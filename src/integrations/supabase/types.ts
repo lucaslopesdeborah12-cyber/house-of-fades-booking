@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           appointment_date: string
@@ -76,28 +94,61 @@ export type Database = {
       }
       barbers: {
         Row: {
+          bio: string | null
+          commission_rate: number
           created_at: string
           email: string
           id: string
           name: string
+          photo_url: string | null
           role: Database["public"]["Enums"]["barber_role"]
           user_id: string
         }
         Insert: {
+          bio?: string | null
+          commission_rate?: number
           created_at?: string
           email: string
           id?: string
           name: string
+          photo_url?: string | null
           role?: Database["public"]["Enums"]["barber_role"]
           user_id: string
         }
         Update: {
+          bio?: string | null
+          commission_rate?: number
           created_at?: string
           email?: string
           id?: string
           name?: string
+          photo_url?: string | null
           role?: Database["public"]["Enums"]["barber_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          author: string
+          created_at: string
+          id: string
+          rating: number
+          text: string
+        }
+        Insert: {
+          author: string
+          created_at?: string
+          id?: string
+          rating?: number
+          text: string
+        }
+        Update: {
+          author?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          text?: string
         }
         Relationships: []
       }
@@ -125,6 +176,24 @@ export type Database = {
         }
         Relationships: []
       }
+      site_content: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -135,6 +204,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["barber_role"]
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       barber_role: "owner" | "employee"

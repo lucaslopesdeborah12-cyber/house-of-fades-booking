@@ -1,31 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
-
-const reviews = [
-  {
-    text: "Would highly recommend the lads. They have great patience with my young lad.",
-    author: "Sean M.",
-  },
-  {
-    text: "Best barbershop in Carlow by a mile. Always leave looking sharp.",
-    author: "Darren K.",
-  },
-  {
-    text: "Unreal skin fade every single time. The lads know their craft inside out.",
-    author: "Conor O'B.",
-  },
-  {
-    text: "Brilliant atmosphere and top-class service. Wouldn't go anywhere else.",
-    author: "James P.",
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 const ReviewsSection = () => {
+  const [reviews, setReviews] = useState<{ author: string; text: string; rating: number }[]>([]);
   const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    supabase.from("reviews").select("author, text, rating").order("created_at").then(({ data }) => {
+      if (data && data.length > 0) setReviews(data);
+    });
+  }, []);
 
   const prev = () => setIdx((i) => (i === 0 ? reviews.length - 1 : i - 1));
   const next = () => setIdx((i) => (i === reviews.length - 1 ? 0 : i + 1));
+
+  if (reviews.length === 0) return null;
 
   return (
     <section id="reviews" className="py-20 px-4">
@@ -50,7 +41,7 @@ const ReviewsSection = () => {
               className="bg-card border border-border rounded-lg p-8 md:p-12"
             >
               <div className="flex justify-center gap-1 mb-6">
-                {[...Array(5)].map((_, i) => (
+                {[...Array(reviews[idx].rating)].map((_, i) => (
                   <Star key={i} size={20} className="fill-primary text-primary" />
                 ))}
               </div>
@@ -64,16 +55,10 @@ const ReviewsSection = () => {
           </AnimatePresence>
 
           <div className="flex justify-center gap-4 mt-6">
-            <button
-              onClick={prev}
-              className="p-2 rounded-full border border-border hover:border-primary transition-colors text-foreground"
-            >
+            <button onClick={prev} className="p-2 rounded-full border border-border hover:border-primary transition-colors text-foreground">
               <ChevronLeft size={20} />
             </button>
-            <button
-              onClick={next}
-              className="p-2 rounded-full border border-border hover:border-primary transition-colors text-foreground"
-            >
+            <button onClick={next} className="p-2 rounded-full border border-border hover:border-primary transition-colors text-foreground">
               <ChevronRight size={20} />
             </button>
           </div>
