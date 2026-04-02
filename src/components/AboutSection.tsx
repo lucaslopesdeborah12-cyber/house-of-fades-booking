@@ -1,7 +1,20 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 import barberAction from "@/assets/barber-action.jpg";
 
 const AboutSection = () => {
+  const [aboutText, setAboutText] = useState("");
+
+  useEffect(() => {
+    supabase.from("site_content").select("value").eq("key", "about").maybeSingle().then(({ data }) => {
+      if (data) {
+        const val = data.value as any;
+        setAboutText(val?.text || "");
+      }
+    });
+  }, []);
+
   return (
     <section className="py-20 px-4 bg-secondary">
       <div className="container mx-auto max-w-5xl">
@@ -12,14 +25,7 @@ const AboutSection = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <img
-              src={barberAction}
-              alt="Barber at work"
-              className="rounded-lg w-full object-cover aspect-square"
-              loading="lazy"
-              width={800}
-              height={800}
-            />
+            <img src={barberAction} alt="Barber at work" className="rounded-lg w-full object-cover aspect-square" loading="lazy" width={800} height={800} />
           </motion.div>
           <motion.div
             initial={{ opacity: 0, x: 30 }}
@@ -32,10 +38,7 @@ const AboutSection = () => {
               It's a beautiful thing when a career and a passion come together.
             </p>
             <p className="text-muted-foreground font-body leading-relaxed">
-              House of Fades has been serving Carlow since 2025. We believe every
-              man deserves to look and feel his best. Our team of skilled barbers
-              brings precision, style, and a genuine love for the craft to every
-              appointment.
+              {aboutText || "House of Fades has been serving Carlow since 2025."}
             </p>
           </motion.div>
         </div>
