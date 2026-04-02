@@ -14,16 +14,130 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          appointment_date: string
+          barber_id: string
+          client_email: string | null
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          service_id: string
+          status: string
+          time_slot: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          barber_id: string
+          client_email?: string | null
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          service_id: string
+          status?: string
+          time_slot: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          barber_id?: string
+          client_email?: string | null
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          service_id?: string
+          status?: string
+          time_slot?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_barber_id_fkey"
+            columns: ["barber_id"]
+            isOneToOne: false
+            referencedRelation: "barbers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      barbers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["barber_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          role?: Database["public"]["Enums"]["barber_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["barber_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          created_at: string
+          duration_minutes: number
+          id: string
+          name: string
+          price: number
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          name: string
+          price: number
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_barber_id: { Args: { _user_id: string }; Returns: string }
+      get_barber_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["barber_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      barber_role: "owner" | "employee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +264,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      barber_role: ["owner", "employee"],
+    },
   },
 } as const
