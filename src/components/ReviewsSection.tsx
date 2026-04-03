@@ -3,13 +3,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+const placeholderReviews = [
+  { author: "Liam K.", text: "Best fade in Carlow, hands down. Always leave looking sharp.", rating: 5 },
+  { author: "Darren O.", text: "Brilliant barbers, great atmosphere. Wouldn't go anywhere else.", rating: 5 },
+];
+
 const ReviewsSection = () => {
   const [reviews, setReviews] = useState<{ author: string; text: string; rating: number }[]>([]);
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
     supabase.from("reviews").select("author, text, rating").order("created_at").then(({ data }) => {
-      if (data && data.length > 0) setReviews(data);
+      const combined = [...(data || []), ...placeholderReviews];
+      setReviews(combined);
     });
   }, []);
 
@@ -19,7 +25,7 @@ const ReviewsSection = () => {
   if (reviews.length === 0) return null;
 
   return (
-    <section id="reviews" className="py-20 px-4">
+    <section id="reviews" className="py-24 px-4">
       <div className="container mx-auto max-w-2xl text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -38,11 +44,11 @@ const ReviewsSection = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }}
               transition={{ duration: 0.3 }}
-              className="bg-card border border-border rounded-lg p-8 md:p-12"
+              className="glass-card rounded-lg p-8 md:p-12"
             >
               <div className="flex justify-center gap-1 mb-6">
                 {[...Array(reviews[idx].rating)].map((_, i) => (
-                  <Star key={i} size={20} className="fill-primary text-primary" />
+                  <Star key={i} size={20} className="fill-accent text-accent" />
                 ))}
               </div>
               <p className="text-foreground font-body text-lg italic mb-6 leading-relaxed">
@@ -55,10 +61,10 @@ const ReviewsSection = () => {
           </AnimatePresence>
 
           <div className="flex justify-center gap-4 mt-6">
-            <button onClick={prev} className="p-2 rounded-full border border-border hover:border-primary transition-colors text-foreground">
+            <button onClick={prev} className="p-2 rounded-full border border-accent/30 hover:border-accent hover:shadow-[0_0_15px_hsla(43,52%,54%,0.2)] transition-all text-foreground">
               <ChevronLeft size={20} />
             </button>
-            <button onClick={next} className="p-2 rounded-full border border-border hover:border-primary transition-colors text-foreground">
+            <button onClick={next} className="p-2 rounded-full border border-accent/30 hover:border-accent hover:shadow-[0_0_15px_hsla(43,52%,54%,0.2)] transition-all text-foreground">
               <ChevronRight size={20} />
             </button>
           </div>
