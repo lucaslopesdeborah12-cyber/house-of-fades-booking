@@ -73,7 +73,7 @@ const GoldScissors = () => (
   </div>
 );
 
-const HeroSection = () => {
+const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
   return (
     <section
       id="hero"
