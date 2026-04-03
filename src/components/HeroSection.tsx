@@ -9,7 +9,7 @@ const HeroSection = () => {
     >
       <img
         src={heroBg}
-        alt="House of Fades barbershop interior"
+        alt="Lopes barbershop interior"
         className="absolute inset-0 w-full h-full object-cover"
         width={1920}
         height={1080}
@@ -26,7 +26,7 @@ const HeroSection = () => {
             EST. 2025 — Carlow, Ireland
           </p>
           <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight">
-            House of Fades
+            Lopes
           </h1>
           <p className="text-foreground text-lg md:text-xl font-body mb-10 max-w-md mx-auto">
             Premium cuts. No compromises.

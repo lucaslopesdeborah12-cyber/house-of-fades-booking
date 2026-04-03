@@ -38,7 +38,7 @@ const AboutSection = () => {
               It's a beautiful thing when a career and a passion come together.
             </p>
             <p className="text-muted-foreground font-body leading-relaxed">
-              {aboutText || "House of Fades has been serving Carlow since 2025."}
+              {aboutText || "Lopes has been serving Carlow since 2025."}
             </p>
           </motion.div>
         </div>
