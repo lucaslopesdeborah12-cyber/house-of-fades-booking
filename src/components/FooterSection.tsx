@@ -2,7 +2,8 @@ import { Instagram, Facebook, Phone } from "lucide-react";
 
 const FooterSection = () => {
   return (
-    <footer className="border-t border-accent/10 py-12 px-4">
+    <footer className="relative border-t border-accent/10 py-12 px-4">
+      <div className="absolute top-0 left-0 right-0 h-[1px]" style={{ background: "linear-gradient(90deg, transparent 10%, hsla(43, 52%, 54%, 0.6) 50%, transparent 90%)", boxShadow: "0 0 12px hsla(43, 52%, 54%, 0.3)" }} />
       <div className="container mx-auto max-w-5xl">
         <div className="grid md:grid-cols-3 gap-8 mb-8">
           <div>

@@ -30,7 +30,7 @@ const ServicesSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              className="glass-card rounded-lg p-6 flex items-center justify-between hover:-translate-y-1 hover:shadow-[0_0_25px_hsla(43,52%,54%,0.15)] transition-all duration-300 cursor-default group"
+              className="glass-card rounded-lg p-6 flex items-center justify-between hover:-translate-y-1 hover:shadow-[0_0_25px_hsla(43,52%,54%,0.15)] transition-all duration-300 cursor-default group card-shimmer-border"
             >
               <div className="flex items-center gap-4">
                 <Scissors size={18} className="text-accent opacity-50 group-hover:opacity-100 transition-opacity" />
