@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Service = { id: string; name: string; duration_minutes: number; price: number };
 
-const ServicesSection = () => {
+const ServicesSection = ({ onBookNow }: { onBookNow?: () => void }) => {
   const [services, setServices] = useState<Service[]>([]);
 
   useEffect(() => {
