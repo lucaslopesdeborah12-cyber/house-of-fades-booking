@@ -63,7 +63,7 @@ const Navbar = () => {
           ))}
           <a
             href="#services"
-            className="block mt-2 btn-primary-glow text-primary-foreground px-5 py-2 rounded text-sm font-medium text-center font-body"
+            className="block mt-2 btn-primary-glow btn-book-pulse text-primary-foreground px-5 py-2 rounded text-sm font-medium text-center font-body"
             onClick={() => setOpen(false)}
           >
             Book Now
