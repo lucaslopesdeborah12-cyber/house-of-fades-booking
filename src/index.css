@@ -68,11 +68,20 @@
 
 @layer utilities {
   .font-serif-display {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Cormorant Garamond', serif;
   }
 
   .font-body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .gold-title-gradient {
+    background: linear-gradient(135deg, #C9A84C, #fff, #C9A84C);
+    background-size: 200% 200%;
+    animation: shimmer 3s ease-in-out infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .gold-shimmer {
