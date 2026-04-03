@@ -7,22 +7,41 @@ import ReviewsSection from "@/components/ReviewsSection";
 import AboutSection from "@/components/AboutSection";
 import HoursLocationSection from "@/components/HoursLocationSection";
 import FooterSection from "@/components/FooterSection";
+import CursorGlow from "@/components/CursorGlow";
+import ScrollReveal from "@/components/ScrollReveal";
+import GoldLine from "@/components/GoldLine";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <CursorGlow />
       <Navbar />
       <HeroSection />
       <SectionDivider />
-      <ServicesSection />
+      <ScrollReveal>
+        <GoldLine />
+        <ServicesSection />
+      </ScrollReveal>
       <SectionDivider />
-      <TeamSection />
+      <ScrollReveal>
+        <GoldLine />
+        <TeamSection />
+      </ScrollReveal>
       <SectionDivider />
-      <ReviewsSection />
+      <ScrollReveal>
+        <GoldLine />
+        <ReviewsSection />
+      </ScrollReveal>
       <SectionDivider />
-      <AboutSection />
+      <ScrollReveal>
+        <GoldLine />
+        <AboutSection />
+      </ScrollReveal>
       <SectionDivider />
-      <HoursLocationSection />
+      <ScrollReveal>
+        <GoldLine />
+        <HoursLocationSection />
+      </ScrollReveal>
       <SectionDivider />
       <FooterSection />
     </div>
