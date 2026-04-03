@@ -58,24 +58,18 @@ const GoldParticlesCanvas = () => {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-0 pointer-events-none" />;
 };
 
-/* CSS-animated gold scissors */
+/* CSS-animated gold scissors with 3D rotation */
 const GoldScissors = () => (
-  <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
-    <motion.div
-      animate={{ rotateY: 360 }}
-      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-      className="opacity-10"
-      style={{ perspective: 800 }}
-    >
+  <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none" style={{ perspective: "800px" }}>
+    <div className="opacity-10 scissors-3d-rotate">
       <svg width="300" height="300" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Scissors SVG with gold */}
         <circle cx="25" cy="75" r="12" stroke="#C9A84C" strokeWidth="2.5" fill="none" />
         <circle cx="75" cy="75" r="12" stroke="#C9A84C" strokeWidth="2.5" fill="none" />
         <line x1="25" y1="63" x2="55" y2="25" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round" />
         <line x1="75" y1="63" x2="45" y2="25" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round" />
         <circle cx="50" cy="42" r="3" fill="#C9A84C" />
       </svg>
-    </motion.div>
+    </div>
   </div>
 );
 
