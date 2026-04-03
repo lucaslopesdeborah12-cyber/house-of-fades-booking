@@ -4,9 +4,15 @@ const LoadingScreen = ({ onDone }: { onDone: () => void }) => {
   const [phase, setPhase] = useState<"in" | "out" | "done">("in");
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("out"), 1400);
-    const t2 = setTimeout(() => { setPhase("done"); onDone(); }, 2200);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const t1 = setTimeout(() => setPhase("out"), 900);
+    const t2 = setTimeout(() => {
+      setPhase("done");
+      onDone();
+    }, 1450);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [onDone]);
 
   if (phase === "done") return null;
@@ -16,15 +22,15 @@ const LoadingScreen = ({ onDone }: { onDone: () => void }) => {
       className="fixed inset-0 z-[99999] flex items-center justify-center bg-black"
       style={{
         opacity: phase === "out" ? 0 : 1,
-        transition: "opacity 0.8s ease-out",
+        transition: "opacity 0.55s ease-out",
       }}
     >
       <h1
-        className="font-serif text-5xl md:text-7xl font-bold gold-title-gradient tracking-[0.05em]"
+        className="gold-title-gradient font-serif text-5xl font-bold tracking-[-0.02em] md:text-7xl"
         style={{
           opacity: phase === "in" ? 1 : 0,
-          transform: phase === "in" ? "translateY(0)" : "translateY(-20px)",
-          transition: "opacity 0.8s ease, transform 0.8s ease",
+          transform: phase === "in" ? "translateY(0)" : "translateY(-16px)",
+          transition: "opacity 0.55s ease, transform 0.55s ease",
         }}
       >
         House of Fades
