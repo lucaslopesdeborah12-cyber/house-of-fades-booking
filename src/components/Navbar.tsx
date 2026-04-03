@@ -38,7 +38,7 @@ const Navbar = () => {
           ))}
           <a
             href="#services"
-            className="btn-primary-glow text-primary-foreground px-5 py-2 rounded text-sm font-medium font-body"
+            className="btn-primary-glow btn-book-pulse text-primary-foreground px-5 py-2 rounded text-sm font-medium font-body"
           >
             Book Now
           </a>
