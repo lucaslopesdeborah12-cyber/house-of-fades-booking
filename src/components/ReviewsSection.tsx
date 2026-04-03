@@ -33,7 +33,7 @@ const ReviewsSection = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-12">What Our Clients Say</h2>
+          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-12 gold-title-gradient">What Our Clients Say</h2>
         </motion.div>
 
         <div className="relative">

@@ -56,7 +56,7 @@ const AboutSection = () => {
             transition={{ duration: 0.6 }}
             className="md:hidden mt-8"
           >
-            <h2 className="font-serif text-4xl font-bold mb-6">About Us</h2>
+            <h2 className="font-serif text-4xl font-bold mb-6 gold-title-gradient">About Us</h2>
             <p className="text-foreground font-body leading-relaxed mb-4">
               It's a beautiful thing when a career and a passion come together.
             </p>

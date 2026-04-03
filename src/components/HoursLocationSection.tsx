@@ -39,7 +39,7 @@ const HoursLocationSection = () => {
     <section id="contact" className="py-24 px-4">
       <div className="container mx-auto max-w-5xl">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-16">
-          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4">Hours & Location</h2>
+          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4 gold-title-gradient">Hours & Location</h2>
           <div className="flex items-center justify-center gap-2 mt-4">
             <span className={`w-2.5 h-2.5 rounded-full ${isOpen ? "bg-green-500" : "bg-red-500"}`} />
             <span className="text-muted-foreground font-body text-sm">
