@@ -1,8 +1,83 @@
-import { Suspense } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Canvas } from "@react-three/fiber";
-import FloatingScissors from "./FloatingScissors";
-import GoldParticles from "./GoldParticles";
+
+const GoldParticlesCanvas = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+    const particles: { x: number; y: number; speed: number; size: number; opacity: number }[] = [];
+    for (let i = 0; i < 50; i++) {
+      particles.push({
+        x: Math.random() * canvas.offsetWidth,
+        y: Math.random() * canvas.offsetHeight,
+        speed: 0.3 + Math.random() * 0.7,
+        size: 1 + Math.random() * 2,
+        opacity: 0.2 + Math.random() * 0.5,
+      });
+    }
+
+    let animId: number;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+      particles.forEach((p) => {
+        p.y -= p.speed;
+        if (p.y < -10) {
+          p.y = canvas.offsetHeight + 10;
+          p.x = Math.random() * canvas.offsetWidth;
+        }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(201, 168, 76, ${p.opacity})`;
+        ctx.fill();
+      });
+      animId = requestAnimationFrame(animate);
+    };
+    animate();
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  useEffect(() => {
+    const cleanup = draw();
+    const handleResize = () => draw();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      cleanup?.();
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [draw]);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-0 pointer-events-none" />;
+};
+
+/* CSS-animated gold scissors */
+const GoldScissors = () => (
+  <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
+    <motion.div
+      animate={{ rotateY: 360 }}
+      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+      className="opacity-10"
+      style={{ perspective: 800 }}
+    >
+      <svg width="300" height="300" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Scissors SVG with gold */}
+        <circle cx="25" cy="75" r="12" stroke="#C9A84C" strokeWidth="2.5" fill="none" />
+        <circle cx="75" cy="75" r="12" stroke="#C9A84C" strokeWidth="2.5" fill="none" />
+        <line x1="25" y1="63" x2="55" y2="25" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="75" y1="63" x2="45" y2="25" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="50" cy="42" r="3" fill="#C9A84C" />
+      </svg>
+    </motion.div>
+  </div>
+);
 
 const HeroSection = () => {
   return (
@@ -11,20 +86,9 @@ const HeroSection = () => {
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
       style={{ background: "radial-gradient(ellipse at center, #0a0a0a 0%, #0a0a0a 60%, #1a0505 100%)" }}
     >
-      {/* 3D Canvas */}
-      <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-          <ambientLight intensity={0.3} />
-          <pointLight position={[5, 5, 5]} intensity={1} color="#C9A84C" />
-          <pointLight position={[-5, -3, 3]} intensity={0.5} color="#8B1A1A" />
-          <Suspense fallback={null}>
-            <FloatingScissors />
-            <GoldParticles />
-          </Suspense>
-        </Canvas>
-      </div>
+      <GoldParticlesCanvas />
+      <GoldScissors />
 
-      {/* Content overlay */}
       <div className="relative z-10 text-center px-4">
         <motion.p
           initial={{ opacity: 0 }}
