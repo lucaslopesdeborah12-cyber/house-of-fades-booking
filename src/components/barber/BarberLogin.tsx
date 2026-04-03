@@ -28,7 +28,7 @@ const BarberLogin = () => {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="font-serif text-3xl font-bold mb-2">Lopes</h1>
+          <h1 className="font-serif text-3xl font-bold mb-2">House</h1>
           <p className="text-muted-foreground font-body text-sm">Barber Portal</p>
         </div>
         <form onSubmit={handleLogin} className="bg-card border border-border rounded-lg p-6 space-y-4">

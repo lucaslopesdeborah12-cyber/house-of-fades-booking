@@ -6,7 +6,7 @@ const FooterSection = () => {
       <div className="container mx-auto max-w-5xl">
         <div className="grid md:grid-cols-3 gap-8 mb-8">
           <div>
-            <h3 className="font-serif text-xl font-bold mb-2">Lopes</h3>
+            <h3 className="font-serif text-xl font-bold mb-2">House</h3>
             <p className="text-muted-foreground font-body text-sm">
               EST. 2025 — Carlow, Ireland
             </p>
@@ -37,7 +37,7 @@ const FooterSection = () => {
         </div>
         <div className="border-t border-border pt-6 text-center">
           <p className="text-muted-foreground font-body text-xs">
-            © {new Date().getFullYear()} Lopes. All rights reserved.
+            © {new Date().getFullYear()} House. All rights reserved.
           </p>
         </div>
       </div>
