@@ -76,7 +76,7 @@
   }
 
   .gold-title-gradient {
-    background: linear-gradient(135deg, #C9A84C, #fff, #C9A84C);
+    background: linear-gradient(135deg, #d4af37, #fff, #d4af37);
     background-size: 200% 200%;
     animation: shimmer 3s ease-in-out infinite;
     -webkit-background-clip: text;
