@@ -27,49 +27,39 @@ const ReviewsSection = () => {
   if (reviews.length === 0) return null;
 
   return (
-    <section id="reviews" className="py-20 md:py-[120px] px-4">
-      <div className="container mx-auto max-w-2xl text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: easeOutExpo }}
-        >
-          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-12 gold-title-gradient">What Our Clients Say</h2>
+    <section id="reviews" className="px-4 py-20 md:py-[120px]">
+      <div className="container mx-auto max-w-3xl text-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: easeOutExpo }} className="mb-12">
+          <p className="mb-4 font-body text-xs uppercase tracking-[0.45em] text-accent">Reviews</p>
+          <h2 className="gold-title-gradient font-serif text-4xl font-bold md:text-5xl">Trusted by clients who expect to look sharp.</h2>
         </motion.div>
 
-        <div className="relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.4, ease: easeOutExpo }}
-              className="glass-card rounded-lg p-8 md:p-12"
-            >
-              <div className="flex justify-center gap-1 mb-6">
-                {[...Array(reviews[idx].rating)].map((_, i) => (
-                  <Star key={i} size={20} className="fill-accent text-accent" />
-                ))}
-              </div>
-              <p className="text-foreground/90 font-body text-lg italic mb-6 leading-relaxed">
-                "{reviews[idx].text}"
-              </p>
-              <p className="text-muted-foreground font-body font-medium">
-                — {reviews[idx].author}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -24 }}
+            transition={{ duration: 0.45, ease: easeOutExpo }}
+            className="glass-card rounded-[24px] px-8 py-10 md:px-12 md:py-14"
+          >
+            <div className="mb-6 flex justify-center gap-1">
+              {[...Array(reviews[idx].rating)].map((_, i) => (
+                <Star key={i} size={20} className="fill-accent text-accent" />
+              ))}
+            </div>
+            <p className="font-serif text-2xl leading-relaxed text-foreground md:text-3xl">“{reviews[idx].text}”</p>
+            <p className="mt-6 font-body text-sm uppercase tracking-[0.2em] text-muted-foreground">{reviews[idx].author}</p>
+          </motion.div>
+        </AnimatePresence>
 
-          <div className="flex justify-center gap-4 mt-6">
-            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} onClick={prev} className="p-2 rounded-full border border-white/[0.1] hover:border-accent/50 hover:shadow-[0_0_15px_hsla(43,74%,52%,0.15)] transition-all duration-300 text-foreground">
-              <ChevronLeft size={20} />
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} onClick={next} className="p-2 rounded-full border border-white/[0.1] hover:border-accent/50 hover:shadow-[0_0_15px_hsla(43,74%,52%,0.15)] transition-all duration-300 text-foreground">
-              <ChevronRight size={20} />
-            </motion.button>
-          </div>
+        <div className="mt-8 flex justify-center gap-4">
+          <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.96 }} onClick={prev} className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-foreground transition-all duration-300 hover:border-accent/40 hover:text-accent">
+            <ChevronLeft size={20} />
+          </motion.button>
+          <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.96 }} onClick={next} className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-foreground transition-all duration-300 hover:border-accent/40 hover:text-accent">
+            <ChevronRight size={20} />
+          </motion.button>
         </div>
       </div>
     </section>

@@ -7,6 +7,7 @@ const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 const AboutSection = () => {
   const [aboutText, setAboutText] = useState("");
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     supabase.from("site_content").select("value").eq("key", "about").maybeSingle().then(({ data }) => {
@@ -18,58 +19,39 @@ const AboutSection = () => {
   }, []);
 
   return (
-    <section className="py-20 md:py-[120px] px-4">
-      <div className="container mx-auto max-w-5xl">
-        <div className="grid md:grid-cols-2 gap-0 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: easeOutExpo }}
-          >
-            <div className="relative overflow-hidden rounded-lg">
-              <img
-                src={barberAction}
-                alt="Barber at work"
-                className="w-full object-cover aspect-square"
-                loading="lazy"
-                width={800}
-                height={800}
-              />
-            </div>
-          </motion.div>
-
-          <div className="hidden md:flex items-stretch relative">
-            <div className="absolute left-0 top-[10%] bottom-[10%] w-px bg-gradient-to-b from-transparent via-accent to-transparent opacity-40" />
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.15, ease: easeOutExpo }}
-              className="pl-12"
-            >
-              <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6 gold-title-gradient">About Us</h2>
-              <p className="text-foreground/90 font-body leading-relaxed mb-4">
-                It's a beautiful thing when a career and a passion come together.
-              </p>
-              <p className="text-muted-foreground font-body leading-relaxed">
-                {aboutText || "House has been serving Carlow since 2025."}
-              </p>
-            </motion.div>
-          </div>
-
+    <section className="px-4 py-20 md:py-[120px]">
+      <div className="container mx-auto max-w-6xl">
+        <div className="grid items-center gap-10 md:grid-cols-[1.1fr_0.9fr]">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: easeOutExpo }}
-            className="md:hidden mt-8"
+            className="relative overflow-hidden rounded-[28px] border border-white/10 bg-card"
           >
-            <h2 className="font-serif text-4xl font-bold mb-6 gold-title-gradient">About Us</h2>
-            <p className="text-foreground/90 font-body leading-relaxed mb-4">
+            <img
+              src={barberAction}
+              alt="Barber at work"
+              loading="lazy"
+              width={800}
+              height={800}
+              onLoad={() => setImageLoaded(true)}
+              className={`aspect-[4/4.6] w-full object-cover transition-all duration-700 ${imageLoaded ? "scale-100 blur-0" : "scale-105 blur-xl"}`}
+            />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.12, ease: easeOutExpo }}
+          >
+            <p className="mb-4 font-body text-xs uppercase tracking-[0.45em] text-accent">About</p>
+            <h2 className="gold-title-gradient font-serif text-4xl font-bold md:text-5xl">A sharper atmosphere, built around confidence and craft.</h2>
+            <p className="mt-6 font-body text-lg leading-relaxed text-foreground/86">
               It's a beautiful thing when a career and a passion come together.
             </p>
-            <p className="text-muted-foreground font-body leading-relaxed">
+            <p className="mt-4 font-body leading-relaxed text-muted-foreground">
               {aboutText || "House has been serving Carlow since 2025."}
             </p>
           </motion.div>
