@@ -7,21 +7,13 @@ const team = [
   { name: "CJ", role: "Fade Expert" },
 ];
 
-const TeamSection = () => {
+const TeamSection = ({ onBookWithBarber }: { onBookWithBarber?: (name: string) => void }) => {
   return (
     <section id="team" className="py-24 px-4">
       <div className="container mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-16">
           <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4 gold-title-gradient">Meet the Team</h2>
-          <p className="text-muted-foreground font-body">
-            Three barbers. One standard of excellence.
-          </p>
+          <p className="text-muted-foreground font-body">Three barbers. One standard of excellence.</p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -39,12 +31,12 @@ const TeamSection = () => {
               </div>
               <h3 className="font-serif text-2xl font-bold mb-1">{member.name}</h3>
               <p className="text-muted-foreground font-body text-sm mb-6">{member.role}</p>
-              <a
-                href="#services"
+              <button
+                onClick={() => onBookWithBarber?.(member.name)}
                 className="inline-block btn-gold-outline px-6 py-2.5 rounded text-sm font-medium font-body"
               >
                 Book with {member.name}
-              </a>
+              </button>
             </motion.div>
           ))}
         </div>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import SectionDivider from "@/components/SectionDivider";
@@ -10,22 +11,31 @@ import FooterSection from "@/components/FooterSection";
 import CursorGlow from "@/components/CursorGlow";
 import ScrollReveal from "@/components/ScrollReveal";
 import GoldLine from "@/components/GoldLine";
+import BookingModal from "@/components/BookingModal";
 
 const Index = () => {
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [preselectedBarber, setPreselectedBarber] = useState<string | undefined>();
+
+  const openBooking = (barberName?: string) => {
+    setPreselectedBarber(barberName);
+    setBookingOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <CursorGlow />
-      <Navbar />
-      <HeroSection />
+      <Navbar onBookNow={() => openBooking()} />
+      <HeroSection onBookNow={() => openBooking()} />
       <SectionDivider />
       <ScrollReveal>
         <GoldLine />
-        <ServicesSection />
+        <ServicesSection onBookNow={() => openBooking()} />
       </ScrollReveal>
       <SectionDivider />
       <ScrollReveal>
         <GoldLine />
-        <TeamSection />
+        <TeamSection onBookWithBarber={(name) => openBooking(name)} />
       </ScrollReveal>
       <SectionDivider />
       <ScrollReveal>
@@ -44,6 +54,7 @@ const Index = () => {
       </ScrollReveal>
       <SectionDivider />
       <FooterSection />
+      <BookingModal open={bookingOpen} onOpenChange={setBookingOpen} preselectedBarber={preselectedBarber} />
     </div>
   );
 };

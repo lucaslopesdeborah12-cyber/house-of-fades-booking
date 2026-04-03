@@ -9,7 +9,7 @@ const navLinks = [
   { label: "Contact", href: "#contact" },
 ];
 
-const Navbar = () => {
+const Navbar = ({ onBookNow }: { onBookNow?: () => void }) => {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -28,20 +28,16 @@ const Navbar = () => {
 
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              className="text-sm font-body text-foreground/80 hover:text-accent transition-colors"
-            >
+            <a key={l.label} href={l.href} className="text-sm font-body text-foreground/80 hover:text-accent transition-colors">
               {l.label}
             </a>
           ))}
-          <a
-            href="#services"
+          <button
+            onClick={onBookNow}
             className="btn-primary-glow btn-book-pulse text-primary-foreground px-5 py-2 rounded text-sm font-medium font-body"
           >
             Book Now
-          </a>
+          </button>
         </div>
 
         <button className="md:hidden text-foreground" onClick={() => setOpen(!open)}>
@@ -52,22 +48,16 @@ const Navbar = () => {
       {open && (
         <div className="md:hidden bg-secondary/95 backdrop-blur-md border-t border-accent/10 px-4 pb-4">
           {navLinks.map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              className="block py-3 text-foreground hover:text-accent transition-colors font-body"
-              onClick={() => setOpen(false)}
-            >
+            <a key={l.label} href={l.href} className="block py-3 text-foreground hover:text-accent transition-colors font-body" onClick={() => setOpen(false)}>
               {l.label}
             </a>
           ))}
-          <a
-            href="#services"
-            className="block mt-2 btn-primary-glow btn-book-pulse text-primary-foreground px-5 py-2 rounded text-sm font-medium text-center font-body"
-            onClick={() => setOpen(false)}
+          <button
+            onClick={() => { setOpen(false); onBookNow?.(); }}
+            className="block w-full mt-2 btn-primary-glow btn-book-pulse text-primary-foreground px-5 py-2 rounded text-sm font-medium text-center font-body"
           >
             Book Now
-          </a>
+          </button>
         </div>
       )}
     </nav>
