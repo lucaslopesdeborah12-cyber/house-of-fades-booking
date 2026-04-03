@@ -1,0 +1,1 @@
+CREATE POLICY "Anyone can read barbers" ON public.barbers FOR SELECT TO public USING (true);
