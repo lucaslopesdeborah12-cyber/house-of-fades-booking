@@ -119,8 +119,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 1.3 }}
-          className="inline-block btn-primary-glow text-primary-foreground px-10 py-4 rounded text-lg font-medium font-body"
-          style={{ animation: "pulse-glow 3s ease-in-out infinite" }}
+          className="inline-block btn-primary-glow btn-book-pulse text-primary-foreground px-10 py-4 rounded text-lg font-medium font-body"
         >
           Book Now
         </motion.a>
