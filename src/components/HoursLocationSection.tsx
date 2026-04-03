@@ -67,7 +67,7 @@ const HoursLocationSection = () => {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="House of Fades location"
+                title="Lopes location"
               />
             </div>
           </motion.div>
