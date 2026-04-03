@@ -99,10 +99,10 @@
   }
 
   .glass-card {
-    background: hsla(0, 0%, 7%, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid hsla(43, 52%, 54%, 0.15);
+    background: hsla(0, 0%, 7%, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .btn-gold-outline {
