@@ -67,7 +67,7 @@ const HoursLocationSection = () => {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Lopes location"
+                title="House location"
               />
             </div>
           </motion.div>

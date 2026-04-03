@@ -90,7 +90,7 @@ const BarberPortal = () => {
       <header className="bg-secondary border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div>
-            <span className="font-serif text-lg text-primary-foreground">Lopes</span>
+            <span className="font-serif text-lg text-primary-foreground">House</span>
             <span className="text-muted-foreground font-body text-sm ml-3">
               {barber.name} • {isOwner ? "Owner" : "Barber"}
             </span>

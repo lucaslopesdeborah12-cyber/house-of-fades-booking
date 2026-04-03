@@ -37,7 +37,7 @@ const FooterSection = () => {
         </div>
         <div className="border-t border-border pt-6 text-center">
           <p className="text-muted-foreground font-body text-xs">
-            © {new Date().getFullYear()} Lopes. All rights reserved.
+            © {new Date().getFullYear()} House. All rights reserved.
           </p>
         </div>
       </div>

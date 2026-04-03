@@ -9,7 +9,7 @@ const HeroSection = () => {
     >
       <img
         src={heroBg}
-        alt="Lopes barbershop interior"
+        alt="House barbershop interior"
         className="absolute inset-0 w-full h-full object-cover"
         width={1920}
         height={1080}
