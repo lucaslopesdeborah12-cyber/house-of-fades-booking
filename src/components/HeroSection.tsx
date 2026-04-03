@@ -102,7 +102,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.4 }}
-          className="font-serif text-6xl md:text-8xl lg:text-9xl font-bold mb-6 leading-tight gold-shimmer"
+          className="font-serif text-6xl md:text-8xl lg:text-9xl font-bold mb-6 leading-tight gold-title-gradient"
         >
           House of Fades
         </motion.h1>

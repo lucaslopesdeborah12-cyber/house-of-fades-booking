@@ -18,7 +18,7 @@ const ServicesSection = () => {
     <section id="services" className="py-24 px-4">
       <div className="container mx-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-16">
-          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4">Our Services</h2>
+          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4 gold-title-gradient">Our Services</h2>
           <p className="text-muted-foreground font-body max-w-lg mx-auto">Expert grooming tailored to your style</p>
         </motion.div>
 

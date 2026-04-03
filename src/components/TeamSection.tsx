@@ -18,7 +18,7 @@ const TeamSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4">Meet the Team</h2>
+          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4 gold-title-gradient">Meet the Team</h2>
           <p className="text-muted-foreground font-body">
             Three barbers. One standard of excellence.
           </p>
