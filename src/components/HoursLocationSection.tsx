@@ -4,6 +4,7 @@ import { MapPin, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 const HoursLocationSection = () => {
   const [hours, setHours] = useState<{ day: string; time: string }[]>([]);
@@ -36,9 +37,9 @@ const HoursLocationSection = () => {
   const isOpen = todayEntry && todayEntry.time !== "Closed";
 
   return (
-    <section id="contact" className="py-24 px-4">
+    <section id="contact" className="py-20 md:py-[120px] px-4">
       <div className="container mx-auto max-w-5xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-16">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: easeOutExpo }} className="text-center mb-16">
           <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4 gold-title-gradient">Hours & Location</h2>
           <div className="flex items-center justify-center gap-2 mt-4">
             <span className={`w-2.5 h-2.5 rounded-full ${isOpen ? "bg-green-500" : "bg-red-500"}`} />
@@ -49,7 +50,7 @@ const HoursLocationSection = () => {
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="glass-card rounded-lg p-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: easeOutExpo }} className="glass-card rounded-lg p-8">
             <div className="flex items-center gap-2 mb-6">
               <Clock size={20} className="text-accent" />
               <h3 className="font-serif text-xl font-semibold">Opening Hours</h3>
@@ -67,13 +68,13 @@ const HoursLocationSection = () => {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="glass-card rounded-lg p-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.1, ease: easeOutExpo }} className="glass-card rounded-lg p-8">
             <div className="flex items-center gap-2 mb-6">
               <MapPin size={20} className="text-accent" />
               <h3 className="font-serif text-xl font-semibold">Find Us</h3>
             </div>
             <p className="text-foreground font-body mb-4">{address}</p>
-            <div className="rounded-lg overflow-hidden border border-accent/20">
+            <div className="rounded-lg overflow-hidden border border-white/[0.06]">
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2400.0!2d-6.9261!3d52.8408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTLCsDUwJzI3LjIiTiA2wrA1NSczMy41Ilc!5e0!3m2!1sen!2sie!4v1"
                 width="100%"

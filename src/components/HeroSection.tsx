@@ -1,6 +1,8 @@
 import { useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 
+const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
+
 const GoldParticlesCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -36,7 +38,7 @@ const GoldParticlesCanvas = () => {
         }
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(201, 168, 76, ${p.opacity})`;
+        ctx.fillStyle = `rgba(212, 175, 55, ${p.opacity})`;
         ctx.fill();
       });
       animId = requestAnimationFrame(animate);
@@ -58,16 +60,15 @@ const GoldParticlesCanvas = () => {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-0 pointer-events-none" />;
 };
 
-/* CSS-animated gold scissors with 3D rotation */
 const GoldScissors = () => (
   <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none" style={{ perspective: "800px" }}>
-    <div className="opacity-10 scissors-3d-rotate">
+    <div className="opacity-[0.07] scissors-3d-rotate">
       <svg width="300" height="300" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="25" cy="75" r="12" stroke="#C9A84C" strokeWidth="2.5" fill="none" />
-        <circle cx="75" cy="75" r="12" stroke="#C9A84C" strokeWidth="2.5" fill="none" />
-        <line x1="25" y1="63" x2="55" y2="25" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="75" y1="63" x2="45" y2="25" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round" />
-        <circle cx="50" cy="42" r="3" fill="#C9A84C" />
+        <circle cx="25" cy="75" r="12" stroke="#d4af37" strokeWidth="2.5" fill="none" />
+        <circle cx="75" cy="75" r="12" stroke="#d4af37" strokeWidth="2.5" fill="none" />
+        <line x1="25" y1="63" x2="55" y2="25" stroke="#d4af37" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="75" y1="63" x2="45" y2="25" stroke="#d4af37" strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="50" cy="42" r="3" fill="#d4af37" />
       </svg>
     </div>
   </div>
@@ -87,15 +88,15 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.2 }}
-          className="text-accent text-sm tracking-[0.4em] uppercase mb-6 font-body"
+          transition={{ duration: 1.2, delay: 0.2, ease: easeOutExpo }}
+          className="text-accent text-xs tracking-[0.5em] uppercase mb-8 font-body"
         >
           EST. 2025 — Carlow, Ireland
         </motion.p>
         <motion.h1
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.4 }}
+          transition={{ duration: 1.2, delay: 0.4, ease: easeOutExpo }}
           className="font-serif text-6xl md:text-8xl lg:text-9xl font-bold mb-6 leading-tight gold-title-gradient"
         >
           House of Fades
@@ -103,8 +104,8 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.9 }}
-          className="text-foreground text-lg md:text-xl font-body mb-12 max-w-md mx-auto"
+          transition={{ duration: 0.8, delay: 0.9, ease: easeOutExpo }}
+          className="text-foreground/80 text-lg md:text-xl font-body mb-14 max-w-md mx-auto tracking-wide"
         >
           Premium cuts. No compromises.
         </motion.p>
@@ -112,8 +113,10 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
           onClick={onBookNow}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 1.3 }}
-          className="inline-block btn-primary-glow btn-book-pulse text-primary-foreground px-10 py-4 rounded text-lg font-medium font-body"
+          transition={{ duration: 0.6, delay: 1.3, ease: easeOutExpo }}
+          whileHover={{ scale: 1.05, boxShadow: "0 0 40px hsla(43, 74%, 52%, 0.4)" }}
+          whileTap={{ scale: 0.98 }}
+          className="inline-block btn-primary-glow btn-book-pulse text-primary-foreground px-10 py-4 rounded text-lg font-medium font-body tracking-[0.05em]"
         >
           Book Now
         </motion.button>

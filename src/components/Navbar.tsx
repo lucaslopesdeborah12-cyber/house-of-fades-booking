@@ -20,21 +20,21 @@ const Navbar = ({ onBookNow }: { onBookNow?: () => void }) => {
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-secondary/95 backdrop-blur-md border-b border-accent/10" : "bg-transparent"}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-secondary/80 backdrop-blur-xl border-b border-white/[0.06]" : "bg-transparent"}`}>
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <a href="#hero" className="font-serif text-xl tracking-wider gold-shimmer font-bold">
+        <a href="#hero" className="font-serif text-xl tracking-wide gold-shimmer font-bold">
           HOUSE OF FADES
         </a>
 
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((l) => (
-            <a key={l.label} href={l.href} className="text-sm font-body text-foreground/80 hover:text-accent transition-colors">
+            <a key={l.label} href={l.href} className="text-sm font-body text-foreground/70 hover:text-accent transition-colors duration-300 tracking-[0.05em]">
               {l.label}
             </a>
           ))}
           <button
             onClick={onBookNow}
-            className="btn-primary-glow btn-book-pulse text-primary-foreground px-5 py-2 rounded text-sm font-medium font-body"
+            className="btn-primary-glow btn-book-pulse text-primary-foreground px-5 py-2 rounded text-sm font-medium font-body tracking-[0.05em]"
           >
             Book Now
           </button>
@@ -46,15 +46,15 @@ const Navbar = ({ onBookNow }: { onBookNow?: () => void }) => {
       </div>
 
       {open && (
-        <div className="md:hidden bg-secondary/95 backdrop-blur-md border-t border-accent/10 px-4 pb-4">
+        <div className="md:hidden bg-secondary/90 backdrop-blur-xl border-t border-white/[0.06] px-4 pb-4">
           {navLinks.map((l) => (
-            <a key={l.label} href={l.href} className="block py-3 text-foreground hover:text-accent transition-colors font-body" onClick={() => setOpen(false)}>
+            <a key={l.label} href={l.href} className="block py-3 text-foreground hover:text-accent transition-colors font-body tracking-[0.05em]" onClick={() => setOpen(false)}>
               {l.label}
             </a>
           ))}
           <button
             onClick={() => { setOpen(false); onBookNow?.(); }}
-            className="block w-full mt-2 btn-primary-glow btn-book-pulse text-primary-foreground px-5 py-2 rounded text-sm font-medium text-center font-body"
+            className="block w-full mt-2 btn-primary-glow btn-book-pulse text-primary-foreground px-5 py-2 rounded text-sm font-medium text-center font-body tracking-[0.05em]"
           >
             Book Now
           </button>

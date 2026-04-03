@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -24,7 +24,7 @@
     --muted: 0 0% 15%;
     --muted-foreground: 0 0% 60%;
 
-    --accent: 43 52% 54%;
+    --accent: 43 74% 52%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
@@ -36,7 +36,7 @@
 
     --radius: 0.5rem;
 
-    --gold: 43 52% 54%;
+    --gold: 43 74% 52%;
     --gold-glow: 0 0 20px hsla(43, 52%, 54%, 0.4);
 
     --sidebar-background: 0 0% 5%;
@@ -60,23 +60,23 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Playfair Display', serif;
     color: hsl(0, 0%, 100%);
-    letter-spacing: 0.05em;
+    letter-spacing: -0.02em;
   }
 }
 
 @layer utilities {
   .font-serif-display {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Playfair Display', serif;
   }
 
   .font-body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
   }
 
   .gold-title-gradient {
-    background: linear-gradient(135deg, #C9A84C, #fff, #C9A84C);
+    background: linear-gradient(135deg, #d4af37, #fff, #d4af37);
     background-size: 200% 200%;
     animation: shimmer 3s ease-in-out infinite;
     -webkit-background-clip: text;
@@ -99,10 +99,10 @@
   }
 
   .glass-card {
-    background: hsla(0, 0%, 7%, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid hsla(43, 52%, 54%, 0.15);
+    background: hsla(0, 0%, 7%, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .btn-gold-outline {
