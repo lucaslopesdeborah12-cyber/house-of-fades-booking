@@ -21,7 +21,7 @@ const GoldLine = () => {
         className="h-[1px] transition-all duration-1000 ease-out"
         style={{
           width: visible ? "80px" : "0px",
-          background: "linear-gradient(90deg, transparent, hsl(43, 52%, 54%), transparent)",
+          background: "linear-gradient(90deg, transparent, hsl(43, 74%, 52%), transparent)",
         }}
       />
     </div>

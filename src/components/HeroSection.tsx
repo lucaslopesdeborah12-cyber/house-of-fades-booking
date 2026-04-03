@@ -17,13 +17,13 @@ const GoldParticlesCanvas = () => {
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
     const particles: { x: number; y: number; speed: number; size: number; opacity: number }[] = [];
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 70; i++) {
       particles.push({
         x: Math.random() * canvas.offsetWidth,
         y: Math.random() * canvas.offsetHeight,
-        speed: 0.3 + Math.random() * 0.7,
-        size: 1 + Math.random() * 2,
-        opacity: 0.2 + Math.random() * 0.5,
+        speed: 0.2 + Math.random() * 0.8,
+        size: 1 + Math.random() * 2.5,
+        opacity: 0.15 + Math.random() * 0.45,
       });
     }
 
@@ -57,13 +57,13 @@ const GoldParticlesCanvas = () => {
     };
   }, [draw]);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-0 pointer-events-none" />;
+  return <canvas ref={canvasRef} className="absolute inset-0 h-full w-full pointer-events-none z-0" />;
 };
 
 const GoldScissors = () => (
-  <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none" style={{ perspective: "800px" }}>
-    <div className="opacity-[0.07] scissors-3d-rotate">
-      <svg width="300" height="300" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0" style={{ perspective: "1000px" }}>
+    <div className="scissors-3d-rotate opacity-10 blur-[0.2px]">
+      <svg width="380" height="380" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="25" cy="75" r="12" stroke="#d4af37" strokeWidth="2.5" fill="none" />
         <circle cx="75" cy="75" r="12" stroke="#d4af37" strokeWidth="2.5" fill="none" />
         <line x1="25" y1="63" x2="55" y2="25" stroke="#d4af37" strokeWidth="2.5" strokeLinecap="round" />
@@ -78,48 +78,66 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
   return (
     <section
       id="hero"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      style={{ background: "radial-gradient(ellipse at center, #0a0a0a 0%, #0a0a0a 60%, #1a0505 100%)" }}
+      className="relative min-h-screen overflow-hidden"
+      style={{ background: "radial-gradient(circle at 50% 40%, hsl(var(--card)) 0%, hsl(var(--background)) 55%, hsl(var(--background)) 100%)" }}
     >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_left,_hsla(0,68%,33%,0.18),_transparent_35%),radial-gradient(circle_at_right,_hsla(0,68%,33%,0.14),_transparent_30%)]" />
       <GoldParticlesCanvas />
       <GoldScissors />
 
-      <div className="relative z-10 text-center px-4">
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, delay: 0.2, ease: easeOutExpo }}
-          className="text-accent text-xs tracking-[0.5em] uppercase mb-8 font-body"
-        >
-          EST. 2025 — Carlow, Ireland
-        </motion.p>
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2, delay: 0.4, ease: easeOutExpo }}
-          className="font-serif text-6xl md:text-8xl lg:text-9xl font-bold mb-6 leading-tight gold-title-gradient"
-        >
-          House of Fades
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.9, ease: easeOutExpo }}
-          className="text-foreground/80 text-lg md:text-xl font-body mb-14 max-w-md mx-auto tracking-wide"
-        >
-          Premium cuts. No compromises.
-        </motion.p>
-        <motion.button
-          onClick={onBookNow}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 1.3, ease: easeOutExpo }}
-          whileHover={{ scale: 1.05, boxShadow: "0 0 40px hsla(43, 74%, 52%, 0.4)" }}
-          whileTap={{ scale: 0.98 }}
-          className="inline-block btn-primary-glow btn-book-pulse text-primary-foreground px-10 py-4 rounded text-lg font-medium font-body tracking-[0.05em]"
-        >
-          Book Now
-        </motion.button>
+      <div className="container relative z-10 mx-auto flex min-h-screen items-center px-4 pt-24 pb-12">
+        <div className="max-w-4xl">
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.15, ease: easeOutExpo }}
+            className="mb-6 font-body text-xs uppercase tracking-[0.5em] text-accent"
+          >
+            EST. 2025 — Carlow, Ireland
+          </motion.p>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.1, delay: 0.3, ease: easeOutExpo }}
+            className="gold-title-gradient max-w-3xl font-serif text-6xl font-bold leading-[0.9] md:text-8xl lg:text-[7rem]"
+          >
+            Precision grooming with a cinematic luxury edge.
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.65, ease: easeOutExpo }}
+            className="mt-8 max-w-xl font-body text-lg leading-relaxed text-foreground/72 md:text-xl"
+          >
+            House of Fades delivers premium cuts, sharp detail, and a high-end barbershop experience designed to feel confident from the first glance.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.95, ease: easeOutExpo }}
+            className="mt-10 flex flex-col gap-4 sm:flex-row"
+          >
+            <motion.button
+              onClick={onBookNow}
+              whileHover={{ scale: 1.05, boxShadow: "0 0 40px hsla(43, 74%, 52%, 0.32)" }}
+              whileTap={{ scale: 0.98 }}
+              className="btn-primary-glow btn-book-pulse rounded px-10 py-4 font-body text-sm font-semibold uppercase tracking-[0.05em] text-primary-foreground"
+            >
+              Book Now
+            </motion.button>
+            <motion.a
+              href="#services"
+              whileHover={{ scale: 1.05, boxShadow: "0 0 30px hsla(43, 74%, 52%, 0.14)" }}
+              whileTap={{ scale: 0.98 }}
+              className="btn-gold-outline inline-flex items-center justify-center rounded px-10 py-4 font-body text-sm font-semibold uppercase tracking-[0.05em]"
+            >
+              Explore Services
+            </motion.a>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

@@ -18,7 +18,7 @@ const CursorGlow = () => {
       ref={glowRef}
       className="pointer-events-none fixed top-0 left-0 z-[9999] w-[300px] h-[300px] rounded-full opacity-20 mix-blend-screen"
       style={{
-        background: "radial-gradient(circle, hsla(43, 52%, 54%, 0.35) 0%, transparent 70%)",
+        background: "radial-gradient(circle, hsla(43, 74%, 52%, 0.22) 0%, transparent 70%)",
         transition: "transform 0.15s ease-out",
       }}
     />

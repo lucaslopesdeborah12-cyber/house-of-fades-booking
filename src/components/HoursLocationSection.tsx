@@ -31,36 +31,34 @@ const HoursLocationSection = () => {
 
   const displayHours = hours.length > 0 ? hours : defaultHours;
   const address = contact.address || "153 Green Ln, Carlow, R93 W354";
-
   const today = dayNames[new Date().getDay()];
   const todayEntry = displayHours.find((h) => h.day === today);
   const isOpen = todayEntry && todayEntry.time !== "Closed";
 
   return (
-    <section id="contact" className="py-20 md:py-[120px] px-4">
-      <div className="container mx-auto max-w-5xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: easeOutExpo }} className="text-center mb-16">
-          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4 gold-title-gradient">Hours & Location</h2>
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <span className={`w-2.5 h-2.5 rounded-full ${isOpen ? "bg-green-500" : "bg-red-500"}`} />
-            <span className="text-muted-foreground font-body text-sm">
-              {isOpen ? "Open today" : "Closed today"}
-            </span>
-          </div>
+    <section id="contact" className="px-4 py-20 md:py-[120px]">
+      <div className="container mx-auto max-w-6xl">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: easeOutExpo }} className="mb-14 max-w-2xl">
+          <p className="mb-4 font-body text-xs uppercase tracking-[0.45em] text-accent">Contact</p>
+          <h2 className="gold-title-gradient font-serif text-4xl font-bold md:text-5xl">Visit the shop and plan your next appointment with ease.</h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: easeOutExpo }} className="glass-card rounded-lg p-8">
-            <div className="flex items-center gap-2 mb-6">
+        <div className="grid gap-8 md:grid-cols-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, ease: easeOutExpo }} className="glass-card rounded-[24px] p-8">
+            <div className="mb-6 flex items-center gap-3">
               <Clock size={20} className="text-accent" />
-              <h3 className="font-serif text-xl font-semibold">Opening Hours</h3>
+              <h3 className="font-serif text-2xl font-semibold">Opening Hours</h3>
+            </div>
+            <div className="mb-6 flex items-center gap-2">
+              <span className={`h-2.5 w-2.5 rounded-full ${isOpen ? "bg-green-500" : "bg-red-500"}`} />
+              <span className="font-body text-sm text-muted-foreground">{isOpen ? "Open today" : "Closed today"}</span>
             </div>
             <div className="space-y-3 font-body">
               {displayHours.map((h) => {
                 const isCurrent = h.day === today;
                 return (
-                  <div key={h.day} className={`flex justify-between text-sm py-1 px-2 rounded ${isCurrent ? "bg-accent/10 border border-accent/20" : ""}`}>
-                    <span className={`${isCurrent ? "text-accent font-medium" : "text-foreground"}`}>{h.day}</span>
+                  <div key={h.day} className={`flex items-center justify-between rounded-xl px-3 py-3 text-sm ${isCurrent ? "border border-accent/20 bg-accent/10" : "border border-white/[0.04] bg-white/[0.01]"}`}>
+                    <span className={isCurrent ? "font-medium text-accent" : "text-foreground"}>{h.day}</span>
                     <span className={h.time === "Closed" ? "text-primary" : "text-muted-foreground"}>{h.time}</span>
                   </div>
                 );
@@ -68,17 +66,17 @@ const HoursLocationSection = () => {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.1, ease: easeOutExpo }} className="glass-card rounded-lg p-8">
-            <div className="flex items-center gap-2 mb-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.1, ease: easeOutExpo }} className="glass-card rounded-[24px] p-8">
+            <div className="mb-6 flex items-center gap-3">
               <MapPin size={20} className="text-accent" />
-              <h3 className="font-serif text-xl font-semibold">Find Us</h3>
+              <h3 className="font-serif text-2xl font-semibold">Find Us</h3>
             </div>
-            <p className="text-foreground font-body mb-4">{address}</p>
-            <div className="rounded-lg overflow-hidden border border-white/[0.06]">
+            <p className="mb-4 font-body text-foreground/86">{address}</p>
+            <div className="overflow-hidden rounded-[18px] border border-white/10">
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2400.0!2d-6.9261!3d52.8408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTLCsDUwJzI3LjIiTiA2wrA1NSczMy41Ilc!5e0!3m2!1sen!2sie!4v1"
                 width="100%"
-                height="250"
+                height="280"
                 style={{ border: 0 }}
                 allowFullScreen
                 loading="lazy"
