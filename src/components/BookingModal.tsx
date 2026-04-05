@@ -103,7 +103,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       appointment_date: format(selectedDate!, "yyyy-MM-dd"),
       time_slot: selectedTime,
       client_name: clientName.trim(),
-      client_phone: clientPhone.trim() ? `${selectedCountry.dial}${clientPhone.trim()}` : null,
+      client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : null,
       client_email: clientEmail.trim() || null,
     });
     setSubmitting(false);
