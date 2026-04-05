@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
+import CountryCodeSelector, { COUNTRIES, type Country } from "@/components/CountryCodeSelector";
 
 type Barber = { id: string; name: string };
 type Service = { id: string; name: string; price: number; duration_minutes: number };
@@ -38,6 +39,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [clientEmail, setClientEmail] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]); // Ireland default
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -101,7 +103,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       appointment_date: format(selectedDate!, "yyyy-MM-dd"),
       time_slot: selectedTime,
       client_name: clientName.trim(),
-      client_phone: clientPhone.trim() ? `+353${clientPhone.trim()}` : null,
+      client_phone: clientPhone.trim() ? `${selectedCountry.dial}${clientPhone.trim()}` : null,
       client_email: clientEmail.trim() || null,
     });
     setSubmitting(false);
@@ -115,7 +117,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         supabase.functions.invoke("send-sms", {
           body: {
             action: "confirmation",
-            phone: `+353${clientPhone.trim()}`,
+            phone: `${selectedCountry.dial}${clientPhone.trim()}`,
             clientName: clientName.trim(),
             barberName: selectedBarberName || "",
             serviceName: selectedServiceObj?.name || "",
@@ -281,9 +283,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     className="bg-background border-border text-foreground font-body"
                   />
                   <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-muted text-muted-foreground text-sm font-body">+353</span>
+                    <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
                     <Input
-                      placeholder="85 123 4567"
+                      placeholder={selectedCountry.code === "IE" ? "85 123 4567" : "Número"}
                       value={clientPhone}
                       onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
                       className="bg-background border-border text-foreground font-body rounded-l-none"
