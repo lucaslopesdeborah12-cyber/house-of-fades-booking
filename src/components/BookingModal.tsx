@@ -117,7 +117,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         supabase.functions.invoke("send-sms", {
           body: {
             action: "confirmation",
-            phone: `${selectedCountry.dial}${clientPhone.trim()}`,
+            phone: formatPhoneForSubmit(clientPhone, selectedCountry),
             clientName: clientName.trim(),
             barberName: selectedBarberName || "",
             serviceName: selectedServiceObj?.name || "",
