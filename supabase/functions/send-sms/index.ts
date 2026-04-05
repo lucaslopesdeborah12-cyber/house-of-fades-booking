@@ -5,7 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 const TWILIO_FROM = "+16624304415";
 
 Deno.serve(async (req: Request) => {
@@ -14,11 +13,14 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
+    if (!TWILIO_ACCOUNT_SID) throw new Error("TWILIO_ACCOUNT_SID is not configured");
 
-    const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
-    if (!TWILIO_API_KEY) throw new Error("TWILIO_API_KEY is not configured");
+    const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
+    if (!TWILIO_AUTH_TOKEN) throw new Error("TWILIO_AUTH_TOKEN is not configured");
+
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+    const authHeader = "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
 
     const { action, ...payload } = await req.json();
 
@@ -30,13 +32,12 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      const body = `✅ Olá ${clientName}! Seu agendamento no House of Fades foi confirmado.\n\n💈 Barbeiro: ${barberName}\n✂️ Serviço: ${serviceName}\n📅 Data: ${date}\n🕐 Horário: ${time}\n\nAté lá! 🔥`;
+      const body = `Olá ${clientName}! Seu agendamento na House of Fades está confirmado para ${date} às ${time}. Até lá! ✂️`;
 
-      const response = await fetch(`${GATEWAY_URL}/Messages.json`, {
+      const response = await fetch(twilioUrl, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "X-Connection-Api-Key": TWILIO_API_KEY,
+          Authorization: authHeader,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({ To: phone, From: TWILIO_FROM, Body: body }),
@@ -57,14 +58,13 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "send-reminders") {
-      // Called by cron - find appointments 2 hours from now
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, serviceRoleKey);
 
       const now = new Date();
       const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-      
+
       const targetDate = twoHoursLater.toISOString().split("T")[0];
       const targetHour = twoHoursLater.getHours().toString().padStart(2, "0");
       const targetMinute = twoHoursLater.getMinutes() < 30 ? "00" : "30";
@@ -89,18 +89,17 @@ Deno.serve(async (req: Request) => {
       let sent = 0;
       for (const apt of appointments || []) {
         if (!apt.client_phone) continue;
-        
+
         const barberName = (apt as any).barbers?.name || "seu barbeiro";
         const serviceName = (apt as any).services?.name || "seu serviço";
-        
+
         const body = `⏰ Lembrete House of Fades!\n\nOlá ${apt.client_name}, seu horário é em 2 horas!\n\n💈 ${barberName}\n✂️ ${serviceName}\n🕐 ${targetTime}\n\nTe esperamos! 🔥`;
 
         try {
-          const response = await fetch(`${GATEWAY_URL}/Messages.json`, {
+          const response = await fetch(twilioUrl, {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
-              "X-Connection-Api-Key": TWILIO_API_KEY,
+              Authorization: authHeader,
               "Content-Type": "application/x-www-form-urlencoded",
             },
             body: new URLSearchParams({ To: apt.client_phone, From: TWILIO_FROM, Body: body }),
