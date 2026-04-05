@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
+import CountryCodeSelector, { COUNTRIES, type Country } from "@/components/CountryCodeSelector";
 
 type Barber = { id: string; name: string };
 type Service = { id: string; name: string; price: number; duration_minutes: number };
