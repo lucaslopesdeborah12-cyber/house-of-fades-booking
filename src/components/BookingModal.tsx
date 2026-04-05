@@ -280,11 +280,13 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     onChange={e => setClientName(e.target.value)}
                     className="bg-background border-border text-foreground font-body"
                   />
-                  <Input
-                    placeholder="Telefone"
-                    value={clientPhone}
-                    onChange={e => setClientPhone(e.target.value)}
-                    className="bg-background border-border text-foreground font-body"
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-muted text-muted-foreground text-sm font-body">+353</span>
+                    <Input
+                      placeholder="85 123 4567"
+                      value={clientPhone}
+                      onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                      className="bg-background border-border text-foreground font-body rounded-l-none"
                   />
                   <Input
                     placeholder="Email"
