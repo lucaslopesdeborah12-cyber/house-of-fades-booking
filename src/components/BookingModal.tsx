@@ -285,7 +285,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   <div className="flex">
                     <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
                     <Input
-                      placeholder={selectedCountry.code === "IE" ? "85 123 4567" : "Número"}
+                      placeholder={selectedCountry.code === "IE" ? "085 123 4567" : "Número"}
                       value={clientPhone}
                       onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
                       className="bg-background border-border text-foreground font-body rounded-l-none"
