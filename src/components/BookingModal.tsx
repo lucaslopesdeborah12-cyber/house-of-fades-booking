@@ -110,6 +110,20 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       console.error(error);
     } else {
       setSuccess(true);
+      // Send confirmation SMS (fire and forget)
+      if (clientPhone.trim()) {
+        supabase.functions.invoke("send-sms", {
+          body: {
+            action: "confirmation",
+            phone: clientPhone.trim(),
+            clientName: clientName.trim(),
+            barberName: selectedBarberName || "",
+            serviceName: selectedServiceObj?.name || "",
+            date: format(selectedDate!, "dd/MM/yyyy"),
+            time: selectedTime,
+          },
+        }).catch(console.error);
+      }
     }
   };
 
