@@ -24,7 +24,8 @@ export const useLanguage = () => useContext(LanguageContext);
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [lang, setLangState] = useState<LangCode>(() => {
     const saved = localStorage.getItem("hof-lang") as LangCode | null;
-    return saved && translations[saved] ? saved : "en";
+    if (saved && translations[saved]) return saved;
+    return detectBrowserLang();
   });
 
   const setLang = useCallback((code: LangCode) => {
