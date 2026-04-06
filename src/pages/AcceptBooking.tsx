@@ -51,14 +51,13 @@ const AcceptBooking = () => {
         .in("status", ["booked", "confirmed"]);
 
       if (existing && existing.length > 0) {
-        setErrorMsg("Sorry, this slot has already been taken.");
+        setErrorMsg("Sorry! This slot was just filled by someone else. We'll notify you when another slot opens up! 🙏");
         setStatus("error");
-        await supabase.from("waiting_list").update({ status: "cancelled" }).eq("id", waitingId);
         return;
       }
 
-      // Get service_id from the waiting list entry or find a default
-      let serviceId = entry.barber_id; // fallback
+      // Get a service_id
+      let serviceId = barberId; // fallback
       const { data: services } = await supabase.from("services").select("id").limit(1);
       if (services && services.length > 0) {
         serviceId = services[0].id;
@@ -82,8 +81,17 @@ const AcceptBooking = () => {
         return;
       }
 
-      // Update waiting list status
+      // Update this waiting list entry to accepted
       await supabase.from("waiting_list").update({ status: "accepted" }).eq("id", waitingId);
+
+      // Cancel all other waiting list entries for this slot
+      await supabase.from("waiting_list")
+        .update({ status: "cancelled" })
+        .eq("barber_id", barberId)
+        .eq("appointment_date", date)
+        .eq("time_slot", entry.time_slot)
+        .neq("id", waitingId)
+        .in("status", ["pending", "notified"]);
 
       // Send confirmation email
       if (email) {

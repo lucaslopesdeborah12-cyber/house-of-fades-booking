@@ -6,6 +6,35 @@ const corsHeaders = {
 };
 
 const TWILIO_FROM = "+16624304415";
+const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
+
+async function sendSMS(to: string, body: string): Promise<{ ok: boolean; data: any }> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+  const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
+  if (!TWILIO_API_KEY) throw new Error("TWILIO_API_KEY is not configured");
+
+  console.log("[send-sms] Sending SMS to:", to);
+
+  const response = await fetch(`${GATEWAY_URL}/Messages.json`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+      "X-Connection-Api-Key": TWILIO_API_KEY,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({ To: to, From: TWILIO_FROM, Body: body }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    console.error("[send-sms] Twilio gateway error:", JSON.stringify(data));
+  } else {
+    console.log("[send-sms] SMS sent successfully, SID:", data.sid);
+  }
+  return { ok: response.ok, data };
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -13,16 +42,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
-    if (!TWILIO_ACCOUNT_SID) throw new Error("TWILIO_ACCOUNT_SID is not configured");
-
-    const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
-    if (!TWILIO_AUTH_TOKEN) throw new Error("TWILIO_AUTH_TOKEN is not configured");
-
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
-    const authHeader = "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
-
     const { action, ...payload } = await req.json();
+    console.log("[send-sms] Action:", action);
 
     if (action === "confirmation") {
       const { phone, clientName, barberName, serviceName, date, time } = payload;
@@ -33,26 +54,10 @@ Deno.serve(async (req: Request) => {
       }
 
       const body = `Olá ${clientName}! Seu agendamento na House of Fades está confirmado para ${date} às ${time}. Até lá! ✂️`;
+      const result = await sendSMS(phone, body);
 
-      const response = await fetch(twilioUrl, {
-        method: "POST",
-        headers: {
-          Authorization: authHeader,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({ To: phone, From: TWILIO_FROM, Body: body }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        console.error("Twilio error:", data);
-        return new Response(JSON.stringify({ success: false, error: data }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      return new Response(JSON.stringify({ success: true, sid: data.sid }), {
+      return new Response(JSON.stringify({ success: result.ok, sid: result.data.sid }), {
+        status: result.ok ? 200 : 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -65,21 +70,9 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      const response = await fetch(twilioUrl, {
-        method: "POST",
-        headers: {
-          Authorization: authHeader,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({ To: phone, From: TWILIO_FROM, Body: message }),
-      });
+      const result = await sendSMS(phone, message);
 
-      const data = await response.json();
-      if (!response.ok) {
-        console.error("Twilio waiting-list error:", data);
-      }
-
-      return new Response(JSON.stringify({ success: response.ok, sid: data.sid }), {
+      return new Response(JSON.stringify({ success: result.ok, sid: result.data.sid }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -91,7 +84,6 @@ Deno.serve(async (req: Request) => {
 
       const now = new Date();
       const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-
       const targetDate = twoHoursLater.toISOString().split("T")[0];
       const targetHour = twoHoursLater.getHours().toString().padStart(2, "0");
       const targetMinute = twoHoursLater.getMinutes() < 30 ? "00" : "30";
@@ -106,7 +98,7 @@ Deno.serve(async (req: Request) => {
         .not("client_phone", "is", null);
 
       if (error) {
-        console.error("Query error:", error);
+        console.error("[send-sms] Query error:", error);
         return new Response(JSON.stringify({ error: error.message }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -116,25 +108,15 @@ Deno.serve(async (req: Request) => {
       let sent = 0;
       for (const apt of appointments || []) {
         if (!apt.client_phone) continue;
-
         const barberName = (apt as any).barbers?.name || "seu barbeiro";
         const serviceName = (apt as any).services?.name || "seu serviço";
-
         const body = `⏰ Lembrete House of Fades!\n\nOlá ${apt.client_name}, seu horário é em 2 horas!\n\n💈 ${barberName}\n✂️ ${serviceName}\n🕐 ${targetTime}\n\nTe esperamos! 🔥`;
 
         try {
-          const response = await fetch(twilioUrl, {
-            method: "POST",
-            headers: {
-              Authorization: authHeader,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: new URLSearchParams({ To: apt.client_phone, From: TWILIO_FROM, Body: body }),
-          });
-          if (response.ok) sent++;
-          else console.error("Failed to send reminder to", apt.client_phone);
+          const result = await sendSMS(apt.client_phone, body);
+          if (result.ok) sent++;
         } catch (e) {
-          console.error("SMS error:", e);
+          console.error("[send-sms] Reminder error:", e);
         }
       }
 
@@ -148,7 +130,7 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("Error:", err);
+    console.error("[send-sms] Error:", err);
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

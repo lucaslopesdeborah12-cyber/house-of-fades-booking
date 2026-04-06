@@ -78,7 +78,7 @@ export const notifyWaitingList = async (
     // Send SMS via Edge Function
     if (waiter.client_phone) {
       console.log("[WaitingListNotifier] Sending SMS to:", waiter.client_phone);
-      const smsMsg = `House of Fades: A slot opened on ${date} at ${cancelledTime}! Accept: ${acceptLink} | Decline: ${declineLink}`;
+      const smsMsg = `House of Fades: A slot opened on ${date} at ${cancelledTime}! Be the first to accept: ${acceptLink}`;
       try {
         const smsResult = await supabase.functions.invoke("send-sms", {
           body: {
@@ -97,23 +97,5 @@ export const notifyWaitingList = async (
     }
   }
 
-  // Set 15 minute timeout
-  setTimeout(async () => {
-    console.log("[WaitingListNotifier] 15min timeout - checking expired waiters");
-    const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-    const { data: expired } = await supabase
-      .from("waiting_list")
-      .select("*")
-      .eq("barber_id", barberId)
-      .eq("appointment_date", date)
-      .eq("status", "notified")
-      .lt("notified_at", fifteenMinAgo);
-
-    if (expired && expired.length > 0) {
-      console.log("[WaitingListNotifier] Expired waiters to cancel:", expired.length);
-      for (const entry of expired) {
-        await supabase.from("waiting_list").update({ status: "cancelled" }).eq("id", entry.id);
-      }
-    }
-  }, 15 * 60 * 1000);
+  // No resend timer - notification is sent only once
 };
