@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Clock, User, Scissors, X, Check } from "lucide-react";
 import emailjs from "@emailjs/browser";
@@ -13,6 +13,10 @@ import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import CountryCodeSelector, { COUNTRIES, formatPhoneForSubmit, type Country } from "@/components/CountryCodeSelector";
 import WaitingListForm from "@/components/WaitingListForm";
+import { notifyWaitingList } from "@/lib/waitingListNotifier";
+
+// Initialize EmailJS once
+emailjs.init("TBNWeHLfrq6OuvZhQ");
 
 type Barber = { id: string; name: string };
 type Service = { id: string; name: string; price: number; duration_minutes: number };
@@ -72,17 +76,32 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     });
   }, [open, preselectedBarber]);
 
-  useEffect(() => {
+  const fetchBookedSlots = useCallback(async () => {
     if (!selectedBarber || !selectedDate) return;
-    supabase
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    console.log("[BookingModal] Fetching booked slots for barber:", selectedBarber, "date:", dateStr);
+    const { data, error } = await supabase
       .from("appointments")
       .select("time_slot")
       .eq("barber_id", selectedBarber)
-      .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
-      .in("status", ["booked", "confirmed"])
-      .then(({ data }) => {
-        if (data) setBookedSlots(data.map(d => d.time_slot.slice(0, 5)));
-      });
+      .eq("appointment_date", dateStr)
+      .in("status", ["booked", "confirmed"]);
+    if (error) {
+      console.error("[BookingModal] Error fetching booked slots:", error);
+      return;
+    }
+    const slots = (data || []).map(d => d.time_slot.slice(0, 5));
+    console.log("[BookingModal] Booked slots:", slots);
+    setBookedSlots(slots);
+    // Clear selected time if it's now booked
+    if (selectedTime && slots.includes(selectedTime)) {
+      console.log("[BookingModal] Selected time is now booked, clearing:", selectedTime);
+      setSelectedTime("");
+    }
+  }, [selectedBarber, selectedDate, selectedTime]);
+
+  useEffect(() => {
+    fetchBookedSlots();
   }, [selectedBarber, selectedDate]);
 
   useEffect(() => {
@@ -156,75 +175,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     onOpenChange(v);
   };
 
-  const notifyWaitingList = async (barberId: string, date: string, cancelledTime: string) => {
-    const { data: waiters } = await supabase
-      .from("waiting_list")
-      .select("*")
-      .eq("barber_id", barberId)
-      .eq("appointment_date", date)
-      .in("status", ["pending"]);
+  // notifyWaitingList is now imported from @/lib/waitingListNotifier
 
-    if (!waiters || waiters.length === 0) return;
-
-    const baseUrl = window.location.origin;
-    const barberName = barbers.find(b => b.id === barberId)?.name || "";
-
-    for (const waiter of waiters) {
-      const acceptLink = `${baseUrl}/waiting-list/accept?id=${waiter.id}&date=${date}&time=${cancelledTime}&barber_id=${barberId}&name=${encodeURIComponent(waiter.client_name)}&email=${encodeURIComponent(waiter.client_email || "")}&phone=${encodeURIComponent(waiter.client_phone || "")}`;
-      const declineLink = `${baseUrl}/waiting-list/decline?id=${waiter.id}`;
-
-      // Update status to notified
-      await supabase.from("waiting_list").update({ 
-        status: "notified", 
-        notified_at: new Date().toISOString() 
-      }).eq("id", waiter.id);
-
-      // Send email via EmailJS
-      emailjs.send(
-        "service_jq26o2f",
-        "template_9wigrr6",
-        {
-          to_name: waiter.client_name,
-          to_email: waiter.client_email,
-          date: date,
-          time: cancelledTime,
-          accept_link: acceptLink,
-          decline_link: declineLink,
-        },
-        "TBNWeHLfrq6OuvZhQ"
-      ).catch(err => console.error("EmailJS waiting list error:", err));
-
-      // Send SMS
-      if (waiter.client_phone) {
-        const smsMsg = `House of Fades: A slot opened on ${date} at ${cancelledTime}! Accept: ${acceptLink} | Decline: ${declineLink}`;
-        supabase.functions.invoke("send-sms", {
-          body: {
-            action: "waiting-list-notify",
-            phone: waiter.client_phone,
-            message: smsMsg,
-          },
-        }).catch(console.error);
-      }
-    }
-
-    // Set 15 minute timeout - remove unresponsive waiters
-    setTimeout(async () => {
-      const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-      const { data: expired } = await supabase
-        .from("waiting_list")
-        .select("*")
-        .eq("barber_id", barberId)
-        .eq("appointment_date", date)
-        .eq("status", "notified")
-        .lt("notified_at", fifteenMinAgo);
-
-      if (expired) {
-        for (const entry of expired) {
-          await supabase.from("waiting_list").update({ status: "cancelled" }).eq("id", entry.id);
-        }
-      }
-    }, 15 * 60 * 1000);
-  };
 
   const handleSubmit = async () => {
     if (!clientName.trim()) { toast.error(t("booking.enterName")); return; }

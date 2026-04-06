@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { format, startOfWeek, startOfMonth, isToday, parseISO, isFuture } from "date-fns";
-import { Check, X, Clock, Calendar } from "lucide-react";
+import { Check, X, Clock, Calendar, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { notifyWaitingList } from "@/lib/waitingListNotifier";
 
 type Appointment = Tables<"appointments"> & {
   services: { name: string; price: number } | null;
@@ -32,7 +33,7 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     fetchAppointments();
   }, [barberId]);
 
-  const updateStatus = async (id: string, status: "completed" | "no-show") => {
+  const updateStatus = async (id: string, status: "completed" | "no-show" | "cancelled", appt?: Appointment) => {
     const { error } = await supabase
       .from("appointments")
       .update({ status })
@@ -43,6 +44,13 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     } else {
       toast.success(`Marked as ${status}`);
       fetchAppointments();
+      
+      // If cancelled, notify waiting list
+      if (status === "cancelled" && appt) {
+        console.log("[ScheduleTab] Appointment cancelled, notifying waiting list");
+        const timeSlot = appt.time_slot.slice(0, 5);
+        notifyWaitingList(appt.barber_id, appt.appointment_date, timeSlot, appt.barbers?.name || "");
+      }
     }
   };
 
@@ -80,6 +88,14 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
             className="bg-accent text-accent-foreground hover:bg-accent/80 font-body"
           >
             <Check size={14} className="mr-1" /> Done
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => updateStatus(appt.id, "cancelled", appt)}
+            className="border-red-500/50 text-red-400 hover:bg-red-500/10 font-body"
+          >
+            <Ban size={14} className="mr-1" /> Cancel
           </Button>
           <Button
             size="sm"
