@@ -11,6 +11,8 @@ const ensureEmailJSInit = () => {
   }
 };
 
+const BASE_URL = "https://house-of-fades-booking.lovable.app";
+
 export const notifyWaitingList = async (
   barberId: string,
   date: string,
@@ -35,13 +37,11 @@ export const notifyWaitingList = async (
   console.log("[WaitingListNotifier] Found waiters:", waiters?.length || 0);
   if (!waiters || waiters.length === 0) return;
 
-  const baseUrl = window.location.origin;
-
   for (const waiter of waiters) {
     console.log("[WaitingListNotifier] Notifying waiter:", waiter.client_name, waiter.client_email);
 
-    const acceptLink = `${baseUrl}/waiting-list/accept?id=${waiter.id}&date=${date}&time=${cancelledTime}&barber_id=${barberId}&name=${encodeURIComponent(waiter.client_name)}&email=${encodeURIComponent(waiter.client_email || "")}&phone=${encodeURIComponent(waiter.client_phone || "")}`;
-    const declineLink = `${baseUrl}/waiting-list/decline?id=${waiter.id}`;
+    const acceptLink = `${BASE_URL}/accept-booking?date=${date}&time=${cancelledTime}&barber=${barberId}&name=${encodeURIComponent(waiter.client_name)}&email=${encodeURIComponent(waiter.client_email || "")}&phone=${encodeURIComponent(waiter.client_phone || "")}&waitingId=${waiter.id}`;
+    const declineLink = `${BASE_URL}/decline-booking?waitingId=${waiter.id}`;
 
     // Update status to notified
     const { error: updateError } = await supabase.from("waiting_list").update({
