@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { format, startOfWeek, startOfMonth, isToday, parseISO, isFuture } from "date-fns";
-import { Check, X, Clock, Calendar } from "lucide-react";
+import { Check, X, Clock, Calendar, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { notifyWaitingList } from "@/lib/waitingListNotifier";
 
 type Appointment = Tables<"appointments"> & {
   services: { name: string; price: number } | null;
