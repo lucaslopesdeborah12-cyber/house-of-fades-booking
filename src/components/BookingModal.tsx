@@ -315,7 +315,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                         red: "!bg-red-500/20 !text-red-400",
                       }}
                     />
-                    />
                   </PopoverContent>
                 </Popover>
 
