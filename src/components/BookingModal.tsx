@@ -21,6 +21,7 @@ const TIME_SLOTS = [
   "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
   "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
 ];
+const TOTAL_SLOTS = TIME_SLOTS.length;
 
 interface BookingModalProps {
   open: boolean;
@@ -33,7 +34,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
-
+  const [monthAvailability, setMonthAvailability] = useState<Record<string, number>>({});
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [selectedBarber, setSelectedBarber] = useState<string>("");
   const [selectedService, setSelectedService] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -78,6 +80,62 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         if (data) setBookedSlots(data.map(d => d.time_slot.slice(0, 5)));
       });
   }, [selectedBarber, selectedDate]);
+
+  // Fetch monthly availability for calendar color coding
+  useEffect(() => {
+    if (!open || step !== 3) return;
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstDay = format(new Date(year, month, 1), "yyyy-MM-dd");
+    const lastDay = format(new Date(year, month + 1, 0), "yyyy-MM-dd");
+
+    const query = supabase
+      .from("appointments")
+      .select("appointment_date, barber_id")
+      .gte("appointment_date", firstDay)
+      .lte("appointment_date", lastDay)
+      .in("status", ["booked", "confirmed"]);
+
+    if (selectedBarber) {
+      query.eq("barber_id", selectedBarber);
+    }
+
+    query.then(({ data }) => {
+      if (!data) return;
+      const countsByDate: Record<string, number> = {};
+      if (selectedBarber) {
+        // Count bookings per date for selected barber
+        data.forEach(row => {
+          const d = row.appointment_date;
+          countsByDate[d] = (countsByDate[d] || 0) + 1;
+        });
+      } else {
+        // For general view, find the barber with fewest bookings per date
+        const byDateBarber: Record<string, Record<string, number>> = {};
+        data.forEach(row => {
+          const d = row.appointment_date;
+          const b = row.barber_id;
+          if (!byDateBarber[d]) byDateBarber[d] = {};
+          byDateBarber[d][b] = (byDateBarber[d][b] || 0) + 1;
+        });
+        Object.entries(byDateBarber).forEach(([date, barberCounts]) => {
+          // Use the minimum bookings (best availability) among barbers
+          countsByDate[date] = Math.min(...Object.values(barberCounts));
+        });
+      }
+      setMonthAvailability(countsByDate);
+    });
+  }, [open, step, selectedBarber, calendarMonth]);
+
+  const getDayAvailabilityClass = (date: Date): string => {
+    if (date < new Date(new Date().setHours(0, 0, 0, 0)) || date.getDay() === 0) return "";
+    const key = format(date, "yyyy-MM-dd");
+    const booked = monthAvailability[key] || 0;
+    const ratio = booked / TOTAL_SLOTS;
+    if (ratio >= 1) return "!bg-red-500/20 !text-red-400";
+    if (ratio >= 0.4) return "!bg-yellow-500/20 !text-yellow-400";
+    return "!bg-green-500/20 !text-green-400";
+  };
 
   const reset = () => {
     setStep(1);
@@ -243,8 +301,19 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       mode="single"
                       selected={selectedDate}
                       onSelect={(date) => { setSelectedDate(date); setCalendarOpen(false); }}
+                      onMonthChange={setCalendarMonth}
                       disabled={(date) => date < new Date() || date.getDay() === 0}
                       className={cn("p-3 pointer-events-auto")}
+                      modifiers={{
+                        green: (date) => getDayAvailabilityClass(date).includes("green"),
+                        yellow: (date) => getDayAvailabilityClass(date).includes("yellow"),
+                        red: (date) => getDayAvailabilityClass(date).includes("red"),
+                      }}
+                      modifiersClassNames={{
+                        green: "!bg-green-500/20 !text-green-400",
+                        yellow: "!bg-yellow-500/20 !text-yellow-400",
+                        red: "!bg-red-500/20 !text-red-400",
+                      }}
                     />
                   </PopoverContent>
                 </Popover>
