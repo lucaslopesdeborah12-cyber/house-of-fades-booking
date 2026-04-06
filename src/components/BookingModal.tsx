@@ -97,6 +97,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
   const handleSubmit = async () => {
     if (!clientName.trim()) { toast.error("Insira seu nome"); return; }
+    if (!clientEmail.trim()) { toast.error("Insira seu email"); return; }
     setSubmitting(true);
     const { error } = await supabase.from("appointments").insert({
       barber_id: selectedBarber,
