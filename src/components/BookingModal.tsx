@@ -304,17 +304,21 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       selected={selectedDate}
                       onSelect={(date) => { setSelectedDate(date); setCalendarOpen(false); }}
                       onMonthChange={setCalendarMonth}
-                      disabled={(date) => date < new Date() || date.getDay() === 0}
+                      disabled={(date) => date < new Date() || date.getDay() === 0 || getDayAvailabilityClass(date) === "full"}
                       className={cn("p-3 pointer-events-auto")}
                       modifiers={{
-                        green: (date) => getDayAvailabilityClass(date).includes("green"),
-                        yellow: (date) => getDayAvailabilityClass(date).includes("yellow"),
-                        red: (date) => getDayAvailabilityClass(date).includes("red"),
+                        green: (date) => getDayAvailabilityClass(date) === "green",
+                        yellow: (date) => getDayAvailabilityClass(date) === "yellow",
+                        orange: (date) => getDayAvailabilityClass(date) === "orange",
+                        red: (date) => getDayAvailabilityClass(date) === "red",
+                        full: (date) => getDayAvailabilityClass(date) === "full",
                       }}
                       modifiersClassNames={{
                         green: "!bg-green-500/20 !text-green-400",
                         yellow: "!bg-yellow-500/20 !text-yellow-400",
+                        orange: "!bg-orange-500/20 !text-orange-400",
                         red: "!bg-red-500/20 !text-red-400",
+                        full: "!bg-gray-500/20 !text-gray-500 !line-through !opacity-50",
                       }}
                     />
                   </PopoverContent>
