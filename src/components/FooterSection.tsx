@@ -28,7 +28,7 @@ const FooterSection = () => {
               <a href="#" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-muted-foreground transition-all hover:border-accent/40 hover:text-accent">
                 <Instagram size={18} />
               </a>
-              <a href="#" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-muted-foreground transition-all hover:border-accent/40 hover:text-accent">
+              <a href="https://www.facebook.com/No6barbershop/#" target="_blank" rel="noopener noreferrer" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-muted-foreground transition-all hover:border-accent/40 hover:text-accent">
                 <Facebook size={18} />
               </a>
               <a href="#" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-muted-foreground transition-all hover:border-accent/40 hover:text-accent">
