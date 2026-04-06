@@ -132,9 +132,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     const key = format(date, "yyyy-MM-dd");
     const booked = monthAvailability[key] || 0;
     const ratio = booked / TOTAL_SLOTS;
-    if (ratio >= 1) return "!bg-red-500/20 !text-red-400";
-    if (ratio >= 0.4) return "!bg-yellow-500/20 !text-yellow-400";
-    return "!bg-green-500/20 !text-green-400";
+    if (ratio >= 1) return "full";
+    if (ratio >= 0.81) return "red";
+    if (ratio >= 0.61) return "orange";
+    if (ratio >= 0.41) return "yellow";
+    return "green";
   };
 
   const reset = () => {
