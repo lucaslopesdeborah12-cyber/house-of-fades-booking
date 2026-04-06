@@ -37,6 +37,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [selectedBarber, setSelectedBarber] = useState<string>("");
   const [selectedService, setSelectedService] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date>();
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState("");
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
