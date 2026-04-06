@@ -330,7 +330,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   <Button variant="ghost" onClick={() => setStep(3)} className="text-muted-foreground font-body text-sm">← Voltar</Button>
                   <Button
                     onClick={handleSubmit}
-                    disabled={submitting || !clientName.trim()}
+                    disabled={submitting || !clientName.trim() || !clientEmail.trim()}
                     className="bg-[#4A7C2F] hover:bg-[#4A7C2F]/90 text-white font-body ml-auto"
                   >
                     {submitting ? "Agendando..." : "Confirmar"}
