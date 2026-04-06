@@ -10,6 +10,8 @@ import Index from "./pages/Index.tsx";
 import BarberPortal from "./pages/BarberPortal.tsx";
 import AdminPortal from "./pages/AdminPortal.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import WaitingListAccept from "./pages/WaitingListAccept.tsx";
+import WaitingListDecline from "./pages/WaitingListDecline.tsx";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +32,8 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/barber" element={<BarberPortal />} />
             <Route path="/admin" element={<AdminPortal />} />
+            <Route path="/waiting-list/accept" element={<WaitingListAccept />} />
+            <Route path="/waiting-list/decline" element={<WaitingListDecline />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
