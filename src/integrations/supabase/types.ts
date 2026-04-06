@@ -194,6 +194,45 @@ export type Database = {
         }
         Relationships: []
       }
+      waiting_list: {
+        Row: {
+          appointment_date: string
+          barber_id: string
+          client_email: string
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          id: string
+          notified_at: string | null
+          status: string
+          time_slot: string
+        }
+        Insert: {
+          appointment_date: string
+          barber_id: string
+          client_email: string
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          status?: string
+          time_slot: string
+        }
+        Update: {
+          appointment_date?: string
+          barber_id?: string
+          client_email?: string
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          status?: string
+          time_slot?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
