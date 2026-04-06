@@ -25,13 +25,13 @@ const FooterSection = () => {
           <div>
             <h4 className="font-body text-xs uppercase tracking-[0.35em] text-accent">{t("footer.followUs")}</h4>
             <div className="mt-4 flex gap-4">
-              <a href="#" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-muted-foreground transition-all hover:border-accent/40 hover:text-accent">
-                <Instagram size={18} />
-              </a>
               <a href="https://www.facebook.com/No6barbershop/#" target="_blank" rel="noopener noreferrer" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-muted-foreground transition-all hover:border-accent/40 hover:text-accent">
                 <Facebook size={18} />
               </a>
-              <a href="#" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-muted-foreground transition-all hover:border-accent/40 hover:text-accent">
+              <a href="mailto:jeffkavna@gmail.com" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-muted-foreground transition-all hover:border-accent/40 hover:text-accent">
+                <Mail size={18} />
+              </a>
+              <a href="tel:+353858544561" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-muted-foreground transition-all hover:border-accent/40 hover:text-accent" title="+353 (85) 854 4561">
                 <Phone size={18} />
               </a>
             </div>
