@@ -231,7 +231,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
             {step === 3 && (
               <div className="space-y-4">
                 <p className="font-body text-sm text-muted-foreground flex items-center gap-2"><CalendarIcon size={16} /> {t("booking.chooseDateTime")}</p>
-                <Popover>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("w-full justify-start text-left font-body border-border", !selectedDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -242,7 +242,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     <Calendar
                       mode="single"
                       selected={selectedDate}
-                      onSelect={setSelectedDate}
+                      onSelect={(date) => { setSelectedDate(date); setCalendarOpen(false); }}
                       disabled={(date) => date < new Date() || date.getDay() === 0}
                       className={cn("p-3 pointer-events-auto")}
                     />
