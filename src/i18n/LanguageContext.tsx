@@ -1,5 +1,11 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
-import { translations, type LangCode } from "./translations";
+import { translations, LANGUAGES, type LangCode } from "./translations";
+
+const detectBrowserLang = (): LangCode => {
+  const browserLang = navigator.language?.split("-")[0]?.toLowerCase() || "en";
+  const supported = LANGUAGES.map(l => l.code) as string[];
+  return (supported.includes(browserLang) ? browserLang : "en") as LangCode;
+};
 
 interface LanguageContextType {
   lang: LangCode;
@@ -18,7 +24,8 @@ export const useLanguage = () => useContext(LanguageContext);
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [lang, setLangState] = useState<LangCode>(() => {
     const saved = localStorage.getItem("hof-lang") as LangCode | null;
-    return saved && translations[saved] ? saved : "en";
+    if (saved && translations[saved]) return saved;
+    return detectBrowserLang();
   });
 
   const setLang = useCallback((code: LangCode) => {
