@@ -92,6 +92,14 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
           <Button
             size="sm"
             variant="outline"
+            onClick={() => updateStatus(appt.id, "cancelled", appt)}
+            className="border-red-500/50 text-red-400 hover:bg-red-500/10 font-body"
+          >
+            <Ban size={14} className="mr-1" /> Cancel
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
             onClick={() => updateStatus(appt.id, "no-show")}
             className="border-border text-foreground hover:bg-muted font-body"
           >
