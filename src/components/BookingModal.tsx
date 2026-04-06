@@ -175,58 +175,86 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   };
 
   const notifyWaitingList = async (barberId: string, date: string, cancelledTime: string) => {
-    const { data: waiters } = await supabase
+    console.log("[WaitingList] Starting notification for barber:", barberId, "date:", date, "time:", cancelledTime);
+    
+    const { data: waiters, error: fetchError } = await supabase
       .from("waiting_list")
       .select("*")
       .eq("barber_id", barberId)
       .eq("appointment_date", date)
       .in("status", ["pending"]);
 
+    if (fetchError) {
+      console.error("[WaitingList] Error fetching waiters:", fetchError);
+      return;
+    }
+
+    console.log("[WaitingList] Found waiters:", waiters?.length || 0);
     if (!waiters || waiters.length === 0) return;
 
     const baseUrl = window.location.origin;
     const barberName = barbers.find(b => b.id === barberId)?.name || "";
 
     for (const waiter of waiters) {
+      console.log("[WaitingList] Notifying waiter:", waiter.client_name, waiter.client_email);
+      
       const acceptLink = `${baseUrl}/waiting-list/accept?id=${waiter.id}&date=${date}&time=${cancelledTime}&barber_id=${barberId}&name=${encodeURIComponent(waiter.client_name)}&email=${encodeURIComponent(waiter.client_email || "")}&phone=${encodeURIComponent(waiter.client_phone || "")}`;
       const declineLink = `${baseUrl}/waiting-list/decline?id=${waiter.id}`;
 
       // Update status to notified
-      await supabase.from("waiting_list").update({ 
+      const { error: updateError } = await supabase.from("waiting_list").update({ 
         status: "notified", 
         notified_at: new Date().toISOString() 
       }).eq("id", waiter.id);
+      
+      if (updateError) {
+        console.error("[WaitingList] Error updating status:", updateError);
+      } else {
+        console.log("[WaitingList] Status updated to notified for:", waiter.id);
+      }
 
       // Send email via EmailJS
-      emailjs.send(
-        "service_jq26o2f",
-        "template_9wigrr6",
-        {
-          to_name: waiter.client_name,
-          to_email: waiter.client_email,
-          date: date,
-          time: cancelledTime,
-          accept_link: acceptLink,
-          decline_link: declineLink,
-        },
-        "TBNWeHLfrq6OuvZhQ"
-      ).catch(err => console.error("EmailJS waiting list error:", err));
+      console.log("[WaitingList] Sending EmailJS notification...");
+      try {
+        const emailResult = await emailjs.send(
+          "service_jq26o2f",
+          "template_9wigrr6",
+          {
+            to_name: waiter.client_name,
+            to_email: waiter.client_email,
+            date: date,
+            time: cancelledTime,
+            accept_link: acceptLink,
+            decline_link: declineLink,
+          }
+        );
+        console.log("[WaitingList] EmailJS sent successfully:", emailResult);
+      } catch (emailErr) {
+        console.error("[WaitingList] EmailJS error:", emailErr);
+      }
 
-      // Send SMS
+      // Send SMS via Edge Function
       if (waiter.client_phone) {
+        console.log("[WaitingList] Sending SMS to:", waiter.client_phone);
         const smsMsg = `House of Fades: A slot opened on ${date} at ${cancelledTime}! Accept: ${acceptLink} | Decline: ${declineLink}`;
-        supabase.functions.invoke("send-sms", {
-          body: {
-            action: "waiting-list-notify",
-            phone: waiter.client_phone,
-            message: smsMsg,
-          },
-        }).catch(console.error);
+        try {
+          const smsResult = await supabase.functions.invoke("send-sms", {
+            body: {
+              action: "waiting-list-notify",
+              phone: waiter.client_phone,
+              message: smsMsg,
+            },
+          });
+          console.log("[WaitingList] SMS result:", smsResult);
+        } catch (smsErr) {
+          console.error("[WaitingList] SMS error:", smsErr);
+        }
       }
     }
 
     // Set 15 minute timeout - remove unresponsive waiters
     setTimeout(async () => {
+      console.log("[WaitingList] 15min timeout - checking expired waiters");
       const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
       const { data: expired } = await supabase
         .from("waiting_list")
@@ -237,6 +265,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         .lt("notified_at", fifteenMinAgo);
 
       if (expired) {
+        console.log("[WaitingList] Expired waiters to cancel:", expired.length);
         for (const entry of expired) {
           await supabase.from("waiting_list").update({ status: "cancelled" }).eq("id", entry.id);
         }
