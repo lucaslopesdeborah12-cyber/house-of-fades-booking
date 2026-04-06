@@ -127,6 +127,23 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
           },
         }).catch(console.error);
       }
+      // Send confirmation email via EmailJS (fire and forget)
+      if (clientEmail.trim()) {
+        emailjs.send(
+          "service_jq26o2f",
+          "template_7i3p8r9",
+          {
+            to_name: clientName.trim(),
+            to_email: clientEmail.trim(),
+            date: format(selectedDate!, "dd/MM/yyyy"),
+            time: selectedTime,
+            service: selectedServiceObj?.name || "",
+            barber: selectedBarberName || "",
+            price: `€${Number(selectedServiceObj?.price || 0).toFixed(0)}`,
+          },
+          "TBNWeHLfrq6OuvZhQ"
+        ).catch((err) => console.error("EmailJS error:", err));
+      }
     }
   };
 
