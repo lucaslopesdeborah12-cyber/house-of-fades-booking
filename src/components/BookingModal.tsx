@@ -75,17 +75,32 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     });
   }, [open, preselectedBarber]);
 
-  useEffect(() => {
+  const fetchBookedSlots = useCallback(async () => {
     if (!selectedBarber || !selectedDate) return;
-    supabase
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    console.log("[BookingModal] Fetching booked slots for barber:", selectedBarber, "date:", dateStr);
+    const { data, error } = await supabase
       .from("appointments")
       .select("time_slot")
       .eq("barber_id", selectedBarber)
-      .eq("appointment_date", format(selectedDate, "yyyy-MM-dd"))
-      .in("status", ["booked", "confirmed"])
-      .then(({ data }) => {
-        if (data) setBookedSlots(data.map(d => d.time_slot.slice(0, 5)));
-      });
+      .eq("appointment_date", dateStr)
+      .in("status", ["booked", "confirmed"]);
+    if (error) {
+      console.error("[BookingModal] Error fetching booked slots:", error);
+      return;
+    }
+    const slots = (data || []).map(d => d.time_slot.slice(0, 5));
+    console.log("[BookingModal] Booked slots:", slots);
+    setBookedSlots(slots);
+    // Clear selected time if it's now booked
+    if (selectedTime && slots.includes(selectedTime)) {
+      console.log("[BookingModal] Selected time is now booked, clearing:", selectedTime);
+      setSelectedTime("");
+    }
+  }, [selectedBarber, selectedDate, selectedTime]);
+
+  useEffect(() => {
+    fetchBookedSlots();
   }, [selectedBarber, selectedDate]);
 
   useEffect(() => {
