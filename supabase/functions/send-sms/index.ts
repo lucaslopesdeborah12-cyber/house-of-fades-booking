@@ -57,6 +57,33 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (action === "waiting-list-notify") {
+      const { phone, message } = payload;
+      if (!phone) {
+        return new Response(JSON.stringify({ success: true, skipped: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const response = await fetch(twilioUrl, {
+        method: "POST",
+        headers: {
+          Authorization: authHeader,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ To: phone, From: TWILIO_FROM, Body: message }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        console.error("Twilio waiting-list error:", data);
+      }
+
+      return new Response(JSON.stringify({ success: response.ok, sid: data.sid }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "send-reminders") {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
