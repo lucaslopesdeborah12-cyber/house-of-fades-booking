@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageContext";
 import CountryCodeSelector, { COUNTRIES, formatPhoneForSubmit, type Country } from "@/components/CountryCodeSelector";
 
 type Barber = { id: string; name: string };
@@ -24,7 +25,7 @@ const TIME_SLOTS = [
 interface BookingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  preselectedBarber?: string; // barber name to preselect
+  preselectedBarber?: string;
 }
 
 const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalProps) => {
@@ -40,11 +41,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [clientEmail, setClientEmail] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]); // Ireland default
+  const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const { t } = useLanguage();
 
-  // Load barbers & services
   useEffect(() => {
     if (!open) return;
     supabase.from("barbers").select("id, name").then(({ data }) => {
@@ -64,7 +65,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     });
   }, [open, preselectedBarber]);
 
-  // Load booked slots when barber+date selected
   useEffect(() => {
     if (!selectedBarber || !selectedDate) return;
     supabase
@@ -96,8 +96,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   };
 
   const handleSubmit = async () => {
-    if (!clientName.trim()) { toast.error("Insira seu nome"); return; }
-    if (!clientEmail.trim()) { toast.error("Insira seu email"); return; }
+    if (!clientName.trim()) { toast.error(t("booking.enterName")); return; }
+    if (!clientEmail.trim()) { toast.error(t("booking.enterEmail")); return; }
     setSubmitting(true);
     const { error } = await supabase.from("appointments").insert({
       barber_id: selectedBarber,
@@ -110,11 +110,10 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     });
     setSubmitting(false);
     if (error) {
-      toast.error("Erro ao agendar. Tente novamente.");
+      toast.error(t("booking.errorBooking"));
       console.error(error);
     } else {
       setSuccess(true);
-      // Send confirmation SMS (fire and forget)
       if (clientPhone.trim()) {
         supabase.functions.invoke("send-sms", {
           body: {
@@ -128,7 +127,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
           },
         }).catch(console.error);
       }
-      // Send confirmation email via EmailJS (fire and forget)
       if (clientEmail.trim()) {
         emailjs.send(
           "service_jq26o2f",
@@ -156,7 +154,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       <DialogContent className="bg-card border-accent/20 text-foreground max-w-md mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl gold-title-gradient">
-            {success ? "Agendado!" : "Agendar Horário"}
+            {success ? t("booking.booked") : t("booking.title")}
           </DialogTitle>
         </DialogHeader>
 
@@ -165,30 +163,28 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
             <div className="w-16 h-16 mx-auto rounded-full bg-[#4A7C2F]/20 flex items-center justify-center">
               <Check size={32} className="text-[#4A7C2F]" />
             </div>
-            <p className="font-body text-foreground">Seu horário foi agendado com sucesso!</p>
+            <p className="font-body text-foreground">{t("booking.successMsg")}</p>
             <div className="text-sm text-muted-foreground font-body space-y-1">
-              <p><strong>Barbeiro:</strong> {selectedBarberName}</p>
-              <p><strong>Serviço:</strong> {selectedServiceObj?.name}</p>
-              <p><strong>Data:</strong> {selectedDate && format(selectedDate, "dd/MM/yyyy")}</p>
-              <p><strong>Horário:</strong> {selectedTime}</p>
+              <p><strong>{t("booking.barber")}</strong> {selectedBarberName}</p>
+              <p><strong>{t("booking.service")}</strong> {selectedServiceObj?.name}</p>
+              <p><strong>{t("booking.date")}</strong> {selectedDate && format(selectedDate, "dd/MM/yyyy")}</p>
+              <p><strong>{t("booking.time")}</strong> {selectedTime}</p>
             </div>
             <Button onClick={() => handleClose(false)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-body mt-4">
-              Fechar
+              {t("booking.close")}
             </Button>
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Progress */}
             <div className="flex gap-1">
               {[1, 2, 3, 4].map(s => (
                 <div key={s} className={cn("h-1 flex-1 rounded-full transition-colors", step >= s ? "bg-accent" : "bg-muted/30")} />
               ))}
             </div>
 
-            {/* Step 1: Choose Barber */}
             {step === 1 && (
               <div className="space-y-3">
-                <p className="font-body text-sm text-muted-foreground flex items-center gap-2"><User size={16} /> Escolha seu barbeiro</p>
+                <p className="font-body text-sm text-muted-foreground flex items-center gap-2"><User size={16} /> {t("booking.chooseBarber")}</p>
                 {barbers.map(b => (
                   <button
                     key={b.id}
@@ -206,10 +202,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               </div>
             )}
 
-            {/* Step 2: Choose Service */}
             {step === 2 && (
               <div className="space-y-3">
-                <p className="font-body text-sm text-muted-foreground flex items-center gap-2"><Scissors size={16} /> Escolha o serviço</p>
+                <p className="font-body text-sm text-muted-foreground flex items-center gap-2"><Scissors size={16} /> {t("booking.chooseService")}</p>
                 {services.map(s => (
                   <button
                     key={s.id}
@@ -223,24 +218,23 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   >
                     <div>
                       <span className="text-foreground font-medium">{s.name}</span>
-                      <span className="block text-xs text-muted-foreground">{s.duration_minutes} min</span>
+                      <span className="block text-xs text-muted-foreground">{s.duration_minutes} {t("services.min")}</span>
                     </div>
                     <span className="text-accent font-serif font-bold">€{Number(s.price).toFixed(0)}</span>
                   </button>
                 ))}
-                <Button variant="ghost" onClick={() => setStep(1)} className="text-muted-foreground font-body text-sm">← Voltar</Button>
+                <Button variant="ghost" onClick={() => setStep(1)} className="text-muted-foreground font-body text-sm">{t("booking.back")}</Button>
               </div>
             )}
 
-            {/* Step 3: Choose Date & Time */}
             {step === 3 && (
               <div className="space-y-4">
-                <p className="font-body text-sm text-muted-foreground flex items-center gap-2"><CalendarIcon size={16} /> Escolha data e horário</p>
+                <p className="font-body text-sm text-muted-foreground flex items-center gap-2"><CalendarIcon size={16} /> {t("booking.chooseDateTime")}</p>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("w-full justify-start text-left font-body border-border", !selectedDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar data"}
+                      {selectedDate ? format(selectedDate, "dd/MM/yyyy") : t("booking.selectDate")}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
@@ -256,23 +250,23 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
                 {selectedDate && (
                   <div className="grid grid-cols-3 gap-2">
-                    {TIME_SLOTS.map(t => {
-                      const booked = bookedSlots.includes(t);
+                    {TIME_SLOTS.map(tm => {
+                      const booked = bookedSlots.includes(tm);
                       return (
                         <button
-                          key={t}
+                          key={tm}
                           disabled={booked}
-                          onClick={() => setSelectedTime(t)}
+                          onClick={() => setSelectedTime(tm)}
                           className={cn(
                             "py-2 rounded text-sm font-body transition-all border",
                             booked
                               ? "border-border text-muted-foreground/40 cursor-not-allowed line-through"
-                              : selectedTime === t
+                              : selectedTime === tm
                                 ? "border-accent bg-accent/20 text-foreground"
                                 : "border-border hover:border-accent/50 text-foreground"
                           )}
                         >
-                          {t}
+                          {tm}
                         </button>
                       );
                     })}
@@ -280,23 +274,22 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 )}
 
                 <div className="flex gap-2">
-                  <Button variant="ghost" onClick={() => setStep(2)} className="text-muted-foreground font-body text-sm">← Voltar</Button>
+                  <Button variant="ghost" onClick={() => setStep(2)} className="text-muted-foreground font-body text-sm">{t("booking.back")}</Button>
                   {selectedDate && selectedTime && (
                     <Button onClick={() => setStep(4)} className="bg-accent hover:bg-accent/90 text-background font-body ml-auto">
-                      Continuar
+                      {t("booking.continue")}
                     </Button>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Step 4: Client Info */}
             {step === 4 && (
               <div className="space-y-4">
-                <p className="font-body text-sm text-muted-foreground">Seus dados</p>
+                <p className="font-body text-sm text-muted-foreground">{t("booking.yourDetails")}</p>
                 <div className="space-y-3">
                   <Input
-                    placeholder="Nome *"
+                    placeholder={t("booking.name")}
                     value={clientName}
                     onChange={e => setClientName(e.target.value)}
                     className="bg-background border-border text-foreground font-body"
@@ -304,14 +297,14 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   <div className="flex">
                     <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
                     <Input
-                      placeholder={selectedCountry.code === "IE" ? "085 123 4567" : "Número"}
+                      placeholder={selectedCountry.code === "IE" ? "085 123 4567" : t("booking.phone")}
                       value={clientPhone}
                       onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
                       className="bg-background border-border text-foreground font-body rounded-l-none"
                     />
                   </div>
                   <Input
-                    placeholder="Email *"
+                    placeholder={t("booking.email")}
                     type="email"
                     value={clientEmail}
                     onChange={e => setClientEmail(e.target.value)}
@@ -319,21 +312,20 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   />
                 </div>
 
-                {/* Summary */}
                 <div className="bg-background/50 rounded p-3 text-sm font-body space-y-1 border border-border">
-                  <p><span className="text-muted-foreground">Barbeiro:</span> {selectedBarberName}</p>
-                  <p><span className="text-muted-foreground">Serviço:</span> {selectedServiceObj?.name} — <span className="text-accent">€{Number(selectedServiceObj?.price || 0).toFixed(0)}</span></p>
-                  <p><span className="text-muted-foreground">Data:</span> {selectedDate && format(selectedDate, "dd/MM/yyyy")} às {selectedTime}</p>
+                  <p><span className="text-muted-foreground">{t("booking.barber")}</span> {selectedBarberName}</p>
+                  <p><span className="text-muted-foreground">{t("booking.service")}</span> {selectedServiceObj?.name} — <span className="text-accent">€{Number(selectedServiceObj?.price || 0).toFixed(0)}</span></p>
+                  <p><span className="text-muted-foreground">{t("booking.date")}</span> {selectedDate && format(selectedDate, "dd/MM/yyyy")} {t("booking.at")} {selectedTime}</p>
                 </div>
 
                 <div className="flex gap-2">
-                  <Button variant="ghost" onClick={() => setStep(3)} className="text-muted-foreground font-body text-sm">← Voltar</Button>
+                  <Button variant="ghost" onClick={() => setStep(3)} className="text-muted-foreground font-body text-sm">{t("booking.back")}</Button>
                   <Button
                     onClick={handleSubmit}
                     disabled={submitting || !clientName.trim() || !clientEmail.trim()}
                     className="bg-[#4A7C2F] hover:bg-[#4A7C2F]/90 text-white font-body ml-auto"
                   >
-                    {submitting ? "Agendando..." : "Confirmar"}
+                    {submitting ? t("booking.confirming") : t("booking.confirm")}
                   </Button>
                 </div>
               </div>

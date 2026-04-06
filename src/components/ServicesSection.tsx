@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, Scissors } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/i18n/LanguageContext";
 import FadeInStagger from "./FadeInStagger";
 
 type Service = { id: string; name: string; duration_minutes: number; price: number };
@@ -9,6 +10,7 @@ const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 const ServicesSection = ({ onBookNow }: { onBookNow?: () => void }) => {
   const [services, setServices] = useState<Service[]>([]);
+  const { t } = useLanguage();
 
   useEffect(() => {
     supabase.from("services").select("id, name, duration_minutes, price").order("created_at").then(({ data }) => {
@@ -26,8 +28,8 @@ const ServicesSection = ({ onBookNow }: { onBookNow?: () => void }) => {
           transition={{ duration: 0.8, ease: easeOutExpo }}
           className="mb-16 max-w-2xl"
         >
-          <p className="mb-4 font-body text-xs uppercase tracking-[0.45em] text-accent">Services</p>
-          <h2 className="gold-title-gradient font-serif text-4xl font-bold md:text-5xl">Crafted cuts, beard work and refined detail.</h2>
+          <p className="mb-4 font-body text-xs uppercase tracking-[0.45em] text-accent">{t("services.label")}</p>
+          <h2 className="gold-title-gradient font-serif text-4xl font-bold md:text-5xl">{t("services.title")}</h2>
         </motion.div>
 
         <FadeInStagger className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -49,7 +51,7 @@ const ServicesSection = ({ onBookNow }: { onBookNow?: () => void }) => {
               <h3 className="font-serif text-2xl font-semibold text-foreground">{s.name}</h3>
               <div className="mt-3 flex items-center gap-2 font-body text-sm text-muted-foreground">
                 <Clock size={14} />
-                <span>{s.duration_minutes} min</span>
+                <span>{s.duration_minutes} {t("services.min")}</span>
               </div>
             </motion.div>
           ))}

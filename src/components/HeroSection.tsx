@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -75,6 +76,8 @@ const GoldScissors = () => (
 );
 
 const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
+  const { t } = useLanguage();
+
   return (
     <section
       id="hero"
@@ -93,7 +96,7 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
             transition={{ duration: 0.9, delay: 0.15, ease: easeOutExpo }}
             className="mb-6 font-body text-xs uppercase tracking-[0.5em] text-accent"
           >
-            EST. 2025 — Carlow, Ireland
+            {t("hero.est")}
           </motion.p>
 
           <motion.h1
@@ -102,7 +105,7 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
             transition={{ duration: 1.1, delay: 0.3, ease: easeOutExpo }}
             className="gold-title-gradient max-w-3xl font-serif text-6xl font-bold leading-[0.9] md:text-8xl lg:text-[7rem]"
           >
-            Precision grooming with a cinematic luxury edge.
+            {t("hero.title")}
           </motion.h1>
 
           <motion.p
@@ -111,7 +114,7 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
             transition={{ duration: 0.9, delay: 0.65, ease: easeOutExpo }}
             className="mt-8 max-w-xl font-body text-lg leading-relaxed text-foreground/72 md:text-xl"
           >
-            House of Fades delivers premium cuts, sharp detail, and a high-end barbershop experience designed to feel confident from the first glance.
+            {t("hero.subtitle")}
           </motion.p>
 
           <motion.div
@@ -126,7 +129,7 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
               whileTap={{ scale: 0.98 }}
               className="btn-primary-glow btn-book-pulse rounded px-10 py-4 font-body text-sm font-semibold uppercase tracking-[0.05em] text-primary-foreground"
             >
-              Book Now
+              {t("nav.bookNow")}
             </motion.button>
             <motion.a
               href="#services"
@@ -134,7 +137,7 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
               whileTap={{ scale: 0.98 }}
               className="btn-gold-outline inline-flex items-center justify-center rounded px-10 py-4 font-body text-sm font-semibold uppercase tracking-[0.05em]"
             >
-              Explore Services
+              {t("hero.exploreServices")}
             </motion.a>
           </motion.div>
         </div>

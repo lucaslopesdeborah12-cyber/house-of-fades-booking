@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/i18n/LanguageContext";
 import barberAction from "@/assets/barber-action.jpg";
 
 const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
@@ -8,6 +9,7 @@ const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 const AboutSection = () => {
   const [aboutText, setAboutText] = useState("");
   const [imageLoaded, setImageLoaded] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     supabase.from("site_content").select("value").eq("key", "about").maybeSingle().then(({ data }) => {
@@ -46,13 +48,13 @@ const AboutSection = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.12, ease: easeOutExpo }}
           >
-            <p className="mb-4 font-body text-xs uppercase tracking-[0.45em] text-accent">About</p>
-            <h2 className="gold-title-gradient font-serif text-4xl font-bold md:text-5xl">A sharper atmosphere, built around confidence and craft.</h2>
+            <p className="mb-4 font-body text-xs uppercase tracking-[0.45em] text-accent">{t("about.label")}</p>
+            <h2 className="gold-title-gradient font-serif text-4xl font-bold md:text-5xl">{t("about.title")}</h2>
             <p className="mt-6 font-body text-lg leading-relaxed text-foreground/86">
-              It's a beautiful thing when a career and a passion come together.
+              {t("about.passion")}
             </p>
             <p className="mt-4 font-body leading-relaxed text-muted-foreground">
-              {aboutText || "House has been serving Carlow since 2025."}
+              {aboutText || t("about.fallback")}
             </p>
           </motion.div>
         </div>
