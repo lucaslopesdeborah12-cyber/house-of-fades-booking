@@ -1,0 +1,1 @@
+CREATE POLICY "Public can read booked slots" ON public.appointments FOR SELECT TO public USING (true);
