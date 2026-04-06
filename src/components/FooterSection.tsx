@@ -1,4 +1,4 @@
-import { Instagram, Facebook, Phone } from "lucide-react";
+import { Facebook, Mail, Phone } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const FooterSection = () => {
