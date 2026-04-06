@@ -34,7 +34,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
-
+  const [monthAvailability, setMonthAvailability] = useState<Record<string, number>>({});
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [selectedBarber, setSelectedBarber] = useState<string>("");
   const [selectedService, setSelectedService] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date>();
