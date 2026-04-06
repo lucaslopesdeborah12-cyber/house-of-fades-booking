@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import CountryCodeSelector, { COUNTRIES, formatPhoneForSubmit, type Country } from "@/components/CountryCodeSelector";
 import WaitingListForm from "@/components/WaitingListForm";
+import { notifyWaitingList } from "@/lib/waitingListNotifier";
 
 // Initialize EmailJS once
 emailjs.init("TBNWeHLfrq6OuvZhQ");
