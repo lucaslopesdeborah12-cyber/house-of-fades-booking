@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Clock, User, Scissors, X, Check } from "lucide-react";
+import emailjs from "@emailjs/browser";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
