@@ -81,6 +81,52 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       });
   }, [selectedBarber, selectedDate]);
 
+  // Fetch monthly availability for calendar color coding
+  useEffect(() => {
+    if (!open || step !== 3) return;
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstDay = format(new Date(year, month, 1), "yyyy-MM-dd");
+    const lastDay = format(new Date(year, month + 1, 0), "yyyy-MM-dd");
+
+    const query = supabase
+      .from("appointments")
+      .select("appointment_date, barber_id")
+      .gte("appointment_date", firstDay)
+      .lte("appointment_date", lastDay)
+      .in("status", ["booked", "confirmed"]);
+
+    if (selectedBarber) {
+      query.eq("barber_id", selectedBarber);
+    }
+
+    query.then(({ data }) => {
+      if (!data) return;
+      const countsByDate: Record<string, number> = {};
+      if (selectedBarber) {
+        // Count bookings per date for selected barber
+        data.forEach(row => {
+          const d = row.appointment_date;
+          countsByDate[d] = (countsByDate[d] || 0) + 1;
+        });
+      } else {
+        // For general view, find the barber with fewest bookings per date
+        const byDateBarber: Record<string, Record<string, number>> = {};
+        data.forEach(row => {
+          const d = row.appointment_date;
+          const b = row.barber_id;
+          if (!byDateBarber[d]) byDateBarber[d] = {};
+          byDateBarber[d][b] = (byDateBarber[d][b] || 0) + 1;
+        });
+        Object.entries(byDateBarber).forEach(([date, barberCounts]) => {
+          // Use the minimum bookings (best availability) among barbers
+          countsByDate[date] = Math.min(...Object.values(barberCounts));
+        });
+      }
+      setMonthAvailability(countsByDate);
+    });
+  }, [open, step, selectedBarber, calendarMonth]);
+
   const reset = () => {
     setStep(1);
     setSelectedBarber("");
