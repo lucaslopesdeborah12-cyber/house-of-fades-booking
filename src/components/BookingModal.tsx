@@ -97,6 +97,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
   const handleSubmit = async () => {
     if (!clientName.trim()) { toast.error("Insira seu nome"); return; }
+    if (!clientEmail.trim()) { toast.error("Insira seu email"); return; }
     setSubmitting(true);
     const { error } = await supabase.from("appointments").insert({
       barber_id: selectedBarber,
@@ -310,7 +311,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     />
                   </div>
                   <Input
-                    placeholder="Email"
+                    placeholder="Email *"
                     type="email"
                     value={clientEmail}
                     onChange={e => setClientEmail(e.target.value)}
@@ -329,7 +330,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   <Button variant="ghost" onClick={() => setStep(3)} className="text-muted-foreground font-body text-sm">← Voltar</Button>
                   <Button
                     onClick={handleSubmit}
-                    disabled={submitting || !clientName.trim()}
+                    disabled={submitting || !clientName.trim() || !clientEmail.trim()}
                     className="bg-[#4A7C2F] hover:bg-[#4A7C2F]/90 text-white font-body ml-auto"
                   >
                     {submitting ? "Agendando..." : "Confirmar"}
