@@ -103,7 +103,7 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.1, delay: 0.3, ease: easeOutExpo }}
-            className="gold-title-gradient max-w-3xl font-serif text-6xl font-bold leading-[0.9] md:text-8xl lg:text-[7rem]"
+            className="gold-title-gradient max-w-3xl font-serif text-4xl font-bold leading-[0.95] sm:text-5xl md:text-8xl lg:text-[7rem] break-words"
           >
             {t("hero.title")}
           </motion.h1>
