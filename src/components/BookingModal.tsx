@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Clock, User, Scissors, X, Check } from "lucide-react";
 import emailjs from "@emailjs/browser";
@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import CountryCodeSelector, { COUNTRIES, formatPhoneForSubmit, type Country } from "@/components/CountryCodeSelector";
 import WaitingListForm from "@/components/WaitingListForm";
+
+// Initialize EmailJS once
+emailjs.init("TBNWeHLfrq6OuvZhQ");
 
 type Barber = { id: string; name: string };
 type Service = { id: string; name: string; price: number; duration_minutes: number };
