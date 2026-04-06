@@ -311,7 +311,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     />
                   </div>
                   <Input
-                    placeholder="Email"
+                    placeholder="Email *"
                     type="email"
                     value={clientEmail}
                     onChange={e => setClientEmail(e.target.value)}
