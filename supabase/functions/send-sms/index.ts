@@ -82,18 +82,23 @@ Deno.serve(async (req: Request) => {
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+      const { hoursAhead } = payload;
+      const hours = hoursAhead || 2;
+
       const now = new Date();
-      const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-      const targetDate = twoHoursLater.toISOString().split("T")[0];
-      const targetHour = twoHoursLater.getHours().toString().padStart(2, "0");
-      const targetMinute = twoHoursLater.getMinutes() < 30 ? "00" : "30";
-      const targetTime = `${targetHour}:${targetMinute}`;
+      const targetTime = new Date(now.getTime() + hours * 60 * 60 * 1000);
+      const targetDate = targetTime.toISOString().split("T")[0];
+      const targetHour = targetTime.getHours().toString().padStart(2, "0");
+      const targetMinute = targetTime.getMinutes() < 30 ? "00" : "30";
+      const targetSlot = `${targetHour}:${targetMinute}`;
+
+      console.log(`[send-sms] Sending ${hours}h reminders for date: ${targetDate}, slot: ${targetSlot}`);
 
       const { data: appointments, error } = await supabase
         .from("appointments")
         .select("*, barbers(name), services(name)")
         .eq("appointment_date", targetDate)
-        .eq("time_slot", `${targetTime}:00`)
+        .eq("time_slot", `${targetSlot}:00`)
         .in("status", ["booked", "confirmed"])
         .not("client_phone", "is", null);
 
@@ -107,16 +112,23 @@ Deno.serve(async (req: Request) => {
 
       let sent = 0;
       for (const apt of appointments || []) {
-        if (!apt.client_phone) continue;
+        const pref = (apt as any).contact_preference || "both";
         const barberName = (apt as any).barbers?.name || "seu barbeiro";
         const serviceName = (apt as any).services?.name || "seu serviço";
-        const body = `⏰ Lembrete House of Fades!\n\nOlá ${apt.client_name}, seu horário é em 2 horas!\n\n💈 ${barberName}\n✂️ ${serviceName}\n🕐 ${targetTime}\n\nTe esperamos! 🔥`;
 
-        try {
-          const result = await sendSMS(apt.client_phone, body);
-          if (result.ok) sent++;
-        } catch (e) {
-          console.error("[send-sms] Reminder error:", e);
+        // Send SMS if preference allows
+        if (apt.client_phone && (pref === "sms" || pref === "both")) {
+          const isDay = hours === 24;
+          const body = isDay
+            ? `⏰ House of Fades Reminder!\n\nHi ${apt.client_name}, your appointment is TOMORROW!\n\n💈 ${barberName}\n✂️ ${serviceName}\n🕐 ${targetSlot}\n\nSee you soon! 🔥`
+            : `⏰ House of Fades Reminder!\n\nHi ${apt.client_name}, your appointment is in 2 hours!\n\n💈 ${barberName}\n✂️ ${serviceName}\n🕐 ${targetSlot}\n\nSee you soon! 🔥`;
+
+          try {
+            const result = await sendSMS(apt.client_phone, body);
+            if (result.ok) sent++;
+          } catch (e) {
+            console.error("[send-sms] Reminder error:", e);
+          }
         }
       }
 
