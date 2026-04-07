@@ -33,7 +33,21 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     fetchAppointments();
   }, [barberId]);
 
+  const canCancel = (appt: Appointment): boolean => {
+    const now = new Date();
+    const [h, m] = appt.time_slot.split(":").map(Number);
+    const apptDate = parseISO(appt.appointment_date);
+    apptDate.setHours(h, m, 0, 0);
+    const diff = apptDate.getTime() - now.getTime();
+    return diff >= 2 * 60 * 60 * 1000; // 2 hours
+  };
+
   const updateStatus = async (id: string, status: "completed" | "no-show" | "cancelled", appt?: Appointment) => {
+    if (status === "cancelled" && appt && !canCancel(appt)) {
+      toast.error("Sorry, this appointment can no longer be cancelled. Please contact us directly.");
+      return;
+    }
+
     const { error } = await supabase
       .from("appointments")
       .update({ status })
@@ -61,54 +75,60 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
 
   if (loading) return <p className="text-muted-foreground font-body p-4">Loading…</p>;
 
-  const AppointmentCard = ({ appt }: { appt: Appointment }) => (
-    <div className="bg-card border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <Clock size={14} className="text-muted-foreground" />
-          <span className="text-foreground font-body text-sm font-medium">{appt.time_slot.slice(0, 5)}</span>
-          <span className={`text-xs px-2 py-0.5 rounded font-body ${
-            appt.status === "booked" ? "bg-accent/20 text-accent" :
-            appt.status === "completed" ? "bg-accent text-accent-foreground" :
-            "bg-primary/20 text-primary"
-          }`}>
-            {appt.status}
-          </span>
+  const AppointmentCard = ({ appt }: { appt: Appointment }) => {
+    const cancellable = canCancel(appt);
+    return (
+      <div className="bg-card border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock size={14} className="text-muted-foreground" />
+            <span className="text-foreground font-body text-sm font-medium">{appt.time_slot.slice(0, 5)}</span>
+            <span className={`text-xs px-2 py-0.5 rounded font-body ${
+              appt.status === "booked" ? "bg-accent/20 text-accent" :
+              appt.status === "completed" ? "bg-accent text-accent-foreground" :
+              "bg-primary/20 text-primary"
+            }`}>
+              {appt.status}
+            </span>
+          </div>
+          <p className="text-foreground font-body font-medium">{appt.client_name}</p>
+          <p className="text-muted-foreground font-body text-sm">
+            {appt.services?.name} — €{appt.services?.price?.toFixed(2)}
+          </p>
         </div>
-        <p className="text-foreground font-body font-medium">{appt.client_name}</p>
-        <p className="text-muted-foreground font-body text-sm">
-          {appt.services?.name} — €{appt.services?.price?.toFixed(2)}
-        </p>
+        {appt.status === "booked" && (
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              size="sm"
+              onClick={() => updateStatus(appt.id, "completed")}
+              className="bg-accent text-accent-foreground hover:bg-accent/80 font-body"
+            >
+              <Check size={14} className="mr-1" /> Done
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => updateStatus(appt.id, "cancelled", appt)}
+              className={`font-body ${cancellable
+                ? "border-red-500/50 text-red-400 hover:bg-red-500/10"
+                : "border-border text-muted-foreground/50 cursor-not-allowed"}`}
+              title={!cancellable ? "Cannot cancel within 2 hours of appointment" : undefined}
+            >
+              <Ban size={14} className="mr-1" /> Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => updateStatus(appt.id, "no-show")}
+              className="border-border text-foreground hover:bg-muted font-body"
+            >
+              <X size={14} className="mr-1" /> No-show
+            </Button>
+          </div>
+        )}
       </div>
-      {appt.status === "booked" && (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={() => updateStatus(appt.id, "completed")}
-            className="bg-accent text-accent-foreground hover:bg-accent/80 font-body"
-          >
-            <Check size={14} className="mr-1" /> Done
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => updateStatus(appt.id, "cancelled", appt)}
-            className="border-red-500/50 text-red-400 hover:bg-red-500/10 font-body"
-          >
-            <Ban size={14} className="mr-1" /> Cancel
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => updateStatus(appt.id, "no-show")}
-            className="border-border text-foreground hover:bg-muted font-body"
-          >
-            <X size={14} className="mr-1" /> No-show
-          </Button>
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-8">
