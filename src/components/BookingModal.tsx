@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, User, Scissors, X, Check } from "lucide-react";
+import { CalendarIcon, Clock, User, Scissors, X, Check, Calendar as CalendarDownloadIcon } from "lucide-react";
 import emailjs from "@emailjs/browser";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import CountryCodeSelector, { COUNTRIES, formatPhoneForSubmit, type Country } from "@/components/CountryCodeSelector";
 import WaitingListForm from "@/components/WaitingListForm";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
+import { downloadICS } from "@/lib/calendarDownload";
 
 // Initialize EmailJS once
 emailjs.init("TBNWeHLfrq6OuvZhQ");
@@ -53,9 +54,23 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [waitingListOpen, setWaitingListOpen] = useState(false);
+  const [reminderSMS, setReminderSMS] = useState(true);
+  const [reminderEmail, setReminderEmail] = useState(true);
   const { t } = useLanguage();
 
   const allSlotsBooked = selectedDate && bookedSlots.length >= TOTAL_SLOTS;
+
+  // Urgency messages
+  const availableSlots = selectedDate ? TOTAL_SLOTS - bookedSlots.length : 0;
+  const occupancyPercent = selectedDate ? (bookedSlots.length / TOTAL_SLOTS) * 100 : 0;
+
+  const getUrgencyMessage = () => {
+    if (!selectedDate || allSlotsBooked) return null;
+    if (availableSlots === 1) return "🔥 Only 1 spot left today!";
+    if (availableSlots === 2) return "🔥 Only 2 spots left today!";
+    if (occupancyPercent > 70) return "👀 High demand for this day!";
+    return null;
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -79,23 +94,16 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const fetchBookedSlots = useCallback(async () => {
     if (!selectedBarber || !selectedDate) return;
     const dateStr = format(selectedDate, "yyyy-MM-dd");
-    console.log("[BookingModal] Fetching booked slots for barber:", selectedBarber, "date:", dateStr);
     const { data, error } = await supabase
       .from("appointments")
       .select("time_slot")
       .eq("barber_id", selectedBarber)
       .eq("appointment_date", dateStr)
       .in("status", ["booked", "confirmed"]);
-    if (error) {
-      console.error("[BookingModal] Error fetching booked slots:", error);
-      return;
-    }
+    if (error) return;
     const slots = (data || []).map(d => d.time_slot.slice(0, 5));
-    console.log("[BookingModal] Booked slots:", slots);
     setBookedSlots(slots);
-    // Clear selected time if it's now booked
     if (selectedTime && slots.includes(selectedTime)) {
-      console.log("[BookingModal] Selected time is now booked, clearing:", selectedTime);
       setSelectedTime("");
     }
   }, [selectedBarber, selectedDate, selectedTime]);
@@ -168,6 +176,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setClientPhone("");
     setClientEmail("");
     setSuccess(false);
+    setReminderSMS(true);
+    setReminderEmail(true);
   };
 
   const handleClose = (v: boolean) => {
@@ -175,8 +185,12 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     onOpenChange(v);
   };
 
-  // notifyWaitingList is now imported from @/lib/waitingListNotifier
-
+  const getContactPreference = () => {
+    if (reminderSMS && reminderEmail) return "both";
+    if (reminderSMS) return "sms";
+    if (reminderEmail) return "email";
+    return "none";
+  };
 
   const handleSubmit = async () => {
     if (!clientName.trim()) { toast.error(t("booking.enterName")); return; }
@@ -190,6 +204,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       client_name: clientName.trim(),
       client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : null,
       client_email: clientEmail.trim() || null,
+      contact_preference: getContactPreference(),
     });
     setSubmitting(false);
     if (error) {
@@ -232,31 +247,56 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const selectedBarberName = barbers.find(b => b.id === selectedBarber)?.name;
   const selectedServiceObj = services.find(s => s.id === selectedService);
 
+  const handleDownloadCalendar = () => {
+    if (!selectedDate || !selectedTime) return;
+    downloadICS(
+      format(selectedDate, "yyyy-MM-dd"),
+      selectedTime,
+      selectedBarberName || "Barber",
+      selectedServiceObj?.name || "Haircut"
+    );
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="bg-card border-accent/20 text-foreground max-w-md mx-auto max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl gold-title-gradient">
-              {success ? t("booking.booked") : t("booking.title")}
+              {success ? "🎉 Booking Confirmed!" : t("booking.title")}
             </DialogTitle>
           </DialogHeader>
 
           {success ? (
-            <div className="text-center py-8 space-y-4">
+            <div className="text-center py-6 space-y-4">
               <div className="w-16 h-16 mx-auto rounded-full bg-[#4A7C2F]/20 flex items-center justify-center">
                 <Check size={32} className="text-[#4A7C2F]" />
               </div>
-              <p className="font-body text-foreground">{t("booking.successMsg")}</p>
-              <div className="text-sm text-muted-foreground font-body space-y-1">
+              <p className="font-body text-foreground font-medium text-lg">{t("booking.successMsg")}</p>
+              <div className="text-sm text-muted-foreground font-body space-y-1 bg-background/50 rounded-lg p-4 border border-border">
                 <p><strong>{t("booking.barber")}</strong> {selectedBarberName}</p>
                 <p><strong>{t("booking.service")}</strong> {selectedServiceObj?.name}</p>
                 <p><strong>{t("booking.date")}</strong> {selectedDate && format(selectedDate, "dd/MM/yyyy")}</p>
                 <p><strong>{t("booking.time")}</strong> {selectedTime}</p>
               </div>
-              <Button onClick={() => handleClose(false)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-body mt-4">
-                {t("booking.close")}
-              </Button>
+              <div className="flex flex-col gap-3 pt-2">
+                <Button
+                  onClick={handleDownloadCalendar}
+                  className="bg-accent hover:bg-accent/90 text-background font-body w-full"
+                >
+                  <CalendarDownloadIcon size={16} className="mr-2" /> Add to Calendar 📅
+                </Button>
+                <Button
+                  onClick={() => { reset(); }}
+                  variant="outline"
+                  className="font-body w-full border-border"
+                >
+                  Book Another Appointment
+                </Button>
+                <Button onClick={() => handleClose(false)} variant="ghost" className="text-muted-foreground font-body text-sm">
+                  {t("booking.close")}
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-6">
@@ -327,7 +367,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                         selected={selectedDate}
                         onSelect={(date) => { setSelectedDate(date); setCalendarOpen(false); }}
                         onMonthChange={setCalendarMonth}
-                        disabled={(date) => date < new Date() || date.getDay() === 0}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0)) || date.getDay() === 0}
                         className={cn("p-3 pointer-events-auto")}
                         modifiers={{
                           green: (date) => getDayAvailabilityClass(date) === "green",
@@ -337,11 +377,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           full: (date) => getDayAvailabilityClass(date) === "full",
                         }}
                         modifiersClassNames={{
-                          green: "!bg-green-500/20 !text-green-400",
-                          yellow: "!bg-yellow-500/20 !text-yellow-400",
-                          orange: "!bg-orange-500/20 !text-orange-400",
-                          red: "!bg-red-500/20 !text-red-400",
-                          full: "!bg-gray-500/20 !text-gray-500 !line-through !opacity-50",
+                          green: "!bg-green-500/30 !text-green-300 font-bold",
+                          yellow: "!bg-yellow-500/30 !text-yellow-300 font-bold",
+                          orange: "!bg-orange-500/30 !text-orange-300 font-bold",
+                          red: "!bg-red-500/30 !text-red-300 font-bold",
+                          full: "!bg-gray-600/30 !text-gray-500 !line-through !opacity-60",
                         }}
                       />
                     </PopoverContent>
@@ -349,6 +389,13 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
                   {selectedDate && (
                     <>
+                      {/* Urgency messages */}
+                      {getUrgencyMessage() && (
+                        <div className="text-center py-2 px-3 rounded-md bg-accent/10 border border-accent/30">
+                          <p className="font-body text-sm text-accent font-medium">{getUrgencyMessage()}</p>
+                        </div>
+                      )}
+
                       {allSlotsBooked ? (
                         <div className="space-y-3">
                           <div className="grid grid-cols-3 gap-2">
@@ -435,6 +482,31 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       onChange={e => setClientEmail(e.target.value)}
                       className="bg-background border-border text-foreground font-body"
                     />
+                  </div>
+
+                  {/* Contact preference */}
+                  <div className="space-y-2">
+                    <p className="font-body text-sm text-muted-foreground font-medium">How do you want to be reminded?</p>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer font-body text-sm text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={reminderSMS}
+                          onChange={e => setReminderSMS(e.target.checked)}
+                          className="rounded border-border accent-accent w-4 h-4"
+                        />
+                        📱 SMS
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer font-body text-sm text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={reminderEmail}
+                          onChange={e => setReminderEmail(e.target.checked)}
+                          className="rounded border-border accent-accent w-4 h-4"
+                        />
+                        📧 Email
+                      </label>
+                    </div>
                   </div>
 
                   <div className="bg-background/50 rounded p-3 text-sm font-body space-y-1 border border-border">
