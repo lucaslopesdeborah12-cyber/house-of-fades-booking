@@ -1,0 +1,1 @@
+ALTER TABLE public.appointments ADD COLUMN contact_preference text DEFAULT 'both';
