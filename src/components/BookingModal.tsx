@@ -175,9 +175,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setClientPhone("");
     setClientEmail("");
     setSuccess(false);
-    setReminderSMS(true);
-    setReminderEmail(true);
-  };
+    setContactPreference('sms');
 
   const handleClose = (v: boolean) => {
     if (!v) reset();
