@@ -241,6 +241,35 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
           "TBNWeHLfrq6OuvZhQ"
         ).catch((err) => console.error("EmailJS error:", err));
       }
+      // Notify owner
+      supabase
+        .from("owner_settings" as any)
+        .select("value")
+        .eq("key", "notification_email")
+        .maybeSingle()
+        .then(({ data }: any) => {
+          if (data?.value) {
+            emailjs.send(
+              "service_jq26o2f",
+              "template_9wigrr6",
+              {
+                to_name: "Owner",
+                to_email: data.value,
+                client_name: clientName.trim(),
+                client_email: clientEmail.trim(),
+                client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : "N/A",
+                barber_name: selectedBarberName || "",
+                service_name: selectedServiceObj?.name || "",
+                appointment_date: format(selectedDate!, "dd/MM/yyyy"),
+                appointment_time: selectedTime,
+                service_price: `€${Number(selectedServiceObj?.price || 0).toFixed(0)}`,
+                date: format(selectedDate!, "dd/MM/yyyy"),
+                time: selectedTime,
+              },
+              "TBNWeHLfrq6OuvZhQ"
+            ).catch((err) => console.error("Owner notification error:", err));
+          }
+        });
     }
   };
 

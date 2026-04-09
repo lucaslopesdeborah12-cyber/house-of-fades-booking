@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { startOfWeek, startOfMonth, format, parseISO, subMonths, eachDayOfInterval, endOfWeek } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -20,6 +23,19 @@ type AppointmentRow = {
 const OwnerStatsTab = () => {
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notifEmail, setNotifEmail] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("owner_settings" as any)
+      .select("value")
+      .eq("key", "notification_email")
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (data?.value) setNotifEmail(data.value);
+      });
+  }, []);
 
   useEffect(() => {
     const fetch = async () => {
@@ -111,6 +127,34 @@ const OwnerStatsTab = () => {
 
   return (
     <div className="space-y-8">
+      {/* Notification Settings */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <h3 className="font-serif text-lg font-semibold mb-3">Notification Settings</h3>
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="font-body text-xs text-muted-foreground mb-1 block">Owner notification email</label>
+            <Input
+              placeholder="your@gmail.com"
+              value={notifEmail}
+              onChange={(e) => setNotifEmail(e.target.value)}
+              className="bg-background border-border text-foreground font-body"
+            />
+          </div>
+          <Button
+            disabled={savingEmail}
+            onClick={async () => {
+              setSavingEmail(true);
+              await (supabase.from("owner_settings" as any) as any).upsert({ key: "notification_email", value: notifEmail.trim() }, { onConflict: "key" });
+              setSavingEmail(false);
+              toast.success("Saved!");
+            }}
+            className="bg-accent hover:bg-accent/90 text-background font-body"
+          >
+            {savingEmail ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </div>
+
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="This Week" value={weekAppts.length} sub="cuts" />
