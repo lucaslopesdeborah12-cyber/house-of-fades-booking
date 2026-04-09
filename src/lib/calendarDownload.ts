@@ -41,3 +41,4 @@ export const downloadICS = (date: string, time: string, barberName: string, serv
     a.click();
     document.body.removeChild(a);
   }
+};
