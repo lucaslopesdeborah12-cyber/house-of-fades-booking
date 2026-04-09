@@ -324,11 +324,21 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 <p><strong>{t("booking.time")}</strong> {selectedTime}</p>
               </div>
               <div className="flex flex-col gap-3 pt-2">
+                <a
+                  href={getGoogleCalendarUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center bg-accent hover:bg-accent/90 text-background font-body w-full h-10 px-4 rounded-md text-sm font-medium"
+                >
+                  <CalendarDownloadIcon size={16} className="mr-2" /> Add to Google Calendar 📅
+                </a>
                 <Button
                   onClick={handleDownloadCalendar}
-                  className="bg-accent hover:bg-accent/90 text-background font-body w-full"
+                  variant="outline"
+                  className="font-body w-full border-border text-xs h-8"
+                  size="sm"
                 >
-                  <CalendarDownloadIcon size={16} className="mr-2" /> Add to Calendar 📅
+                  Download .ics (Apple Calendar)
                 </Button>
                 <Button
                   onClick={() => { reset(); }}
