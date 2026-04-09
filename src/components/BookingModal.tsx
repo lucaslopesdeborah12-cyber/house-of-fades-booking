@@ -665,73 +665,202 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               )}
 
               {step === 4 && (
-                <div className="space-y-4">
-                  <p className="font-body text-sm text-muted-foreground">{t("booking.yourDetails")}</p>
-                  <div className="space-y-3">
-                    <Input
-                      placeholder={t("booking.name")}
-                      value={clientName}
-                      onChange={e => setClientName(e.target.value)}
-                      className="bg-background border-border text-foreground font-body"
-                    />
-                    <div className="flex">
-                      <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
-                      <Input
-                        placeholder={selectedCountry.code === "IE" ? "085 123 4567" : t("booking.phone")}
-                        value={clientPhone}
-                        onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                        className="bg-background border-border text-foreground font-body rounded-l-none"
+                <div style={{ padding: "0 0 14px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, alignItems: "start" }}>
+                    {/* LEFT COLUMN — Form */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <input
+                        placeholder="Nome *"
+                        value={clientName}
+                        onChange={e => setClientName(e.target.value)}
+                        style={{
+                          background: "rgba(255,255,255,0.04)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: 10,
+                          padding: "11px 12px",
+                          fontSize: 12,
+                          color: "#e0e0e0",
+                          width: "100%",
+                          outline: "none",
+                          opacity: 0,
+                          animation: "fadeUpForm 0.42s ease forwards",
+                          animationDelay: "0.05s",
+                        }}
+                        onFocus={e => e.currentTarget.style.borderColor = "#C9A84C"}
+                        onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
                       />
-                    </div>
-                    <Input
-                      placeholder={t("booking.email")}
-                      type="email"
-                      value={clientEmail}
-                      onChange={e => setClientEmail(e.target.value)}
-                      className="bg-background border-border text-foreground font-body"
-                    />
-                  </div>
-
-                  {/* Contact preference */}
-                  <div className="space-y-2">
-                    <p className="font-body text-sm text-muted-foreground font-medium">How do you want to be reminded?</p>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer font-body text-sm text-foreground">
+                      <input
+                        placeholder="Email *"
+                        type="email"
+                        value={clientEmail}
+                        onChange={e => setClientEmail(e.target.value)}
+                        style={{
+                          background: "rgba(255,255,255,0.04)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: 10,
+                          padding: "11px 12px",
+                          fontSize: 12,
+                          color: "#e0e0e0",
+                          width: "100%",
+                          outline: "none",
+                          opacity: 0,
+                          animation: "fadeUpForm 0.42s ease forwards",
+                          animationDelay: "0.13s",
+                        }}
+                        onFocus={e => e.currentTarget.style.borderColor = "#C9A84C"}
+                        onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+                      />
+                      <div style={{ display: "flex", gap: 6, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.21s" }}>
+                        <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
                         <input
-                          type="checkbox"
-                          checked={reminderSMS}
-                          onChange={e => setReminderSMS(e.target.checked)}
-                          className="rounded border-border accent-accent w-4 h-4"
+                          placeholder={selectedCountry.code === "IE" ? "085 123 4567" : t("booking.phone")}
+                          value={clientPhone}
+                          onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                          style={{
+                            background: "rgba(255,255,255,0.04)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: 10,
+                            padding: "11px 12px",
+                            fontSize: 12,
+                            color: "#e0e0e0",
+                            flex: 1,
+                            outline: "none",
+                          }}
+                          onFocus={e => e.currentTarget.style.borderColor = "#C9A84C"}
+                          onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
                         />
+                      </div>
+                    </div>
+
+                    {/* RIGHT COLUMN — Summary card */}
+                    <div style={{
+                      opacity: 0,
+                      animation: "zoomInSum 0.4s cubic-bezier(.22,.68,0,1.15) forwards",
+                      animationDelay: "0.1s",
+                      background: "#1a1a1a",
+                      borderRadius: 12,
+                      padding: 12,
+                    }}>
+                      <div style={{
+                        fontSize: 8,
+                        color: "rgba(201,168,76,0.45)",
+                        letterSpacing: 1.5,
+                        textTransform: "uppercase" as const,
+                        fontFamily: "Arial",
+                        marginBottom: 9,
+                        paddingBottom: 7,
+                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                      }}>RESUMO</div>
+                      {[
+                        { label: "Barbeiro", value: selectedBarberName || "" },
+                        { label: "Serviço", value: selectedServiceObj?.name || "" },
+                        { label: "Data", value: selectedDate ? format(selectedDate, "dd/MM") : "" },
+                        { label: "Hora", value: selectedTime },
+                      ].map((row, i, arr) => (
+                        <div key={row.label} style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 2,
+                          padding: "7px 0",
+                          borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                        }}>
+                          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.22)", fontFamily: "Arial" }}>{row.label}</span>
+                          <span style={{ fontSize: 11, color: "#e0e0e0", fontWeight: 500 }}>{row.value}</span>
+                        </div>
+                      ))}
+                      {/* Total row */}
+                      <div style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                        padding: "7px 0",
+                      }}>
+                        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.22)", fontFamily: "Arial" }}>Total</span>
+                        <span style={{
+                          background: "linear-gradient(90deg, #C9A84C, #f5e49c, #C9A84C)",
+                          backgroundSize: "300% auto",
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
+                          animation: "shimmerGold 2.2s linear infinite",
+                          fontWeight: "bold",
+                          fontFamily: "Georgia",
+                          fontSize: 14,
+                        }}>€{Number(selectedServiceObj?.price || 0).toFixed(0)}</span>
+                      </div>
+                    </div>
+
+                    {/* Reminder checkboxes — full width */}
+                    <div style={{
+                      gridColumn: "span 2",
+                      display: "flex",
+                      gap: 14,
+                      padding: "4px 0",
+                      opacity: 0,
+                      animation: "fadeUpForm 0.38s ease forwards",
+                      animationDelay: "0.28s",
+                    }}>
+                      <label style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                        <span
+                          onClick={() => setReminderSMS(!reminderSMS)}
+                          style={{
+                            width: 16, height: 16, borderRadius: 5,
+                            background: reminderSMS ? "rgba(201,168,76,0.15)" : "transparent",
+                            border: "1px solid #C9A84C",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 9, color: "#C9A84C", cursor: "pointer",
+                          }}
+                        >{reminderSMS ? "✓" : ""}</span>
                         📱 SMS
                       </label>
-                      <label className="flex items-center gap-2 cursor-pointer font-body text-sm text-foreground">
-                        <input
-                          type="checkbox"
-                          checked={reminderEmail}
-                          onChange={e => setReminderEmail(e.target.checked)}
-                          className="rounded border-border accent-accent w-4 h-4"
-                        />
+                      <label style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                        <span
+                          onClick={() => setReminderEmail(!reminderEmail)}
+                          style={{
+                            width: 16, height: 16, borderRadius: 5,
+                            background: reminderEmail ? "rgba(201,168,76,0.15)" : "transparent",
+                            border: "1px solid #C9A84C",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 9, color: "#C9A84C", cursor: "pointer",
+                          }}
+                        >{reminderEmail ? "✓" : ""}</span>
                         📧 Email
                       </label>
                     </div>
-                  </div>
 
-                  <div className="bg-background/50 rounded p-3 text-sm font-body space-y-1 border border-border">
-                    <p><span className="text-muted-foreground">{t("booking.barber")}</span> {selectedBarberName}</p>
-                    <p><span className="text-muted-foreground">{t("booking.service")}</span> {selectedServiceObj?.name} — <span className="text-accent">€{Number(selectedServiceObj?.price || 0).toFixed(0)}</span></p>
-                    <p><span className="text-muted-foreground">{t("booking.date")}</span> {selectedDate && format(selectedDate, "dd/MM/yyyy")} {t("booking.at")} {selectedTime}</p>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button variant="ghost" onClick={() => setStep(3)} className="text-muted-foreground font-body text-sm">{t("booking.back")}</Button>
-                    <Button
+                    {/* Confirm button — full width */}
+                    <button
                       onClick={handleSubmit}
                       disabled={submitting || !clientName.trim() || !clientEmail.trim()}
-                      className="bg-[#4A7C2F] hover:bg-[#4A7C2F]/90 text-white font-body ml-auto"
+                      style={{
+                        gridColumn: "span 2",
+                        opacity: 0,
+                        animation: "fadeUpForm 0.42s ease forwards",
+                        animationDelay: "0.34s",
+                        background: "#C9A84C",
+                        border: "none",
+                        borderRadius: 13,
+                        padding: 14,
+                        width: "100%",
+                        fontSize: 15,
+                        fontWeight: "bold",
+                        color: "#111",
+                        fontFamily: "Georgia",
+                        letterSpacing: 0.3,
+                        marginTop: 4,
+                        cursor: submitting || !clientName.trim() || !clientEmail.trim() ? "not-allowed" : "pointer",
+                        opacity: submitting || !clientName.trim() || !clientEmail.trim() ? 0.5 : 1,
+                      }}
                     >
-                      {submitting ? t("booking.confirming") : t("booking.confirm")}
-                    </Button>
+                      {submitting ? "A confirmar..." : "Confirmar →"}
+                    </button>
+                  </div>
+
+                  {/* Back button */}
+                  <div
+                    onClick={() => setStep(3)}
+                    style={{ textAlign: "center", padding: "10px 0 4px", fontSize: 12, color: "rgba(255,255,255,0.18)", cursor: "pointer" }}
+                  >
+                    ← Voltar
                   </div>
                 </div>
               )}
