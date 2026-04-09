@@ -1,44 +1,38 @@
-export const downloadICS = (date: string, time: string, barberName: string, serviceName: string) => {
-  // date format: "yyyy-MM-dd", time format: "HH:mm"
-  const [year, month, day] = date.split("-").map(Number);
-  const [hour, minute] = time.split(":").map(Number);
+export function downloadICS(date: string, time: string, barberName: string, serviceName: string) {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hour, minute] = time.split(':').map(Number);
 
-  const start = new Date(year, month - 1, day, hour, minute);
-  const end = new Date(start.getTime() + 30 * 60 * 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
 
-  const fmt = (d: Date) => {
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
-  };
+  const dtStart = `${year}${pad(month)}${pad(day)}T${pad(hour)}${pad(minute)}00`;
+  const endHour = minute + 30 >= 60 ? hour + 1 : hour;
+  const endMinute = (minute + 30) % 60;
+  const dtEnd = `${year}${pad(month)}${pad(day)}T${pad(endHour)}${pad(endMinute)}00`;
+  const dtStamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-  const ics = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//House of Fades//Booking//EN",
-    "BEGIN:VEVENT",
-    `DTSTART:${fmt(start)}`,
-    `DTEND:${fmt(end)}`,
-    `SUMMARY:House of Fades - ${serviceName || "Haircut"}`,
-    `DESCRIPTION:Your appointment at House of Fades with ${barberName}. See you soon!`,
-    "LOCATION:House of Fades\\, Carlow\\, Ireland",
-    "STATUS:CONFIRMED",
-    `UID:${crypto.randomUUID()}@houseoffades`,
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ].join("\r\n");
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//House of Fades//Booking//EN',
+    'BEGIN:VEVENT',
+    `DTSTART:${dtStart}`,
+    `DTEND:${dtEnd}`,
+    `DTSTAMP:${dtStamp}`,
+    `SUMMARY:${serviceName} - House of Fades`,
+    `DESCRIPTION:Appointment with ${barberName}`,
+    'LOCATION:House of Fades, Carlow, Ireland',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
 
-  const dataUri = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
-
-  // Try window.open first (works best on iOS Safari)
-  const opened = window.open(dataUri);
-
-  // Fallback: programmatic link click (works on Android / desktop)
-  if (!opened) {
-    const a = document.createElement("a");
-    a.href = dataUri;
-    a.download = "house-of-fades-appointment.ics";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-};
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'house-of-fades-appointment.ics');
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
