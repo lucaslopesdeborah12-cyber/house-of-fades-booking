@@ -790,26 +790,48 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     </div>
                   </div>
 
-                  {/* Reminder checkboxes */}
-                  <div style={{ display: "flex", gap: 14, opacity: 0, animation: "fadeUpForm 0.38s ease forwards", animationDelay: "0.28s", marginBottom: 8 }}>
-                    <label style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                      <span onClick={() => setReminderSMS(!reminderSMS)} style={{
-                        width: 16, height: 16, borderRadius: 5,
-                        background: reminderSMS ? "rgba(201,168,76,0.15)" : "transparent",
-                        border: "1px solid #C9A84C", display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 9, color: "#C9A84C", cursor: "pointer",
-                      }}>{reminderSMS ? "✓" : ""}</span>
-                      📱 SMS
-                    </label>
-                    <label style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                      <span onClick={() => setReminderEmail(!reminderEmail)} style={{
-                        width: 16, height: 16, borderRadius: 5,
-                        background: reminderEmail ? "rgba(201,168,76,0.15)" : "transparent",
-                        border: "1px solid #C9A84C", display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 9, color: "#C9A84C", cursor: "pointer",
-                      }}>{reminderEmail ? "✓" : ""}</span>
-                      📧 Email
-                    </label>
+                  {/* Contact preference pills */}
+                  <div style={{ opacity: 0, animation: "fadeUpForm 0.38s ease forwards", animationDelay: "0.28s", marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.32)", fontFamily: "Arial", marginBottom: 8, lineHeight: 1.4 }}>
+                      Qual a sua <span style={{ color: "#C9A84C" }}>melhor forma</span> de receber confirmação?
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "nowrap" }}>
+                      {([
+                        { value: 'sms' as const, label: '📱 SMS' },
+                        { value: 'email' as const, label: '✉️ Email' },
+                        { value: 'call' as const, label: '📞 Ligação' },
+                        { value: 'all' as const, label: '🔔 Todos' },
+                      ]).map(pill => {
+                        const isActive = contactPreference === pill.value;
+                        return (
+                          <button
+                            key={pill.value}
+                            type="button"
+                            onClick={() => setContactPreference(pill.value)}
+                            style={{
+                              flex: 1,
+                              background: isActive ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)",
+                              border: `1.5px solid ${isActive ? "#C9A84C" : "rgba(255,255,255,0.09)"}`,
+                              borderRadius: 99,
+                              padding: "9px 4px",
+                              fontSize: 10,
+                              color: isActive ? "#C9A84C" : "rgba(255,255,255,0.35)",
+                              fontFamily: "Arial",
+                              fontWeight: isActive ? 500 : 400,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 4,
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                              transition: "all 0.22s",
+                            }}
+                          >
+                            {pill.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Confirm button */}
