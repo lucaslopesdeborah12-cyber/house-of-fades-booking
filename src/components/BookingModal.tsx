@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, User, Scissors, X, Check, Calendar as CalendarDownloadIcon } from "lucide-react";
+import { CalendarIcon, Clock, User, Scissors, X, Check, Calendar as CalendarDownloadIcon, Lock, Zap } from "lucide-react";
 import emailjs from "@emailjs/browser";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import CountryCodeSelector, { COUNTRIES, formatPhoneForSubmit, type Country } from "@/components/CountryCodeSelector";
@@ -45,7 +45,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [selectedBarber, setSelectedBarber] = useState<string>("");
   const [selectedService, setSelectedService] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const [calendarOpen, setCalendarOpen] = useState(false);
+  // calendarOpen removed — calendar is always inline
   const [selectedTime, setSelectedTime] = useState("");
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
@@ -354,38 +354,41 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               {step === 3 && (
                 <div className="space-y-4">
                   <p className="font-body text-sm text-muted-foreground flex items-center gap-2"><CalendarIcon size={16} /> {t("booking.chooseDateTime")}</p>
-                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left font-body border-border", !selectedDate && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {selectedDate ? format(selectedDate, "dd/MM/yyyy") : t("booking.selectDate")}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={(date) => { setSelectedDate(date); setCalendarOpen(false); }}
-                        onMonthChange={setCalendarMonth}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0)) || date.getDay() === 0}
-                        className={cn("p-3 pointer-events-auto")}
-                        modifiers={{
-                          green: (date) => getDayAvailabilityClass(date) === "green",
-                          yellow: (date) => getDayAvailabilityClass(date) === "yellow",
-                          orange: (date) => getDayAvailabilityClass(date) === "orange",
-                          red: (date) => getDayAvailabilityClass(date) === "red",
-                          full: (date) => getDayAvailabilityClass(date) === "full",
-                        }}
-                        modifiersClassNames={{
-                          green: "!bg-green-500/30 !text-green-300 font-bold",
-                          yellow: "!bg-yellow-500/30 !text-yellow-300 font-bold",
-                          orange: "!bg-orange-500/30 !text-orange-300 font-bold",
-                          red: "!bg-red-500/30 !text-red-300 font-bold",
-                          full: "!bg-gray-600/30 !text-gray-500 !line-through !opacity-60",
-                        }}
-                      />
-                    </PopoverContent>
-                  </Popover>
+
+                  {/* Inline calendar — always visible */}
+                  <div className="rounded-lg border border-border bg-card overflow-hidden">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => setSelectedDate(date)}
+                      onMonthChange={setCalendarMonth}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0)) || date.getDay() === 0}
+                      className={cn("p-3 pointer-events-auto w-full")}
+                      modifiers={{
+                        green: (date) => getDayAvailabilityClass(date) === "green",
+                        yellow: (date) => getDayAvailabilityClass(date) === "yellow",
+                        orange: (date) => getDayAvailabilityClass(date) === "orange",
+                        red: (date) => getDayAvailabilityClass(date) === "red",
+                        full: (date) => getDayAvailabilityClass(date) === "full",
+                      }}
+                      modifiersClassNames={{
+                        green: "!bg-green-500/30 !text-green-300 font-bold",
+                        yellow: "!bg-yellow-500/30 !text-yellow-300 font-bold",
+                        orange: "!bg-orange-500/30 !text-orange-300 font-bold",
+                        red: "!bg-red-500/30 !text-red-300 font-bold",
+                        full: "!bg-gray-600/30 !text-gray-500 !line-through !opacity-60",
+                      }}
+                    />
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-3 justify-center text-xs font-body text-muted-foreground">
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500/50 inline-block" /> Available</span>
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-yellow-500/50 inline-block" /> Filling up</span>
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-orange-500/50 inline-block" /> Almost full</span>
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500/50 inline-block" /> Last spots</span>
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-gray-500/50 inline-block" /> Waitlist</span>
+                  </div>
 
                   {selectedDate && (
                     <>
@@ -397,26 +400,38 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       )}
 
                       {allSlotsBooked ? (
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-3 gap-2">
-                            {TIME_SLOTS.map(tm => (
-                              <button
-                                key={tm}
-                                disabled
-                                className="py-2 rounded text-sm font-body border border-border text-muted-foreground/40 cursor-not-allowed line-through bg-muted/20"
-                              >
-                                {tm}
-                              </button>
-                            ))}
+                        <div
+                          className="flex flex-col items-center text-center gap-3"
+                          style={{
+                            background: "rgba(255,255,255,0.03)",
+                            border: "1px solid rgba(255,255,255,0.09)",
+                            borderRadius: "14px",
+                            padding: "22px 16px",
+                          }}
+                        >
+                          <div className="w-12 h-12 rounded-full bg-muted/20 flex items-center justify-center">
+                            <Lock size={24} className="text-muted-foreground" />
                           </div>
-                          <div className="flex justify-center pt-2">
-                            <Button
-                              onClick={() => setWaitingListOpen(true)}
-                              className="bg-accent hover:bg-accent/90 text-background font-body text-lg px-8 py-4"
-                            >
-                              📋 Join Waiting List
-                            </Button>
-                          </div>
+                          <h3 className="font-serif text-lg font-semibold text-foreground">This day is fully booked</h3>
+                          <p className="font-body text-sm text-muted-foreground leading-relaxed">
+                            All slots are taken — but you can join the waiting list and be notified instantly if someone cancels.
+                          </p>
+                          <Badge variant="secondary" className="flex items-center gap-1.5 px-3 py-1 text-xs font-body">
+                            <Zap size={12} className="text-accent" /> Instant notification if a slot opens
+                          </Badge>
+                          <Button
+                            onClick={() => setWaitingListOpen(true)}
+                            className="bg-accent hover:bg-accent/90 text-background font-body text-base px-8 py-3 w-full mt-1"
+                          >
+                            📋 Join Waiting List
+                          </Button>
+                          <Button
+                            onClick={() => setSelectedDate(undefined)}
+                            variant="outline"
+                            className="font-body text-sm w-full border-border"
+                          >
+                            Choose another day
+                          </Button>
                         </div>
                       ) : (
                         <div className="grid grid-cols-3 gap-2">
