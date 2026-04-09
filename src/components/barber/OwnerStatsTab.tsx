@@ -23,6 +23,19 @@ type AppointmentRow = {
 const OwnerStatsTab = () => {
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notifEmail, setNotifEmail] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("owner_settings" as any)
+      .select("value")
+      .eq("key", "notification_email")
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (data?.value) setNotifEmail(data.value);
+      });
+  }, []);
 
   useEffect(() => {
     const fetch = async () => {
