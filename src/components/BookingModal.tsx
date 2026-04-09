@@ -383,24 +383,78 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               {step === 2 && (
                 <div className="space-y-3">
                   <p className="font-body text-sm text-muted-foreground flex items-center gap-2"><Scissors size={16} /> {t("booking.chooseService")}</p>
-                  {services.map(s => (
-                    <button
-                      key={s.id}
-                      onClick={() => { setSelectedService(s.id); setStep(3); }}
-                      className={cn(
-                        "w-full p-4 rounded border text-left font-body transition-all flex justify-between items-center",
-                        selectedService === s.id
-                          ? "border-accent bg-accent/10"
-                          : "border-border hover:border-accent/50"
-                      )}
-                    >
-                      <div>
-                        <span className="text-foreground font-medium">{s.name}</span>
-                        <span className="block text-xs text-muted-foreground">{s.duration_minutes} {t("services.min")}</span>
-                      </div>
-                      <span className="text-accent font-serif font-bold">€{Number(s.price).toFixed(0)}</span>
-                    </button>
-                  ))}
+                  <div style={{ position: "relative", padding: "4px 0 8px" }}>
+                    <div style={{ position: "absolute", right: 26, top: 14, bottom: 14, width: 1, background: "rgba(201,168,76,0.1)" }} />
+                    {services.map((s, index) => {
+                      const isSelected = selectedService === s.id;
+                      const delays = [0.06, 0.14, 0.22, 0.30, 0.38];
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => { setSelectedService(s.id); setStep(3); }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            width: "100%",
+                            padding: isSelected ? "13px 42px 13px 16px" : "13px 36px 13px 16px",
+                            position: "relative",
+                            cursor: "pointer",
+                            borderBottom: index < services.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                            borderLeft: "none",
+                            borderRight: "none",
+                            borderTop: "none",
+                            transition: "all 0.25s ease",
+                            background: isSelected ? "rgba(201,168,76,0.04)" : "transparent",
+                            animation: `fadeUp 0.42s ease forwards`,
+                            animationDelay: `${delays[index] || 0.06 + index * 0.08}s`,
+                            opacity: 0,
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.paddingRight = "42px"; e.currentTarget.style.background = "rgba(201,168,76,0.04)"; }}
+                          onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.paddingRight = "36px"; e.currentTarget.style.background = "transparent"; } }}
+                        >
+                          <span style={{ flex: 1, fontSize: 14, color: isSelected ? "#fff" : "rgba(255,255,255,0.75)", letterSpacing: "0.2px", textAlign: "left" }} className="font-body">
+                            {s.name}
+                          </span>
+                          <div style={{ textAlign: "right", marginRight: 12, flexShrink: 0 }}>
+                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginBottom: 2, fontFamily: "Arial" }}>
+                              {s.duration_minutes} min
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 14,
+                                fontWeight: "bold",
+                                ...(isSelected
+                                  ? {
+                                      background: "linear-gradient(90deg, #C9A84C, #f5e49c, #C9A84C)",
+                                      backgroundSize: "300% auto",
+                                      WebkitBackgroundClip: "text",
+                                      WebkitTextFillColor: "transparent",
+                                      animation: "shimmerGold 2s linear infinite",
+                                    }
+                                  : { color: "#C9A84C" }),
+                              }}
+                            >
+                              €{Number(s.price).toFixed(0)}
+                            </div>
+                          </div>
+                          <div
+                            style={{
+                              position: "absolute",
+                              right: 22,
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              border: isSelected ? "1.5px solid #C9A84C" : "1.5px solid rgba(201,168,76,0.25)",
+                              background: isSelected ? "#C9A84C" : "#0e0e0e",
+                              transition: "all 0.25s",
+                              transform: isSelected ? "scale(1.35)" : "scale(1)",
+                              boxShadow: isSelected ? "0 0 6px rgba(201,168,76,0.4)" : "none",
+                            }}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
                   <Button variant="ghost" onClick={() => setStep(1)} className="text-muted-foreground font-body text-sm">{t("booking.back")}</Button>
                 </div>
               )}
