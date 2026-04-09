@@ -286,6 +286,21 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     );
   };
 
+  const getGoogleCalendarUrl = () => {
+    if (!selectedDate || !selectedTime) return "#";
+    const [hour, minute] = selectedTime.split(":").map(Number);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const dateStr = format(selectedDate, "yyyyMMdd");
+    const startStr = `${dateStr}T${pad(hour)}${pad(minute)}00`;
+    const endH = minute + 30 >= 60 ? hour + 1 : hour;
+    const endM = (minute + 30) % 60;
+    const endStr = `${dateStr}T${pad(endH)}${pad(endM)}00`;
+    const title = encodeURIComponent(`${selectedServiceObj?.name || "Haircut"} - House of Fades`);
+    const details = encodeURIComponent(`Appointment with ${selectedBarberName || "Barber"}`);
+    const location = encodeURIComponent("House of Fades, Carlow, Ireland");
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startStr}/${endStr}&details=${details}&location=${location}`;
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
@@ -309,11 +324,21 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 <p><strong>{t("booking.time")}</strong> {selectedTime}</p>
               </div>
               <div className="flex flex-col gap-3 pt-2">
+                <a
+                  href={getGoogleCalendarUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center bg-accent hover:bg-accent/90 text-background font-body w-full h-10 px-4 rounded-md text-sm font-medium"
+                >
+                  <CalendarDownloadIcon size={16} className="mr-2" /> Add to Google Calendar 📅
+                </a>
                 <Button
                   onClick={handleDownloadCalendar}
-                  className="bg-accent hover:bg-accent/90 text-background font-body w-full"
+                  variant="outline"
+                  className="font-body w-full border-border text-xs h-8"
+                  size="sm"
                 >
-                  <CalendarDownloadIcon size={16} className="mr-2" /> Add to Calendar 📅
+                  Download .ics (Apple Calendar)
                 </Button>
                 <Button
                   onClick={() => { reset(); }}
