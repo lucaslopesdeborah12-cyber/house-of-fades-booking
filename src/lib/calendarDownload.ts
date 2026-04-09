@@ -27,13 +27,17 @@ export const downloadICS = (date: string, time: string, barberName: string, serv
     "END:VCALENDAR",
   ].join("\r\n");
 
-  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "house-of-fades-appointment.ics";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
+  const dataUri = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+
+  // Try window.open first (works best on iOS Safari)
+  const opened = window.open(dataUri);
+
+  // Fallback: programmatic link click (works on Android / desktop)
+  if (!opened) {
+    const a = document.createElement("a");
+    a.href = dataUri;
+    a.download = "house-of-fades-appointment.ics";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
