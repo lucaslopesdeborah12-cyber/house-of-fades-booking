@@ -187,6 +187,16 @@
     50% { background-position: 100% 50%; }
   }
 
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes shimmerGold {
+    0% { background-position: -300% center; }
+    100% { background-position: 300% center; }
+  }
+
   @keyframes pulse-glow {
     0%, 100% { box-shadow: 0 0 15px hsla(0, 68%, 33%, 0.3); }
     50% { box-shadow: 0 0 30px hsla(0, 68%, 33%, 0.6), 0 0 10px hsla(43, 52%, 54%, 0.15); }
