@@ -833,7 +833,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       disabled={submitting || !clientName.trim() || !clientEmail.trim()}
                       style={{
                         gridColumn: "span 2",
-                        opacity: 0,
                         animation: "fadeUpForm 0.42s ease forwards",
                         animationDelay: "0.34s",
                         background: "#C9A84C",
