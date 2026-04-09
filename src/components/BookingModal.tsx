@@ -666,199 +666,174 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
               {step === 4 && (
                 <div style={{ padding: "0 0 14px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, alignItems: "start" }}>
-                    {/* LEFT COLUMN — Form */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {/* Section label */}
+                  <div style={{
+                    fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 1, textTransform: "uppercase" as const,
+                    fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6, marginBottom: 12,
+                  }}>
+                    <span style={{ width: 14, height: 1, background: "rgba(201,168,76,0.3)", display: "inline-block" }} />
+                    Seus dados
+                  </div>
+
+                  {/* Nome field */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 8, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.05s" }}>
+                    <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>Nome</span>
+                    <div className="border-run-box" style={{ padding: 1.5, borderRadius: 12, background: "rgba(255,255,255,0.07)" }}>
                       <input
                         placeholder="Nome *"
                         value={clientName}
                         onChange={e => setClientName(e.target.value)}
-                        style={{
-                          background: "rgba(255,255,255,0.04)",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          borderRadius: 10,
-                          padding: "11px 12px",
-                          fontSize: 12,
-                          color: "#e0e0e0",
-                          width: "100%",
-                          outline: "none",
-                          opacity: 0,
-                          animation: "fadeUpForm 0.42s ease forwards",
-                          animationDelay: "0.05s",
+                        style={{ background: "#181818", border: "none", borderRadius: 11, padding: "13px 14px", fontSize: 13, color: "#e0e0e0", outline: "none", width: "100%", fontFamily: "Arial" }}
+                        onFocus={e => {
+                          const box = e.currentTarget.parentElement;
+                          if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
+                          const lbl = box?.parentElement?.querySelector("span");
+                          if (lbl) lbl.style.color = "#C9A84C";
                         }}
-                        onFocus={e => e.currentTarget.style.borderColor = "#C9A84C"}
-                        onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
-                      />
-                      <input
-                        placeholder="Email *"
-                        type="email"
-                        value={clientEmail}
-                        onChange={e => setClientEmail(e.target.value)}
-                        style={{
-                          background: "rgba(255,255,255,0.04)",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          borderRadius: 10,
-                          padding: "11px 12px",
-                          fontSize: 12,
-                          color: "#e0e0e0",
-                          width: "100%",
-                          outline: "none",
-                          opacity: 0,
-                          animation: "fadeUpForm 0.42s ease forwards",
-                          animationDelay: "0.13s",
+                        onBlur={e => {
+                          const box = e.currentTarget.parentElement;
+                          if (box) { box.style.background = "rgba(255,255,255,0.07)"; box.style.animation = "none"; }
+                          const lbl = box?.parentElement?.querySelector("span");
+                          if (lbl) lbl.style.color = "rgba(201,168,76,0.5)";
                         }}
-                        onFocus={e => e.currentTarget.style.borderColor = "#C9A84C"}
-                        onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
                       />
-                      <div style={{ display: "flex", gap: 6, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.21s" }}>
-                        <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
+                    </div>
+                  </div>
+
+                  {/* Email + Phone row */}
+                  <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                    {/* Email */}
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.13s" }}>
+                      <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>Email</span>
+                      <div className="border-run-box" style={{ padding: 1.5, borderRadius: 12, background: "rgba(255,255,255,0.07)" }}>
+                        <input
+                          placeholder="Email *"
+                          type="email"
+                          value={clientEmail}
+                          onChange={e => setClientEmail(e.target.value)}
+                          style={{ background: "#181818", border: "none", borderRadius: 11, padding: "13px 14px", fontSize: 13, color: "#e0e0e0", outline: "none", width: "100%", fontFamily: "Arial" }}
+                          onFocus={e => {
+                            const box = e.currentTarget.parentElement;
+                            if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
+                            const lbl = box?.parentElement?.querySelector("span");
+                            if (lbl) lbl.style.color = "#C9A84C";
+                          }}
+                          onBlur={e => {
+                            const box = e.currentTarget.parentElement;
+                            if (box) { box.style.background = "rgba(255,255,255,0.07)"; box.style.animation = "none"; }
+                            const lbl = box?.parentElement?.querySelector("span");
+                            if (lbl) lbl.style.color = "rgba(201,168,76,0.5)";
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {/* Phone */}
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.21s" }}>
+                      <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>Telefone</span>
+                      <div className="border-run-box" style={{ padding: 1.5, borderRadius: 12, background: "rgba(255,255,255,0.07)", display: "flex", alignItems: "center" }}
+                        onFocus={() => {}}
+                      >
+                        <div style={{ flexShrink: 0 }}>
+                          <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
+                        </div>
                         <input
                           placeholder={selectedCountry.code === "IE" ? "085 123 4567" : t("booking.phone")}
                           value={clientPhone}
                           onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                          style={{
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 10,
-                            padding: "11px 12px",
-                            fontSize: 12,
-                            color: "#e0e0e0",
-                            flex: 1,
-                            outline: "none",
+                          style={{ flex: 1, background: "transparent", border: "none", outline: "none", padding: "13px 10px", fontSize: 13, color: "#e0e0e0", fontFamily: "Arial" }}
+                          onFocus={e => {
+                            const box = e.currentTarget.parentElement;
+                            if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
+                            const lbl = box?.parentElement?.querySelector("span");
+                            if (lbl) lbl.style.color = "#C9A84C";
                           }}
-                          onFocus={e => e.currentTarget.style.borderColor = "#C9A84C"}
-                          onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+                          onBlur={e => {
+                            const box = e.currentTarget.parentElement;
+                            if (box) { box.style.background = "rgba(255,255,255,0.07)"; box.style.animation = "none"; }
+                            const lbl = box?.parentElement?.querySelector("span");
+                            if (lbl) lbl.style.color = "rgba(201,168,76,0.5)";
+                          }}
                         />
                       </div>
                     </div>
+                  </div>
 
-                    {/* RIGHT COLUMN — Summary card */}
+                  {/* Summary card */}
+                  <div style={{
+                    opacity: 0, animation: "zoomInSum 0.4s cubic-bezier(.22,.68,0,1.15) forwards", animationDelay: "0.2s",
+                    background: "#1a1a1a", borderRadius: 14, padding: "13px 14px", marginBottom: 10,
+                  }}>
                     <div style={{
-                      opacity: 0,
-                      animation: "zoomInSum 0.4s cubic-bezier(.22,.68,0,1.15) forwards",
-                      animationDelay: "0.1s",
-                      background: "#1a1a1a",
-                      borderRadius: 12,
-                      padding: 12,
+                      fontSize: 8, color: "rgba(201,168,76,0.45)", letterSpacing: 2, textTransform: "uppercase" as const, fontFamily: "Arial",
+                      marginBottom: 9, paddingBottom: 7, borderBottom: "1px solid rgba(255,255,255,0.05)",
+                      display: "flex", justifyContent: "space-between", alignItems: "center",
                     }}>
-                      <div style={{
-                        fontSize: 8,
-                        color: "rgba(201,168,76,0.45)",
-                        letterSpacing: 1.5,
-                        textTransform: "uppercase" as const,
-                        fontFamily: "Arial",
-                        marginBottom: 9,
-                        paddingBottom: 7,
-                        borderBottom: "1px solid rgba(255,255,255,0.05)",
-                      }}>RESUMO</div>
+                      <span>Resumo</span>
+                      <span style={{ width: 14, height: 14, borderRadius: "50%", background: "rgba(74,124,47,0.2)", border: "1px solid rgba(74,124,47,0.4)", color: "#4A7C2F", fontSize: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>✓</span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
                       {[
                         { label: "Barbeiro", value: selectedBarberName || "" },
                         { label: "Serviço", value: selectedServiceObj?.name || "" },
-                        { label: "Data", value: selectedDate ? format(selectedDate, "dd/MM") : "" },
+                        { label: "Data", value: selectedDate ? format(selectedDate, "dd/MM/yyyy") : "" },
                         { label: "Hora", value: selectedTime },
-                      ].map((row, i, arr) => (
-                        <div key={row.label} style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 2,
-                          padding: "7px 0",
-                          borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                        }}>
-                          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.22)", fontFamily: "Arial" }}>{row.label}</span>
-                          <span style={{ fontSize: 11, color: "#e0e0e0", fontWeight: 500 }}>{row.value}</span>
+                      ].map((row, i) => (
+                        <div key={row.label} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)", fontFamily: "Arial", marginBottom: 2 }}>{row.label}</div>
+                          <div style={{ fontSize: 12, color: "#e0e0e0", fontWeight: 500 }}>{row.value}</div>
                         </div>
                       ))}
-                      {/* Total row */}
-                      <div style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
-                        padding: "7px 0",
-                      }}>
-                        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.22)", fontFamily: "Arial" }}>Total</span>
-                        <span style={{
-                          background: "linear-gradient(90deg, #C9A84C, #f5e49c, #C9A84C)",
-                          backgroundSize: "300% auto",
-                          WebkitBackgroundClip: "text",
-                          WebkitTextFillColor: "transparent",
-                          animation: "shimmerGold 2.2s linear infinite",
-                          fontWeight: "bold",
-                          fontFamily: "Georgia",
-                          fontSize: 14,
-                        }}>€{Number(selectedServiceObj?.price || 0).toFixed(0)}</span>
+                      {/* Total */}
+                      <div style={{ gridColumn: "span 2", borderTop: "1px solid rgba(255,255,255,0.04)", marginTop: 4, paddingTop: 8 }}>
+                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)", fontFamily: "Arial", marginBottom: 2 }}>Total</div>
+                        <div style={{
+                          background: "linear-gradient(90deg, #C9A84C, #f5e49c, #C9A84C)", backgroundSize: "300% auto",
+                          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                          animation: "shimmerGold 2s linear infinite", fontWeight: "bold", fontFamily: "Georgia", fontSize: 15,
+                        }}>€{Number(selectedServiceObj?.price || 0).toFixed(0)}</div>
                       </div>
                     </div>
-
-                    {/* Reminder checkboxes — full width */}
-                    <div style={{
-                      gridColumn: "span 2",
-                      display: "flex",
-                      gap: 14,
-                      padding: "4px 0",
-                      opacity: 0,
-                      animation: "fadeUpForm 0.38s ease forwards",
-                      animationDelay: "0.28s",
-                    }}>
-                      <label style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                        <span
-                          onClick={() => setReminderSMS(!reminderSMS)}
-                          style={{
-                            width: 16, height: 16, borderRadius: 5,
-                            background: reminderSMS ? "rgba(201,168,76,0.15)" : "transparent",
-                            border: "1px solid #C9A84C",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 9, color: "#C9A84C", cursor: "pointer",
-                          }}
-                        >{reminderSMS ? "✓" : ""}</span>
-                        📱 SMS
-                      </label>
-                      <label style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                        <span
-                          onClick={() => setReminderEmail(!reminderEmail)}
-                          style={{
-                            width: 16, height: 16, borderRadius: 5,
-                            background: reminderEmail ? "rgba(201,168,76,0.15)" : "transparent",
-                            border: "1px solid #C9A84C",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 9, color: "#C9A84C", cursor: "pointer",
-                          }}
-                        >{reminderEmail ? "✓" : ""}</span>
-                        📧 Email
-                      </label>
-                    </div>
-
-                    {/* Confirm button — full width */}
-                    <button
-                      onClick={handleSubmit}
-                      disabled={submitting || !clientName.trim() || !clientEmail.trim()}
-                      style={{
-                        gridColumn: "span 2",
-                        animation: "fadeUpForm 0.42s ease forwards",
-                        animationDelay: "0.34s",
-                        background: "#C9A84C",
-                        border: "none",
-                        borderRadius: 13,
-                        padding: 14,
-                        width: "100%",
-                        fontSize: 15,
-                        fontWeight: "bold",
-                        color: "#111",
-                        fontFamily: "Georgia",
-                        letterSpacing: 0.3,
-                        marginTop: 4,
-                        cursor: submitting || !clientName.trim() || !clientEmail.trim() ? "not-allowed" : "pointer",
-                        opacity: submitting || !clientName.trim() || !clientEmail.trim() ? 0.5 : 1,
-                      }}
-                    >
-                      {submitting ? "A confirmar..." : "Confirmar →"}
-                    </button>
                   </div>
 
-                  {/* Back button */}
-                  <div
-                    onClick={() => setStep(3)}
-                    style={{ textAlign: "center", padding: "10px 0 4px", fontSize: 12, color: "rgba(255,255,255,0.18)", cursor: "pointer" }}
+                  {/* Reminder checkboxes */}
+                  <div style={{ display: "flex", gap: 14, opacity: 0, animation: "fadeUpForm 0.38s ease forwards", animationDelay: "0.28s", marginBottom: 8 }}>
+                    <label style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                      <span onClick={() => setReminderSMS(!reminderSMS)} style={{
+                        width: 16, height: 16, borderRadius: 5,
+                        background: reminderSMS ? "rgba(201,168,76,0.15)" : "transparent",
+                        border: "1px solid #C9A84C", display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 9, color: "#C9A84C", cursor: "pointer",
+                      }}>{reminderSMS ? "✓" : ""}</span>
+                      📱 SMS
+                    </label>
+                    <label style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                      <span onClick={() => setReminderEmail(!reminderEmail)} style={{
+                        width: 16, height: 16, borderRadius: 5,
+                        background: reminderEmail ? "rgba(201,168,76,0.15)" : "transparent",
+                        border: "1px solid #C9A84C", display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 9, color: "#C9A84C", cursor: "pointer",
+                      }}>{reminderEmail ? "✓" : ""}</span>
+                      📧 Email
+                    </label>
+                  </div>
+
+                  {/* Confirm button */}
+                  <button
+                    onClick={handleSubmit}
+                    disabled={submitting || !clientName.trim() || !clientEmail.trim()}
+                    style={{
+                      opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.34s",
+                      background: "#C9A84C", border: "none", borderRadius: 14, padding: 15,
+                      width: "100%", fontSize: 15, fontWeight: "bold", color: "#111", fontFamily: "Georgia", letterSpacing: 0.3,
+                      cursor: submitting || !clientName.trim() || !clientEmail.trim() ? "not-allowed" : "pointer",
+                      ...(submitting || !clientName.trim() || !clientEmail.trim() ? { filter: "opacity(0.5)" } : {}),
+                    }}
                   >
+                    {submitting ? t("booking.confirming") : "Confirmar →"}
+                  </button>
+
+                  {/* Back button */}
+                  <div onClick={() => setStep(3)} style={{ textAlign: "center", padding: "8px 0 2px", fontSize: 12, color: "rgba(255,255,255,0.18)", cursor: "pointer", fontFamily: "Arial" }}>
                     ← Voltar
                   </div>
                 </div>
