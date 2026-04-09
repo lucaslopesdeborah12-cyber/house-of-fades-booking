@@ -360,25 +360,110 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 ))}
               </div>
 
-              {step === 1 && (
-                <div className="space-y-3">
-                  <p className="font-body text-sm text-muted-foreground flex items-center gap-2"><User size={16} /> {t("booking.chooseBarber")}</p>
-                  {barbers.map(b => (
-                    <button
-                      key={b.id}
-                      onClick={() => { setSelectedBarber(b.id); setStep(2); }}
-                      className={cn(
-                        "w-full p-4 rounded border text-left font-body transition-all",
-                        selectedBarber === b.id
-                          ? "border-accent bg-accent/10 text-foreground"
-                          : "border-border hover:border-accent/50 text-foreground"
-                      )}
-                    >
-                      {b.name}
-                    </button>
-                  ))}
+              {step === 1 && (() => {
+                const barberRoles: Record<string, string> = {
+                  'John': 'Senior Barber',
+                  'Mario': 'Fade Specialist',
+                  'CJ': 'Style Expert'
+                };
+                return (
+                <div>
+                  <p className="font-body text-sm text-muted-foreground flex items-center gap-2 mb-2"><User size={16} /> {t("booking.chooseBarber")}</p>
+                  <div style={{ padding: "4px 0 8px" }}>
+                    {barbers.map((b, index) => {
+                      const isSelected = selectedBarber === b.id;
+                      const delays = [0.06, 0.16, 0.26];
+                      return (
+                        <button
+                          key={b.id}
+                          onClick={() => { setSelectedBarber(b.id); setStep(2); }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            width: "100%",
+                            padding: "13px 16px",
+                            borderBottom: index < barbers.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                            borderLeft: "none",
+                            borderRight: "none",
+                            borderTop: "none",
+                            background: isSelected ? "rgba(201,168,76,0.05)" : "transparent",
+                            cursor: "pointer",
+                            position: "relative",
+                            transition: "all 0.22s ease",
+                            opacity: 0,
+                            animation: `fadeUp 0.44s ease forwards`,
+                            animationDelay: `${delays[index] || 0.06 + index * 0.1}s`,
+                          }}
+                          onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = "rgba(201,168,76,0.05)"; }}
+                          onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          {/* Avatar */}
+                          <div style={{
+                            flexShrink: 0,
+                            width: 46,
+                            height: 46,
+                            borderRadius: 12,
+                            background: isSelected ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)",
+                            border: isSelected ? "1px solid #C9A84C" : "1px solid rgba(255,255,255,0.07)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 18,
+                            color: isSelected ? "#C9A84C" : "rgba(201,168,76,0.4)",
+                            fontWeight: "bold",
+                            fontFamily: "Arial",
+                            transition: "all 0.25s",
+                          }}>
+                            {b.name.charAt(0)}
+                          </div>
+                          {/* Info */}
+                          <div style={{ flex: 1, textAlign: "left" }}>
+                            <span style={{
+                              fontSize: 15,
+                              fontWeight: "bold",
+                              letterSpacing: "0.2px",
+                              display: "block",
+                              ...(isSelected ? {
+                                background: "linear-gradient(90deg, #C9A84C, #f5e49c, #C9A84C)",
+                                backgroundSize: "300% auto",
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent",
+                                animation: "shimmerGold 1.8s linear infinite",
+                              } : {
+                                color: "#e0e0e0",
+                              }),
+                            }}>{b.name}</span>
+                            <span style={{
+                              fontSize: 11,
+                              color: "rgba(255,255,255,0.22)",
+                              fontFamily: "Arial",
+                              marginTop: 3,
+                              fontWeight: "normal",
+                              display: "block",
+                            }}>{barberRoles[b.name] || 'Barber'}</span>
+                          </div>
+                          {/* Dot */}
+                          <div style={{
+                            flexShrink: 0,
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            border: "1.5px solid rgba(201,168,76,0.2)",
+                            transition: "all 0.25s",
+                            ...(isSelected ? {
+                              background: "#C9A84C",
+                              borderColor: "#C9A84C",
+                              boxShadow: "0 0 6px rgba(201,168,76,0.4)",
+                            } : {}),
+                          }} />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
+                );
+              })()}
 
               {step === 2 && (
                 <div className="space-y-3">
