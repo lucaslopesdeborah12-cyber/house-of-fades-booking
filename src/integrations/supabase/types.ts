@@ -131,6 +131,21 @@ export type Database = {
         }
         Relationships: []
       }
+      owner_settings: {
+        Row: {
+          key: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           author: string
