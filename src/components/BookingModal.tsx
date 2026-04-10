@@ -926,7 +926,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     ← Voltar
                   </div>
                 </div>
-              )}
+                );
+              })()}
             </div>
           )}
         </DialogContent>
