@@ -341,16 +341,20 @@ html {
   color: rgba(255,255,255,0.3);
 }
 
-[role="dialog"] {
-  transform: none !important;
-  -webkit-transform: none !important;
-  zoom: 1 !important;
+[data-radix-dialog-content] {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  -webkit-transform: translate(-50%, -50%) !important;
+  width: 95vw !important;
+  max-width: 448px !important;
+  max-height: 85vh !important;
+  overflow-y: auto !important;
+  margin: 0 !important;
 }
 
-.dialog-content,
-[data-radix-dialog-content] {
-  transform: none !important;
-  -webkit-transform: none !important;
-  zoom: 1 !important;
-  -webkit-text-size-adjust: 100% !important;
+[data-radix-dialog-overlay] {
+  position: fixed !important;
+  inset: 0 !important;
 }
