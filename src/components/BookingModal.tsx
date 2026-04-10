@@ -683,9 +683,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               )}
 
               {step === 4 && (() => {
-                const showEmailField = loggedInEmail ? true : (contactPreference === 'email' || contactPreference === 'all');
-                const hideEmailField = !loggedInEmail && (contactPreference === 'sms' || contactPreference === 'call');
-                const emailDisabled = loggedInEmail ? true : contactPreference === null;
+                const showEmailField = (contactPreference === 'email' || contactPreference === 'all');
+                const hideEmailField = (contactPreference === 'sms' || contactPreference === 'call');
+                const emailDisabled = contactPreference === null;
                 const showPhoneField = contactPreference === 'sms' || contactPreference === 'call' || contactPreference === 'all';
                 const hidePhoneField = contactPreference === 'email';
                 const phoneDisabled = contactPreference === null;
@@ -697,7 +697,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 }
 
                 const isConfirmDisabled = submitting || !clientName.trim() || contactPreference === null ||
-                  ((contactPreference === 'email' || contactPreference === 'all') && !clientEmail.trim() && !loggedInEmail) ||
+                  ((contactPreference === 'email' || contactPreference === 'all') && !clientEmail.trim()) ||
                   ((contactPreference === 'sms' || contactPreference === 'call' || contactPreference === 'all') && !clientPhone.trim());
 
                 return (
