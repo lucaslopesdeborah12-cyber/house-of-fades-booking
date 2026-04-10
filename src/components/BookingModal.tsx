@@ -193,6 +193,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setSuccess(false);
     setContactPreference(null);
     setPrefShakeTriggered(false);
+    setLoggedInEmail(null);
   };
 
   const handleClose = (v: boolean) => {
