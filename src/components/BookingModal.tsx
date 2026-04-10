@@ -798,42 +798,38 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     {/* Email */}
                     {!hideEmailField && (
                       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.18s" }}>
-                        <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>
                           Email
-                          {loggedInEmail && (
-                            <span style={{ fontSize: 8, color: "#4A7C2F", background: "rgba(74,124,47,0.15)", padding: "1px 6px", borderRadius: 8, fontWeight: 500 }}>✓ Conta conectada</span>
-                          )}
                         </span>
                         <div className="border-run-box" style={{
                           padding: 1.5, borderRadius: 12,
-                          background: loggedInEmail ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.07)",
-                          ...(emailDisabled && !loggedInEmail ? { opacity: 0.4 } : {}),
+                          background: "rgba(255,255,255,0.07)",
+                          ...(emailDisabled ? { opacity: 0.4 } : {}),
                         }}>
                           <input
-                            placeholder={emailDisabled && !loggedInEmail ? "Escolha uma opção acima primeiro" : "Email *"}
+                            placeholder={emailDisabled ? "Escolha uma opção acima primeiro" : "Email *"}
                             type="email"
                             value={clientEmail}
-                            onChange={e => { if (!loggedInEmail) setClientEmail(e.target.value); }}
-                            readOnly={!!loggedInEmail}
-                            disabled={emailDisabled && !loggedInEmail}
+                            onChange={e => setClientEmail(e.target.value)}
+                            disabled={emailDisabled}
                             style={{
-                              background: loggedInEmail ? "transparent" : "#181818",
-                              border: loggedInEmail ? "1px solid rgba(74,124,47,0.3)" : "none",
+                              background: "#181818",
+                              border: "none",
                               borderRadius: 11, padding: "13px 14px", fontSize: "16px",
-                              color: loggedInEmail ? "rgba(255,255,255,0.5)" : "#e0e0e0",
+                              color: "#e0e0e0",
                               outline: "none", width: "100%", fontFamily: "Arial",
-                              cursor: loggedInEmail || (emailDisabled && !loggedInEmail) ? "not-allowed" : "text",
+                              cursor: emailDisabled ? "not-allowed" : "text",
                               WebkitTextSizeAdjust: "none", touchAction: "manipulation",
                             }}
                             onFocus={e => {
-                              if (loggedInEmail || emailDisabled) return;
+                              if (emailDisabled) return;
                               const box = e.currentTarget.parentElement;
                               if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
                               const lbl = box?.parentElement?.querySelector("span");
                               if (lbl) lbl.style.color = "#C9A84C";
                             }}
                             onBlur={e => {
-                              if (loggedInEmail || emailDisabled) return;
+                              if (emailDisabled) return;
                               const box = e.currentTarget.parentElement;
                               if (box) { box.style.background = "rgba(255,255,255,0.07)"; box.style.animation = "none"; }
                               const lbl = box?.parentElement?.querySelector("span");
