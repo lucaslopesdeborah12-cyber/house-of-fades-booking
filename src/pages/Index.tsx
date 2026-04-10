@@ -32,17 +32,17 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <CursorGlow />
-      <Navbar onBookNow={() => openBooking()} />
-      <HeroSection onBookNow={() => openBooking()} />
+      <Navbar onBookNow={() => openAuth()} />
+      <HeroSection onBookNow={() => openAuth()} />
       <SectionDivider />
       <ScrollReveal>
         <GoldLine />
-        <ServicesSection onBookNow={() => openBooking()} />
+        <ServicesSection onBookNow={() => openAuth()} />
       </ScrollReveal>
       <SectionDivider />
       <ScrollReveal>
         <GoldLine />
-        <TeamSection onBookWithBarber={(name) => openBooking(name)} />
+        <TeamSection onBookWithBarber={(name) => openAuth(name)} />
       </ScrollReveal>
       <SectionDivider />
       <ScrollReveal>
@@ -61,6 +61,7 @@ const Index = () => {
       </ScrollReveal>
       <SectionDivider />
       <FooterSection />
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} onContinue={handleAuthContinue} />
       <BookingModal open={bookingOpen} onOpenChange={setBookingOpen} preselectedBarber={preselectedBarber} />
     </div>
   );
