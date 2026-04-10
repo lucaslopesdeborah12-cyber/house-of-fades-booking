@@ -12,30 +12,37 @@ import CursorGlow from "@/components/CursorGlow";
 import ScrollReveal from "@/components/ScrollReveal";
 import GoldLine from "@/components/GoldLine";
 import BookingModal from "@/components/BookingModal";
+import AuthModal from "@/components/AuthModal";
 
 const Index = () => {
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [preselectedBarber, setPreselectedBarber] = useState<string | undefined>();
 
-  const openBooking = (barberName?: string) => {
+  const openAuth = (barberName?: string) => {
     setPreselectedBarber(barberName);
+    setAuthOpen(true);
+  };
+
+  const handleAuthContinue = () => {
+    setAuthOpen(false);
     setBookingOpen(true);
   };
 
   return (
     <div className="min-h-screen bg-background">
       <CursorGlow />
-      <Navbar onBookNow={() => openBooking()} />
-      <HeroSection onBookNow={() => openBooking()} />
+      <Navbar onBookNow={() => openAuth()} />
+      <HeroSection onBookNow={() => openAuth()} />
       <SectionDivider />
       <ScrollReveal>
         <GoldLine />
-        <ServicesSection onBookNow={() => openBooking()} />
+        <ServicesSection onBookNow={() => openAuth()} />
       </ScrollReveal>
       <SectionDivider />
       <ScrollReveal>
         <GoldLine />
-        <TeamSection onBookWithBarber={(name) => openBooking(name)} />
+        <TeamSection onBookWithBarber={(name) => openAuth(name)} />
       </ScrollReveal>
       <SectionDivider />
       <ScrollReveal>
@@ -54,6 +61,7 @@ const Index = () => {
       </ScrollReveal>
       <SectionDivider />
       <FooterSection />
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} onContinue={handleAuthContinue} />
       <BookingModal open={bookingOpen} onOpenChange={setBookingOpen} preselectedBarber={preselectedBarber} />
     </div>
   );
