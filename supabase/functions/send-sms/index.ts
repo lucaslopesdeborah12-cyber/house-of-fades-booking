@@ -6,22 +6,22 @@ const corsHeaders = {
 };
 
 const TWILIO_FROM = "+16624304415";
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 
 async function sendSMS(to: string, body: string): Promise<{ ok: boolean; data: any }> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
 
-  const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
-  if (!TWILIO_API_KEY) throw new Error("TWILIO_API_KEY is not configured");
+  if (!accountSid) throw new Error("TWILIO_ACCOUNT_SID is not configured");
+  if (!authToken) throw new Error("TWILIO_AUTH_TOKEN is not configured");
 
   console.log("[send-sms] Sending SMS to:", to);
 
-  const response = await fetch(`${GATEWAY_URL}/Messages.json`, {
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+
+  const response = await fetch(url, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-      "X-Connection-Api-Key": TWILIO_API_KEY,
+      "Authorization": "Basic " + btoa(`${accountSid}:${authToken}`),
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: new URLSearchParams({ To: to, From: TWILIO_FROM, Body: body }),
@@ -29,7 +29,7 @@ async function sendSMS(to: string, body: string): Promise<{ ok: boolean; data: a
 
   const data = await response.json();
   if (!response.ok) {
-    console.error("[send-sms] Twilio gateway error:", JSON.stringify(data));
+    console.error("[send-sms] Twilio error:", JSON.stringify(data));
   } else {
     console.log("[send-sms] SMS sent successfully, SID:", data.sid);
   }
@@ -116,7 +116,6 @@ Deno.serve(async (req: Request) => {
         const barberName = (apt as any).barbers?.name || "seu barbeiro";
         const serviceName = (apt as any).services?.name || "seu serviço";
 
-        // Send SMS if preference allows
         if (apt.client_phone && (pref === "sms" || pref === "both")) {
           const isDay = hours === 24;
           const body = isDay
