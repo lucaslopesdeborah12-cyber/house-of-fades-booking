@@ -195,7 +195,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setSuccess(false);
     setContactPreference(null);
     setPrefShakeTriggered(false);
-    setLoggedInEmail(null);
+    
   };
 
   const handleClose = (v: boolean) => {
@@ -207,7 +207,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const handleSubmit = async () => {
     if (!clientName.trim()) { toast.error(t("booking.enterName")); return; }
     if (contactPreference === null) { toast.error("Escolha como quer receber a confirmação"); return; }
-    if ((contactPreference === 'email' || contactPreference === 'all') && !clientEmail.trim() && !loggedInEmail) { toast.error(t("booking.enterEmail")); return; }
+    if ((contactPreference === 'email' || contactPreference === 'all') && !clientEmail.trim()) { toast.error(t("booking.enterEmail")); return; }
     if ((contactPreference === 'sms' || contactPreference === 'call' || contactPreference === 'all') && !clientPhone.trim()) { toast.error("Introduza o seu telefone"); return; }
     setSubmitting(true);
     const { data: bookResult, error } = await supabase.functions.invoke("book-appointment", {
@@ -218,7 +218,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         time_slot: selectedTime,
         client_name: clientName.trim(),
         client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : null,
-        client_email: clientEmail.trim() || loggedInEmail || null,
+        client_email: clientEmail.trim() || null,
         contact_preference: contactPreference || 'sms',
       },
     });
@@ -242,7 +242,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
           },
         }).catch(console.error);
       }
-      const emailToSend = clientEmail.trim() || loggedInEmail;
+      const emailToSend = clientEmail.trim();
       if (emailToSend) {
         emailjs.send(
           "service_jq26o2f",
