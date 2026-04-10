@@ -235,13 +235,14 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
           },
         }).catch(console.error);
       }
-      if (clientEmail.trim()) {
+      const emailToSend = clientEmail.trim() || loggedInEmail;
+      if (emailToSend) {
         emailjs.send(
           "service_jq26o2f",
           "template_7i3p8r9",
           {
             to_name: clientName.trim(),
-            to_email: clientEmail.trim(),
+            to_email: emailToSend,
             date: format(selectedDate!, "dd/MM/yyyy"),
             time: selectedTime,
             service: selectedServiceObj?.name || "",
