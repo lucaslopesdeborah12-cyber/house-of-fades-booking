@@ -187,7 +187,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setClientPhone("");
     setClientEmail("");
     setSuccess(false);
-    setContactPreference('sms');
+    setContactPreference(null);
+    setPrefShakeTriggered(false);
   };
 
   const handleClose = (v: boolean) => {
@@ -201,7 +202,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
   const handleSubmit = async () => {
     if (!clientName.trim()) { toast.error(t("booking.enterName")); return; }
-    if (!clientEmail.trim()) { toast.error(t("booking.enterEmail")); return; }
+    if (contactPreference === null) { toast.error("Escolha como quer receber a confirmação"); return; }
+    if ((contactPreference === 'email' || contactPreference === 'all') && !clientEmail.trim() && !loggedInEmail) { toast.error(t("booking.enterEmail")); return; }
+    if ((contactPreference === 'sms' || contactPreference === 'call' || contactPreference === 'all') && !clientPhone.trim()) { toast.error("Introduza o seu telefone"); return; }
     setSubmitting(true);
     const { error } = await supabase.from("appointments").insert({
       barber_id: selectedBarber,
