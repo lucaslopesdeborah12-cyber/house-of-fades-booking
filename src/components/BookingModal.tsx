@@ -733,8 +733,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                               setContactPreference(pill.value);
                               if (!clientName.trim()) {
                                 const nameInput = document.querySelector<HTMLInputElement>('input[placeholder="Nome *"]');
-                                nameInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                setTimeout(() => nameInput?.focus(), 300);
+                                // Focus removed to prevent iOS Safari zoom
                               }
                             }}
                             style={{
