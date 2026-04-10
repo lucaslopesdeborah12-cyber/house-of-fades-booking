@@ -73,8 +73,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     return null;
   };
 
-  // Fetch logged-in user email on mount
+  // Fetch logged-in user email when modal opens
   useEffect(() => {
+    if (!open) return;
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user?.email) {
         setLoggedInEmail(session.user.email);
@@ -84,7 +85,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         setClientEmail('');
       }
     });
-  }, []);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -192,6 +193,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setSuccess(false);
     setContactPreference(null);
     setPrefShakeTriggered(false);
+    setLoggedInEmail(null);
   };
 
   const handleClose = (v: boolean) => {
