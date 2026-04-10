@@ -87,6 +87,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_barber_id_fkey"
+            columns: ["barber_id"]
+            isOneToOne: false
+            referencedRelation: "public_barbers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -128,6 +135,27 @@ export type Database = {
           photo_url?: string | null
           role?: Database["public"]["Enums"]["barber_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      booking_attempts: {
+        Row: {
+          client_email: string | null
+          created_at: string
+          id: string
+          ip_address: string
+        }
+        Insert: {
+          client_email?: string | null
+          created_at?: string
+          id?: string
+          ip_address: string
+        }
+        Update: {
+          client_email?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string
         }
         Relationships: []
       }
@@ -253,7 +281,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_barbers: {
+        Row: {
+          bio: string | null
+          id: string | null
+          name: string | null
+          photo_url: string | null
+        }
+        Insert: {
+          bio?: string | null
+          id?: string | null
+          name?: string | null
+          photo_url?: string | null
+        }
+        Update: {
+          bio?: string | null
+          id?: string | null
+          name?: string | null
+          photo_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_barber_id: { Args: { _user_id: string }; Returns: string }
