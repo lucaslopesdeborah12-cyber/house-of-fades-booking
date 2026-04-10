@@ -89,21 +89,36 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
   useEffect(() => {
     if (!open) return;
-    supabase.from("barbers").select("id, name").then(({ data }) => {
-      if (data) {
-        setBarbers(data);
-        if (preselectedBarber) {
-          const match = data.find(b => b.name.toLowerCase() === preselectedBarber.toLowerCase());
-          if (match) {
-            setSelectedBarber(match.id);
-            setStep(2);
-          }
+    
+    supabase
+      .from("barbers")
+      .select("id, name")
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Barbers fetch error:", error);
         }
-      }
-    });
-    supabase.from("services").select("id, name, price, duration_minutes").order("created_at").then(({ data }) => {
-      if (data) setServices(data);
-    });
+        if (data && data.length > 0) {
+          setBarbers(data);
+          if (preselectedBarber) {
+            const match = data.find(b => b.name.toLowerCase() === preselectedBarber.toLowerCase());
+            if (match) {
+              setSelectedBarber(match.id);
+              setStep(2);
+            }
+          }
+        } else {
+          console.error("No barbers returned. data:", data, "error:", error);
+        }
+      });
+
+    supabase
+      .from("services")
+      .select("id, name, price, duration_minutes")
+      .order("created_at")
+      .then(({ data, error }) => {
+        if (error) console.error("Services fetch error:", error);
+        if (data) setServices(data);
+      });
   }, [open, preselectedBarber]);
 
   const fetchBookedSlots = useCallback(async () => {
