@@ -54,7 +54,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [waitingListOpen, setWaitingListOpen] = useState(false);
-  const [contactPreference, setContactPreference] = useState<'sms' | 'email' | 'call' | 'all'>('sms');
+  const [contactPreference, setContactPreference] = useState<'sms' | 'email' | 'call' | 'all' | null>(null);
+  const [loggedInEmail, setLoggedInEmail] = useState<string | null>(null);
+  const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
   const { t } = useLanguage();
 
   const allSlotsBooked = selectedDate && bookedSlots.length >= TOTAL_SLOTS;
@@ -70,6 +72,16 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     if (occupancyPercent > 70) return "👀 High demand for this day!";
     return null;
   };
+
+  // Fetch logged-in user email on mount
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.email) {
+        setLoggedInEmail(data.user.email);
+        setClientEmail(data.user.email);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -175,7 +187,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setClientPhone("");
     setClientEmail("");
     setSuccess(false);
-    setContactPreference('sms');
+    setContactPreference(null);
+    setPrefShakeTriggered(false);
   };
 
   const handleClose = (v: boolean) => {
@@ -183,13 +196,12 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     onOpenChange(v);
   };
 
-  const getContactPreference = () => {
-    return contactPreference;
-  };
 
   const handleSubmit = async () => {
     if (!clientName.trim()) { toast.error(t("booking.enterName")); return; }
-    if (!clientEmail.trim()) { toast.error(t("booking.enterEmail")); return; }
+    if (contactPreference === null) { toast.error("Escolha como quer receber a confirmação"); return; }
+    if ((contactPreference === 'email' || contactPreference === 'all') && !clientEmail.trim() && !loggedInEmail) { toast.error(t("booking.enterEmail")); return; }
+    if ((contactPreference === 'sms' || contactPreference === 'call' || contactPreference === 'all') && !clientPhone.trim()) { toast.error("Introduza o seu telefone"); return; }
     setSubmitting(true);
     const { error } = await supabase.from("appointments").insert({
       barber_id: selectedBarber,
@@ -198,8 +210,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       time_slot: selectedTime,
       client_name: clientName.trim(),
       client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : null,
-      client_email: clientEmail.trim() || null,
-      contact_preference: getContactPreference(),
+      client_email: clientEmail.trim() || loggedInEmail || null,
+      contact_preference: contactPreference || 'sms',
     });
     setSubmitting(false);
     if (error) {
@@ -220,13 +232,14 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
           },
         }).catch(console.error);
       }
-      if (clientEmail.trim()) {
+      const emailToSend = clientEmail.trim() || loggedInEmail;
+      if (emailToSend) {
         emailjs.send(
           "service_jq26o2f",
           "template_7i3p8r9",
           {
             to_name: clientName.trim(),
-            to_email: clientEmail.trim(),
+            to_email: emailToSend,
             date: format(selectedDate!, "dd/MM/yyyy"),
             time: selectedTime,
             service: selectedServiceObj?.name || "",
@@ -659,7 +672,25 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 </div>
               )}
 
-              {step === 4 && (
+              {step === 4 && (() => {
+                const showEmailField = loggedInEmail ? true : (contactPreference === 'email' || contactPreference === 'all');
+                const hideEmailField = !loggedInEmail && (contactPreference === 'sms' || contactPreference === 'call');
+                const emailDisabled = loggedInEmail ? true : contactPreference === null;
+                const showPhoneField = contactPreference === 'sms' || contactPreference === 'call' || contactPreference === 'all';
+                const hidePhoneField = contactPreference === 'email';
+                const phoneDisabled = contactPreference === null;
+                const needsWarning = contactPreference === null && clientName.length > 0;
+
+                // Trigger shake once
+                if (needsWarning && !prefShakeTriggered) {
+                  setPrefShakeTriggered(true);
+                }
+
+                const isConfirmDisabled = submitting || !clientName.trim() || contactPreference === null ||
+                  ((contactPreference === 'email' || contactPreference === 'all') && !clientEmail.trim() && !loggedInEmail) ||
+                  ((contactPreference === 'sms' || contactPreference === 'call' || contactPreference === 'all') && !clientPhone.trim());
+
+                return (
                 <div style={{ padding: "0 0 14px" }}>
                   {/* Section label */}
                   <div style={{
@@ -670,8 +701,66 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     Seus dados
                   </div>
 
+                  {/* Contact preference pills */}
+                  <div style={{ opacity: 0, animation: "fadeUpForm 0.38s ease forwards", animationDelay: "0.05s", marginBottom: 10 }}>
+                    {needsWarning && (
+                      <div style={{ fontSize: 11, color: "#ff4444", fontFamily: "Arial", marginBottom: 8, animation: prefShakeTriggered ? "prefShake 0.4s ease" : "none" }}>
+                        ⚠️ Escolha como quer receber a confirmação
+                      </div>
+                    )}
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.32)", fontFamily: "Arial", marginBottom: 8, lineHeight: 1.4 }}>
+                      Qual a sua <span style={{ color: "#C9A84C" }}>melhor forma</span> de receber confirmação?
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "nowrap" }}>
+                      {([
+                        { value: 'sms' as const, label: '📱 SMS' },
+                        { value: 'email' as const, label: '✉️ Email' },
+                        { value: 'call' as const, label: '📞 Ligação' },
+                        { value: 'all' as const, label: '🔔 Todos' },
+                      ]).map(pill => {
+                        const isActive = contactPreference === pill.value;
+                        const isRedState = needsWarning;
+                        return (
+                          <button
+                            key={pill.value}
+                            type="button"
+                            onClick={() => {
+                              setContactPreference(pill.value);
+                              if (!clientName.trim()) {
+                                const nameInput = document.querySelector<HTMLInputElement>('input[placeholder="Nome *"]');
+                                nameInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                setTimeout(() => nameInput?.focus(), 300);
+                              }
+                            }}
+                            style={{
+                              flex: 1,
+                              background: isActive ? "rgba(201,168,76,0.12)" : isRedState ? "rgba(220,50,50,0.05)" : "rgba(255,255,255,0.04)",
+                              border: `1.5px solid ${isActive ? "#C9A84C" : isRedState ? "rgba(220,50,50,0.6)" : "rgba(255,255,255,0.09)"}`,
+                              borderRadius: 99,
+                              padding: "9px 4px",
+                              fontSize: 10,
+                              color: isActive ? "#C9A84C" : isRedState ? "rgba(220,50,50,0.8)" : "rgba(255,255,255,0.35)",
+                              fontFamily: "Arial",
+                              fontWeight: isActive ? 500 : 400,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 4,
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                              transition: "all 0.22s",
+                              animation: isRedState && !isActive ? "prefPulse 1.5s ease infinite" : "none",
+                            }}
+                          >
+                            {pill.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* Nome field */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 8, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.05s" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 8, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.12s" }}>
                     <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>Nome</span>
                     <div className="border-run-box" style={{ padding: 1.5, borderRadius: 12, background: "rgba(255,255,255,0.07)" }}>
                       <input
@@ -698,59 +787,84 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   {/* Email + Phone row */}
                   <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                     {/* Email */}
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.13s" }}>
-                      <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>Email</span>
-                      <div className="border-run-box" style={{ padding: 1.5, borderRadius: 12, background: "rgba(255,255,255,0.07)" }}>
-                        <input
-                          placeholder="Email *"
-                          type="email"
-                          value={clientEmail}
-                          onChange={e => setClientEmail(e.target.value)}
-                          style={{ background: "#181818", border: "none", borderRadius: 11, padding: "13px 14px", fontSize: 13, color: "#e0e0e0", outline: "none", width: "100%", fontFamily: "Arial" }}
-                          onFocus={e => {
-                            const box = e.currentTarget.parentElement;
-                            if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
-                            const lbl = box?.parentElement?.querySelector("span");
-                            if (lbl) lbl.style.color = "#C9A84C";
-                          }}
-                          onBlur={e => {
-                            const box = e.currentTarget.parentElement;
-                            if (box) { box.style.background = "rgba(255,255,255,0.07)"; box.style.animation = "none"; }
-                            const lbl = box?.parentElement?.querySelector("span");
-                            if (lbl) lbl.style.color = "rgba(201,168,76,0.5)";
-                          }}
-                        />
-                      </div>
-                    </div>
-                    {/* Phone */}
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.21s" }}>
-                      <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>Telefone</span>
-                      <div className="border-run-box" style={{ padding: 1.5, borderRadius: 12, background: "rgba(255,255,255,0.07)", display: "flex", alignItems: "center" }}
-                        onFocus={() => {}}
-                      >
-                        <div style={{ flexShrink: 0 }}>
-                          <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
+                    {!hideEmailField && (
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.18s" }}>
+                        <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6 }}>
+                          Email
+                          {loggedInEmail && (
+                            <span style={{ fontSize: 8, color: "#4A7C2F", background: "rgba(74,124,47,0.15)", padding: "1px 6px", borderRadius: 8, fontWeight: 500 }}>✓ Conta conectada</span>
+                          )}
+                        </span>
+                        <div className="border-run-box" style={{
+                          padding: 1.5, borderRadius: 12,
+                          background: loggedInEmail ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.07)",
+                          ...(emailDisabled && !loggedInEmail ? { opacity: 0.4 } : {}),
+                        }}>
+                          <input
+                            placeholder={emailDisabled && !loggedInEmail ? "Escolha uma opção acima primeiro" : "Email *"}
+                            type="email"
+                            value={clientEmail}
+                            onChange={e => { if (!loggedInEmail) setClientEmail(e.target.value); }}
+                            readOnly={!!loggedInEmail}
+                            disabled={emailDisabled && !loggedInEmail}
+                            style={{
+                              background: loggedInEmail ? "transparent" : "#181818",
+                              border: loggedInEmail ? "1px solid rgba(74,124,47,0.3)" : "none",
+                              borderRadius: 11, padding: "13px 14px", fontSize: 13,
+                              color: loggedInEmail ? "rgba(255,255,255,0.5)" : "#e0e0e0",
+                              outline: "none", width: "100%", fontFamily: "Arial",
+                              cursor: loggedInEmail || (emailDisabled && !loggedInEmail) ? "not-allowed" : "text",
+                            }}
+                            onFocus={e => {
+                              if (loggedInEmail || emailDisabled) return;
+                              const box = e.currentTarget.parentElement;
+                              if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
+                              const lbl = box?.parentElement?.querySelector("span");
+                              if (lbl) lbl.style.color = "#C9A84C";
+                            }}
+                            onBlur={e => {
+                              if (loggedInEmail || emailDisabled) return;
+                              const box = e.currentTarget.parentElement;
+                              if (box) { box.style.background = "rgba(255,255,255,0.07)"; box.style.animation = "none"; }
+                              const lbl = box?.parentElement?.querySelector("span");
+                              if (lbl) lbl.style.color = "rgba(201,168,76,0.5)";
+                            }}
+                          />
                         </div>
-                        <input
-                          placeholder={selectedCountry.code === "IE" ? "085 123 4567" : t("booking.phone")}
-                          value={clientPhone}
-                          onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                          style={{ flex: 1, background: "transparent", border: "none", outline: "none", padding: "13px 10px", fontSize: 13, color: "#e0e0e0", fontFamily: "Arial" }}
-                          onFocus={e => {
-                            const box = e.currentTarget.parentElement;
-                            if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
-                            const lbl = box?.parentElement?.querySelector("span");
-                            if (lbl) lbl.style.color = "#C9A84C";
-                          }}
-                          onBlur={e => {
-                            const box = e.currentTarget.parentElement;
-                            if (box) { box.style.background = "rgba(255,255,255,0.07)"; box.style.animation = "none"; }
-                            const lbl = box?.parentElement?.querySelector("span");
-                            if (lbl) lbl.style.color = "rgba(201,168,76,0.5)";
-                          }}
-                        />
                       </div>
-                    </div>
+                    )}
+                    {/* Phone */}
+                    {!hidePhoneField && (
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.21s", ...(phoneDisabled ? { opacity: 0.4 } : {}) }}>
+                        <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>Telefone</span>
+                        <div className="border-run-box" style={{ padding: 1.5, borderRadius: 12, background: "rgba(255,255,255,0.07)", display: "flex", alignItems: "center" }}>
+                          <div style={{ flexShrink: 0 }}>
+                            <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
+                          </div>
+                          <input
+                            placeholder={selectedCountry.code === "IE" ? "085 123 4567" : t("booking.phone")}
+                            value={clientPhone}
+                            onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                            disabled={phoneDisabled}
+                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", padding: "13px 10px", fontSize: 13, color: "#e0e0e0", fontFamily: "Arial", cursor: phoneDisabled ? "not-allowed" : "text" }}
+                            onFocus={e => {
+                              if (phoneDisabled) return;
+                              const box = e.currentTarget.parentElement;
+                              if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
+                              const lbl = box?.parentElement?.querySelector("span");
+                              if (lbl) lbl.style.color = "#C9A84C";
+                            }}
+                            onBlur={e => {
+                              if (phoneDisabled) return;
+                              const box = e.currentTarget.parentElement;
+                              if (box) { box.style.background = "rgba(255,255,255,0.07)"; box.style.animation = "none"; }
+                              const lbl = box?.parentElement?.querySelector("span");
+                              if (lbl) lbl.style.color = "rgba(201,168,76,0.5)";
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Summary card */}
@@ -772,13 +886,12 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                         { label: "Serviço", value: selectedServiceObj?.name || "" },
                         { label: "Data", value: selectedDate ? format(selectedDate, "dd/MM/yyyy") : "" },
                         { label: "Hora", value: selectedTime },
-                      ].map((row, i) => (
+                      ].map((row) => (
                         <div key={row.label} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                           <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)", fontFamily: "Arial", marginBottom: 2 }}>{row.label}</div>
                           <div style={{ fontSize: 12, color: "#e0e0e0", fontWeight: 500 }}>{row.value}</div>
                         </div>
                       ))}
-                      {/* Total */}
                       <div style={{ gridColumn: "span 2", borderTop: "1px solid rgba(255,255,255,0.04)", marginTop: 4, paddingTop: 8 }}>
                         <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)", fontFamily: "Arial", marginBottom: 2 }}>Total</div>
                         <div style={{
@@ -790,60 +903,16 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     </div>
                   </div>
 
-                  {/* Contact preference pills */}
-                  <div style={{ opacity: 0, animation: "fadeUpForm 0.38s ease forwards", animationDelay: "0.28s", marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.32)", fontFamily: "Arial", marginBottom: 8, lineHeight: 1.4 }}>
-                      Qual a sua <span style={{ color: "#C9A84C" }}>melhor forma</span> de receber confirmação?
-                    </div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "nowrap" }}>
-                      {([
-                        { value: 'sms' as const, label: '📱 SMS' },
-                        { value: 'email' as const, label: '✉️ Email' },
-                        { value: 'call' as const, label: '📞 Ligação' },
-                        { value: 'all' as const, label: '🔔 Todos' },
-                      ]).map(pill => {
-                        const isActive = contactPreference === pill.value;
-                        return (
-                          <button
-                            key={pill.value}
-                            type="button"
-                            onClick={() => setContactPreference(pill.value)}
-                            style={{
-                              flex: 1,
-                              background: isActive ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)",
-                              border: `1.5px solid ${isActive ? "#C9A84C" : "rgba(255,255,255,0.09)"}`,
-                              borderRadius: 99,
-                              padding: "9px 4px",
-                              fontSize: 10,
-                              color: isActive ? "#C9A84C" : "rgba(255,255,255,0.35)",
-                              fontFamily: "Arial",
-                              fontWeight: isActive ? 500 : 400,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: 4,
-                              cursor: "pointer",
-                              whiteSpace: "nowrap",
-                              transition: "all 0.22s",
-                            }}
-                          >
-                            {pill.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
                   {/* Confirm button */}
                   <button
                     onClick={handleSubmit}
-                    disabled={submitting || !clientName.trim() || !clientEmail.trim()}
+                    disabled={isConfirmDisabled}
                     style={{
                       opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.34s",
                       background: "#C9A84C", border: "none", borderRadius: 14, padding: 15,
                       width: "100%", fontSize: 15, fontWeight: "bold", color: "#111", fontFamily: "Georgia", letterSpacing: 0.3,
-                      cursor: submitting || !clientName.trim() || !clientEmail.trim() ? "not-allowed" : "pointer",
-                      ...(submitting || !clientName.trim() || !clientEmail.trim() ? { filter: "opacity(0.5)" } : {}),
+                      cursor: isConfirmDisabled ? "not-allowed" : "pointer",
+                      ...(isConfirmDisabled ? { filter: "opacity(0.5)" } : {}),
                     }}
                   >
                     {submitting ? t("booking.confirming") : "Confirmar →"}
@@ -854,7 +923,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     ← Voltar
                   </div>
                 </div>
-              )}
+                );
+              })()}
             </div>
           )}
         </DialogContent>
