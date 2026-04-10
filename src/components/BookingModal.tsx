@@ -89,7 +89,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
   useEffect(() => {
     if (!open) return;
-    supabase.from("barbers").select("id, name").then(({ data }) => {
+    supabase.from("public_barbers").select("id, name").then(({ data }) => {
       if (data) {
         setBarbers(data);
         if (preselectedBarber) {
