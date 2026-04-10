@@ -208,20 +208,23 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     if ((contactPreference === 'email' || contactPreference === 'all') && !clientEmail.trim() && !loggedInEmail) { toast.error(t("booking.enterEmail")); return; }
     if ((contactPreference === 'sms' || contactPreference === 'call' || contactPreference === 'all') && !clientPhone.trim()) { toast.error("Introduza o seu telefone"); return; }
     setSubmitting(true);
-    const { error } = await supabase.from("appointments").insert({
-      barber_id: selectedBarber,
-      service_id: selectedService,
-      appointment_date: format(selectedDate!, "yyyy-MM-dd"),
-      time_slot: selectedTime,
-      client_name: clientName.trim(),
-      client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : null,
-      client_email: clientEmail.trim() || loggedInEmail || null,
-      contact_preference: contactPreference || 'sms',
+    const { data: bookResult, error } = await supabase.functions.invoke("book-appointment", {
+      body: {
+        barber_id: selectedBarber,
+        service_id: selectedService,
+        appointment_date: format(selectedDate!, "yyyy-MM-dd"),
+        time_slot: selectedTime,
+        client_name: clientName.trim(),
+        client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : null,
+        client_email: clientEmail.trim() || loggedInEmail || null,
+        contact_preference: contactPreference || 'sms',
+      },
     });
     setSubmitting(false);
-    if (error) {
-      toast.error(t("booking.errorBooking"));
-      console.error(error);
+    if (error || (bookResult && bookResult.error)) {
+      const errMsg = bookResult?.error || t("booking.errorBooking");
+      toast.error(errMsg);
+      console.error(error || bookResult?.error);
     } else {
       setSuccess(true);
       if (clientPhone.trim()) {
