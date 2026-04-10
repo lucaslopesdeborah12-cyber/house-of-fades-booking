@@ -317,7 +317,14 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="bg-card border-accent/20 text-foreground max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          className="bg-card border-accent/20 text-foreground max-w-md mx-auto max-h-[90vh] overflow-y-auto"
+          style={{
+            transform: 'none',
+            WebkitTransform: 'none',
+            zoom: 1,
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl gold-title-gradient">
               {success ? "🎉 Booking Confirmed!" : t("booking.title")}
