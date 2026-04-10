@@ -260,7 +260,7 @@ const CountryCodeSelector = ({ selected, onSelect }: Props) => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 text-sm bg-background border-border text-foreground"
-            autoFocus
+            
           />
         </div>
         <div className="overflow-y-auto max-h-56">
