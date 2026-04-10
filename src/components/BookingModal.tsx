@@ -213,8 +213,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       time_slot: selectedTime,
       client_name: clientName.trim(),
       client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : null,
-      client_email: clientEmail.trim() || null,
-      contact_preference: getContactPreference(),
+      client_email: clientEmail.trim() || loggedInEmail || null,
+      contact_preference: contactPreference || 'sms',
     });
     setSubmitting(false);
     if (error) {
