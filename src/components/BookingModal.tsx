@@ -772,7 +772,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                         placeholder="Nome *"
                         value={clientName}
                         onChange={e => setClientName(e.target.value)}
-                        style={{ background: "#181818", border: "none", borderRadius: 11, padding: "13px 14px", fontSize: 16, color: "#e0e0e0", outline: "none", width: "100%", fontFamily: "Arial" }}
+                        style={{ background: "#181818", border: "none", borderRadius: 11, padding: "13px 14px", fontSize: "16px", color: "#e0e0e0", outline: "none", width: "100%", fontFamily: "Arial", WebkitTextSizeAdjust: "none", touchAction: "manipulation" }}
                         onFocus={e => {
                           const box = e.currentTarget.parentElement;
                           if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
@@ -815,10 +815,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             style={{
                               background: loggedInEmail ? "transparent" : "#181818",
                               border: loggedInEmail ? "1px solid rgba(74,124,47,0.3)" : "none",
-                              borderRadius: 11, padding: "13px 14px", fontSize: 16,
+                              borderRadius: 11, padding: "13px 14px", fontSize: "16px",
                               color: loggedInEmail ? "rgba(255,255,255,0.5)" : "#e0e0e0",
                               outline: "none", width: "100%", fontFamily: "Arial",
                               cursor: loggedInEmail || (emailDisabled && !loggedInEmail) ? "not-allowed" : "text",
+                              WebkitTextSizeAdjust: "none", touchAction: "manipulation",
                             }}
                             onFocus={e => {
                               if (loggedInEmail || emailDisabled) return;
@@ -851,7 +852,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             value={clientPhone}
                             onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
                             disabled={phoneDisabled}
-                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", padding: "13px 10px", fontSize: 16, color: "#e0e0e0", fontFamily: "Arial", cursor: phoneDisabled ? "not-allowed" : "text" }}
+                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", padding: "13px 10px", fontSize: "16px", color: "#e0e0e0", fontFamily: "Arial", WebkitTextSizeAdjust: "none", touchAction: "manipulation", cursor: phoneDisabled ? "not-allowed" : "text" }}
                             onFocus={e => {
                               if (phoneDisabled) return;
                               const box = e.currentTarget.parentElement;
