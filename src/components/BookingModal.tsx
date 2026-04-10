@@ -75,10 +75,13 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
   // Fetch logged-in user email on mount
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user?.email) {
-        setLoggedInEmail(data.user.email);
-        setClientEmail(data.user.email);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) {
+        setLoggedInEmail(session.user.email);
+        setClientEmail(session.user.email);
+      } else {
+        setLoggedInEmail(null);
+        setClientEmail('');
       }
     });
   }, []);
