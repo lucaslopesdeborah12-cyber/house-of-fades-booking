@@ -55,7 +55,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [success, setSuccess] = useState(false);
   const [waitingListOpen, setWaitingListOpen] = useState(false);
   const [contactPreference, setContactPreference] = useState<'sms' | 'email' | 'call' | 'all' | null>(null);
-  const [loggedInEmail, setLoggedInEmail] = useState<string | null>(null);
+  
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
   const { t } = useLanguage();
 
@@ -73,19 +73,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     return null;
   };
 
-  // Fetch logged-in user email when modal opens
-  useEffect(() => {
-    if (!open) return;
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email) {
-        setLoggedInEmail(session.user.email);
-        setClientEmail(session.user.email);
-      } else {
-        setLoggedInEmail(null);
-        setClientEmail('');
-      }
-    });
-  }, [open]);
 
   useEffect(() => {
     if (!open) return;
