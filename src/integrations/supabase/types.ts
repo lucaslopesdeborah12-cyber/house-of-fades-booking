@@ -138,6 +138,27 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_attempts: {
+        Row: {
+          client_email: string | null
+          created_at: string
+          id: string
+          ip_address: string
+        }
+        Insert: {
+          client_email?: string | null
+          created_at?: string
+          id?: string
+          ip_address: string
+        }
+        Update: {
+          client_email?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string
+        }
+        Relationships: []
+      }
       owner_settings: {
         Row: {
           key: string
