@@ -54,7 +54,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [waitingListOpen, setWaitingListOpen] = useState(false);
-  const [contactPreference, setContactPreference] = useState<'sms' | 'email' | 'call' | 'all'>('sms');
+  const [contactPreference, setContactPreference] = useState<'sms' | 'email' | 'call' | 'all' | null>(null);
+  const [loggedInEmail, setLoggedInEmail] = useState<string | null>(null);
+  const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
   const { t } = useLanguage();
 
   const allSlotsBooked = selectedDate && bookedSlots.length >= TOTAL_SLOTS;
