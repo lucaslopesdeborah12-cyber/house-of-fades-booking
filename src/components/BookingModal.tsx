@@ -196,9 +196,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     onOpenChange(v);
   };
 
-  const getContactPreference = () => {
-    return contactPreference;
-  };
 
   const handleSubmit = async () => {
     if (!clientName.trim()) { toast.error(t("booking.enterName")); return; }
