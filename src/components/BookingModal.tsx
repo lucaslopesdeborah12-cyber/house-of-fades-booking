@@ -875,7 +875,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
                   {/* Summary card */}
                   <div style={{
-                    opacity: 0, animation: "zoomInSum 0.4s cubic-bezier(.22,.68,0,1.15) forwards", animationDelay: "0.2s",
+                    opacity: 0, animation: "fadeUpForm 0.4s ease forwards", animationDelay: "0.2s",
                     background: "#1a1a1a", borderRadius: 14, padding: "13px 14px", marginBottom: 10,
                   }}>
                     <div style={{
