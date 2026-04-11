@@ -5,35 +5,35 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const TWILIO_FROM = "+16624304415";
+async function sendSMS(to: string, text: string): Promise<{ ok: boolean; data: any }> {
+  const apiKey = Deno.env.get("VONAGE_API_KEY")!;
+  const apiSecret = Deno.env.get("VONAGE_API_SECRET")!;
 
-async function sendSMS(to: string, body: string): Promise<{ ok: boolean; data: any }> {
-  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
-  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
-
-  if (!accountSid) throw new Error("TWILIO_ACCOUNT_SID is not configured");
-  if (!authToken) throw new Error("TWILIO_AUTH_TOKEN is not configured");
+  if (!apiKey) throw new Error("VONAGE_API_KEY is not configured");
+  if (!apiSecret) throw new Error("VONAGE_API_SECRET is not configured");
 
   console.log("[send-sms] Sending SMS to:", to);
 
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-
-  const response = await fetch(url, {
+  const response = await fetch("https://rest.nexmo.com/sms/json", {
     method: "POST",
-    headers: {
-      "Authorization": "Basic " + btoa(`${accountSid}:${authToken}`),
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({ To: to, From: TWILIO_FROM, Body: body }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      api_key: apiKey,
+      api_secret: apiSecret,
+      to: to.replace("+", ""),
+      from: "HouseOfFades",
+      text,
+    }),
   });
 
   const data = await response.json();
-  if (!response.ok) {
-    console.error("[send-sms] Twilio error:", JSON.stringify(data));
+  const success = data?.messages?.[0]?.status === "0";
+  if (!success) {
+    console.error("[send-sms] Vonage error:", JSON.stringify(data));
   } else {
-    console.log("[send-sms] SMS sent successfully, SID:", data.sid);
+    console.log("[send-sms] SMS sent successfully, message-id:", data?.messages?.[0]?.["message-id"]);
   }
-  return { ok: response.ok, data };
+  return { ok: success, data };
 }
 
 Deno.serve(async (req: Request) => {
@@ -53,10 +53,10 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      const body = `Olá ${clientName}! Seu agendamento na House of Fades está confirmado para ${date} às ${time}. Até lá! ✂️`;
+      const body = `Hi ${clientName}! Your appointment at House of Fades with ${barberName} for ${serviceName} on ${date} at ${time} is confirmed! See you soon! ✂️`;
       const result = await sendSMS(phone, body);
 
-      return new Response(JSON.stringify({ success: result.ok, sid: result.data.sid }), {
+      return new Response(JSON.stringify({ success: result.ok, data: result.data }), {
         status: result.ok ? 200 : 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -72,7 +72,8 @@ Deno.serve(async (req: Request) => {
 
       const result = await sendSMS(phone, message);
 
-      return new Response(JSON.stringify({ success: result.ok, sid: result.data.sid }), {
+      return new Response(JSON.stringify({ success: result.ok, data: result.data }), {
+        status: result.ok ? 200 : 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -113,8 +114,8 @@ Deno.serve(async (req: Request) => {
       let sent = 0;
       for (const apt of appointments || []) {
         const pref = (apt as any).contact_preference || "both";
-        const barberName = (apt as any).barbers?.name || "seu barbeiro";
-        const serviceName = (apt as any).services?.name || "seu serviço";
+        const barberName = (apt as any).barbers?.name || "your barber";
+        const serviceName = (apt as any).services?.name || "your service";
 
         if (apt.client_phone && (pref === "sms" || pref === "both")) {
           const isDay = hours === 24;
