@@ -18,7 +18,13 @@ Deno.serve(async (req: Request) => {
     const TWILIO_PHONE_NUMBER = Deno.env.get("TWILIO_PHONE_NUMBER")!;
     if (!TWILIO_PHONE_NUMBER) throw new Error("TWILIO_PHONE_NUMBER is not configured");
 
-    const { action, phone, clientName, barberName, serviceName, date, time } = await req.json();
+    const { action, phone, clientName, barberName, serviceName, date, time, contactPreference } = await req.json();
+
+    if (contactPreference && contactPreference !== 'call' && contactPreference !== 'all') {
+      return new Response(JSON.stringify({ skipped: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!phone) {
       return new Response(JSON.stringify({ success: false, error: "No phone number provided" }), {
@@ -31,7 +37,7 @@ Deno.serve(async (req: Request) => {
     if (action === "confirmation") {
       message = `Hello ${clientName}! This is House of Fades confirming your appointment with ${barberName} for ${serviceName} on ${date} at ${time}. We look forward to seeing you! Goodbye!`;
     } else if (action === "reminder") {
-      message = `Hello ${clientName}! This is a reminder from House of Fades. Your appointment with ${barberName} for ${serviceName} is today at ${time}. See you soon! Goodbye!`;
+      message = `Hello ${clientName}! This is a reminder from House of Fades. Your appointment with ${barberName} is today at ${time} in 2 hours. See you soon! Goodbye!`;
     } else {
       return new Response(JSON.stringify({ success: false, error: "Unknown action" }), {
         status: 400,
