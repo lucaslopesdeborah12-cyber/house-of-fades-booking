@@ -79,6 +79,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
+        onOpenAutoFocus={(e) => e.preventDefault()}
         className="auth-modal-content p-0 overflow-hidden border-0"
         style={{
           maxWidth: 380,

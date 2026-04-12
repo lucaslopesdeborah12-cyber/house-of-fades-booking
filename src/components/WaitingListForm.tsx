@@ -91,7 +91,7 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
   if (success) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="bg-card border-accent/20 text-foreground max-w-md mx-auto">
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-accent/20 text-foreground max-w-md mx-auto">
           <div className="text-center py-8 space-y-4">
             <div className="w-16 h-16 mx-auto rounded-full bg-[#4A7C2F]/20 flex items-center justify-center">
               <Check size={32} className="text-[#4A7C2F]" />
@@ -113,7 +113,7 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-card border-accent/20 text-foreground max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-accent/20 text-foreground max-w-md mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl gold-title-gradient flex items-center gap-2">
             <ClipboardList size={24} /> Join Waiting List
