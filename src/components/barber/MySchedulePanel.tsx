@@ -73,7 +73,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
       client_email: null,
       service_id: null,
     });
-    if (error) { toast.error("Erro ao adicionar pausa"); return; }
+    if (error) { console.error("Break insert error:", error); toast.error("Erro ao adicionar pausa"); return; }
     toast.success("Pausa adicionada");
     fetchAppointments();
   };
