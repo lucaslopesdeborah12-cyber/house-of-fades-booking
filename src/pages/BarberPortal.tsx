@@ -19,10 +19,15 @@ const BarberPortal = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("stats");
   const [scheduleRefreshToken, setScheduleRefreshToken] = useState(0);
+  const [clientsRefreshToken, setClientsRefreshToken] = useState(0);
   const navigate = useNavigate();
 
   const forceScheduleRefresh = () => {
     setScheduleRefreshToken((current) => current + 1);
+  };
+
+  const forceClientsRefresh = () => {
+    setClientsRefreshToken((current) => current + 1);
   };
 
   const handleTabChange = (value: string) => {
@@ -30,6 +35,10 @@ const BarberPortal = () => {
 
     if (value === "schedule") {
       forceScheduleRefresh();
+    }
+
+    if (value === "clients") {
+      forceClientsRefresh();
     }
   };
 
@@ -141,7 +150,15 @@ const BarberPortal = () => {
               <CalendarDays size={16} className="mr-1.5" />
               My Schedule
             </TabsTrigger>
-            <TabsTrigger value="clients" className="font-body data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger
+              value="clients"
+              className="font-body data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              onClick={() => {
+                if (activeTab === "clients") {
+                  forceClientsRefresh();
+                }
+              }}
+            >
               <Users size={16} className="mr-1.5" />
               Clients
             </TabsTrigger>
@@ -159,7 +176,12 @@ const BarberPortal = () => {
             />
           </TabsContent>
           <TabsContent value="clients">
-            <ClientsTab barberId={barber.id} isOwner={isOwner} />
+            <ClientsTab
+              barberId={barber.id}
+              isOwner={isOwner}
+              activeTab={activeTab}
+              refreshToken={clientsRefreshToken}
+            />
           </TabsContent>
         </Tabs>
       </div>

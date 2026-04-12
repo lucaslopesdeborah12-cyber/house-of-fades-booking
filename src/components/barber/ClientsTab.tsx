@@ -1,9 +1,8 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { format, startOfWeek, addDays, parseISO, endOfWeek } from "date-fns";
-import { pt } from "date-fns/locale";
 import { Phone, Mail, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   AlertDialog,
@@ -16,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
-import { getDayCount, useShopSettings } from "@/hooks/useShopSettings";
+import { useShopSettings } from "@/hooks/useShopSettings";
 
 type ClientAppointment = {
   id: string;
@@ -31,43 +30,54 @@ type ClientAppointment = {
   barbers: { name: string } | null;
 };
 
+type WeekRange = {
+  start: Date;
+  end: Date;
+  startStr: string;
+  endStr: string;
+};
+
 const DAY_NAMES = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
-const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean }) => {
-  const { settings, loading: settingsLoading } = useShopSettings();
+const getCurrentWeekRange = (): WeekRange => {
+  const today = new Date();
+  const start = startOfWeek(today, { weekStartsOn: 1 });
+  const end = endOfWeek(today, { weekStartsOn: 1 });
+
+  return {
+    start,
+    end,
+    startStr: format(start, "yyyy-MM-dd"),
+    endStr: format(end, "yyyy-MM-dd"),
+  };
+};
+
+const ClientsTab = ({
+  barberId,
+  isOwner,
+  activeTab,
+  refreshToken,
+}: {
+  barberId: string;
+  isOwner: boolean;
+  activeTab?: string;
+  refreshToken?: number;
+}) => {
+  const { loading: settingsLoading } = useShopSettings();
   const [appointments, setAppointments] = useState<ClientAppointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [visibleWeek, setVisibleWeek] = useState<WeekRange>(() => getCurrentWeekRange());
   const [cancelTarget, setCancelTarget] = useState<ClientAppointment | null>(null);
-  const dayCount = getDayCount(settings.last_working_day);
-  const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
-  const { currentWeekStartStr, currentWeekEndStr } = useMemo(() => {
-    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const currentWeekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
-
-    return {
-      currentWeekStartStr: format(currentWeekStart, "yyyy-MM-dd"),
-      currentWeekEndStr: format(currentWeekEnd, "yyyy-MM-dd"),
-    };
-  }, []);
-
-  useEffect(() => {
-    if (settingsLoading) return;
-    setWeekStart(parseISO(currentWeekStartStr));
-  }, [currentWeekStartStr, settingsLoading]);
-
-  const currentWeekStart = parseISO(currentWeekStartStr);
-  const currentWeekEnd = parseISO(currentWeekEndStr);
 
   const fetchAppointments = useCallback(async () => {
-    const from = currentWeekStartStr;
-    const to = currentWeekEndStr;
+    const nextWeek = getCurrentWeekRange();
+    setVisibleWeek(nextWeek);
 
     let query = supabase
       .from("appointments")
       .select("id, appointment_date, time_slot, client_name, client_email, client_phone, status, barber_id, services(name), barbers(name)")
-      .gte("appointment_date", from)
-      .lte("appointment_date", to)
+      .gte("appointment_date", nextWeek.startStr)
+      .lte("appointment_date", nextWeek.endStr)
       .in("status", ["booked", "confirmed"])
       .neq("client_name", "BREAK")
       .order("appointment_date")
@@ -80,37 +90,75 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
     const { data, error } = await query;
 
     if (error) {
+      console.error("[ClientsTab] failed to load appointments:", error);
       toast.error("Failed to load clients");
     } else {
-      console.log("[ClientsTab] fetched weekly appointments:", { from, to, count: data?.length ?? 0, data });
+      console.log("[ClientsTab] fetched current week appointments:", {
+        from: nextWeek.startStr,
+        to: nextWeek.endStr,
+        barberId,
+        isOwner,
+        count: data?.length ?? 0,
+        data,
+      });
       setAppointments((data as ClientAppointment[]) || []);
     }
+
     setLoading(false);
-  }, [barberId, currentWeekEndStr, currentWeekStartStr, isOwner]);
+  }, [barberId, isOwner]);
 
   useEffect(() => {
     setLoading(true);
     fetchAppointments();
   }, [fetchAppointments]);
 
-  // Realtime subscription
   useEffect(() => {
-    const channel = supabase
-      .channel(`clients-${barberId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'appointments' },
-        () => fetchAppointments()
-      )
-      .subscribe();
+    if (activeTab !== "clients") return;
 
-    return () => { supabase.removeChannel(channel); };
-  }, [barberId, fetchAppointments]);
+    setLoading(true);
+    fetchAppointments();
+  }, [activeTab, refreshToken, fetchAppointments]);
+
+  useEffect(() => {
+    const channelConfig = !isOwner
+      ? {
+          event: "INSERT" as const,
+          schema: "public" as const,
+          table: "appointments",
+          filter: `barber_id=eq.${barberId}`,
+        }
+      : {
+          event: "INSERT" as const,
+          schema: "public" as const,
+          table: "appointments",
+        };
+
+    const channel = supabase
+      .channel(`clients-insert-${barberId}-${isOwner ? "owner" : "barber"}`)
+      .on("postgres_changes", channelConfig, (payload: any) => {
+        const insertedAppointment = payload.new as Partial<ClientAppointment> | undefined;
+        const appointmentDate = insertedAppointment?.appointment_date;
+
+        console.log("[ClientsTab] realtime insert detected:", payload);
+
+        if (!appointmentDate) return;
+        if (appointmentDate < visibleWeek.startStr || appointmentDate > visibleWeek.endStr) return;
+
+        setLoading(true);
+        fetchAppointments();
+      })
+      .subscribe((status) => {
+        console.log("[ClientsTab] realtime subscription status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [barberId, fetchAppointments, isOwner, visibleWeek.endStr, visibleWeek.startStr]);
 
   const handleCancel = async () => {
     if (!cancelTarget) return;
-    
-    // Notify waiting list before deleting
+
     const timeSlot = cancelTarget.time_slot.slice(0, 5);
     const barberName = cancelTarget.barbers?.name || "";
     const barberIdForNotify = cancelTarget.barber_id;
@@ -128,39 +176,40 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
       notifyWaitingList(barberIdForNotify, dateForNotify, timeSlot, barberName);
       fetchAppointments();
     }
+
     setCancelTarget(null);
   };
 
-  // Group by day
   const grouped = new Map<string, ClientAppointment[]>();
   for (let i = 0; i < 7; i++) {
-    const dateStr = format(addDays(currentWeekStart, i), "yyyy-MM-dd");
+    const dateStr = format(addDays(visibleWeek.start, i), "yyyy-MM-dd");
     grouped.set(dateStr, []);
   }
-  appointments.forEach((a) => {
-    const list = grouped.get(a.appointment_date);
-    if (list) list.push(a);
+
+  appointments.forEach((appointment) => {
+    const list = grouped.get(appointment.appointment_date);
+    if (list) list.push(appointment);
   });
 
-  if (loading || settingsLoading) return <p className="text-muted-foreground font-body text-sm p-4">Loading…</p>;
+  if (loading || settingsLoading) {
+    return <p className="text-muted-foreground font-body text-sm p-4">Loading…</p>;
+  }
 
   return (
     <div className="space-y-4">
-      {/* Week navigation */}
       <div className="flex items-center justify-center gap-3">
         <Button variant="outline" size="icon" className="h-8 w-8" disabled>
           <ChevronLeft size={16} />
         </Button>
         <span className="text-sm font-body text-muted-foreground">
-          {format(currentWeekStart, "dd/MM")} — {format(currentWeekEnd, "dd/MM")}
+          {format(visibleWeek.start, "dd/MM")} — {format(visibleWeek.end, "dd/MM")}
         </span>
         <Button variant="outline" size="icon" className="h-8 w-8" disabled>
           <ChevronRight size={16} />
         </Button>
       </div>
 
-      {/* Day groups */}
-      {Array.from(grouped.entries()).map(([dateStr, dayAppts], dayIndex) => (
+      {Array.from(grouped.entries()).map(([dateStr, dayAppts]) => (
         <div key={dateStr} className="space-y-2">
           <h4 className="font-serif text-sm font-semibold text-foreground border-b border-border pb-1">
             {DAY_NAMES[(parseISO(dateStr).getDay() + 6) % 7]} — {format(parseISO(dateStr), "dd/MM")}
@@ -169,33 +218,33 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
             <p className="text-xs text-muted-foreground/60 font-body pl-2">Sem agendamentos</p>
           ) : (
             <div className="space-y-1.5">
-              {dayAppts.map((a) => (
+              {dayAppts.map((appointment) => (
                 <div
-                  key={a.id}
+                  key={appointment.id}
                   className="flex items-center gap-3 bg-card border border-border rounded-lg px-3 py-2"
                 >
                   <span className="text-xs font-body text-muted-foreground w-12 text-right shrink-0">
-                    {a.time_slot.slice(0, 5)}
+                    {appointment.time_slot.slice(0, 5)}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-body font-medium text-foreground truncate">{a.client_name}</p>
+                    <p className="text-sm font-body font-medium text-foreground truncate">{appointment.client_name}</p>
                     <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                      {a.services?.name && (
-                        <span className="text-xs text-muted-foreground font-body">{a.services.name}</span>
+                      {appointment.services?.name && (
+                        <span className="text-xs text-muted-foreground font-body">{appointment.services.name}</span>
                       )}
-                      {isOwner && a.barbers?.name && (
-                        <span className="text-xs text-primary/70 font-body">{a.barbers.name}</span>
+                      {isOwner && appointment.barbers?.name && (
+                        <span className="text-xs text-primary/70 font-body">{appointment.barbers.name}</span>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-                      {a.client_email && (
+                      {appointment.client_email && (
                         <span className="text-xs text-muted-foreground font-body flex items-center gap-1">
-                          <Mail size={10} /> {a.client_email}
+                          <Mail size={10} /> {appointment.client_email}
                         </span>
                       )}
-                      {a.client_phone && (
+                      {appointment.client_phone && (
                         <span className="text-xs text-muted-foreground font-body flex items-center gap-1">
-                          <Phone size={10} /> {a.client_phone}
+                          <Phone size={10} /> {appointment.client_phone}
                         </span>
                       )}
                     </div>
@@ -204,7 +253,7 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
                     size="sm"
                     variant="ghost"
                     className="text-destructive hover:text-destructive hover:bg-destructive/10 font-body text-xs h-8 shrink-0"
-                    onClick={() => setCancelTarget(a)}
+                    onClick={() => setCancelTarget(appointment)}
                   >
                     <Trash2 size={14} />
                   </Button>
@@ -215,7 +264,7 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
         </div>
       ))}
 
-      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+      <AlertDialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="font-serif">Cancelar agendamento?</AlertDialogTitle>
