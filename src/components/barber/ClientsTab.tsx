@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
+import { getDayCount, useShopSettings } from "@/hooks/useShopSettings";
 
 type ClientAppointment = {
   id: string;
@@ -33,16 +34,43 @@ type ClientAppointment = {
 const DAY_NAMES = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
 const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean }) => {
+  const { settings, loading: settingsLoading } = useShopSettings();
   const [appointments, setAppointments] = useState<ClientAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [cancelTarget, setCancelTarget] = useState<ClientAppointment | null>(null);
+  const dayCount = getDayCount(settings.last_working_day);
+  const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
+  const today = new Date();
+  const todayWeekStart = startOfWeek(today, { weekStartsOn: 1 });
+  const isCurrentWeekView = format(weekStart, "yyyy-MM-dd") === format(todayWeekStart, "yyyy-MM-dd");
+  const visibleWeekDays = isCurrentWeekView
+    ? weekDays.filter((day) => format(day, "yyyy-MM-dd") >= format(today, "yyyy-MM-dd"))
+    : weekDays;
 
-  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+  useEffect(() => {
+    if (settingsLoading) return;
+
+    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const currentWeekLastWorkingDay = addDays(currentWeekStart, dayCount - 1);
+
+    if (format(today, "yyyy-MM-dd") > format(currentWeekLastWorkingDay, "yyyy-MM-dd")) {
+      setWeekStart(addDays(currentWeekStart, 7));
+      return;
+    }
+
+    setWeekStart(currentWeekStart);
+  }, [dayCount, settingsLoading]);
 
   const fetchAppointments = useCallback(async () => {
-    const from = format(weekStart, "yyyy-MM-dd");
-    const to = format(addDays(weekStart, 6), "yyyy-MM-dd");
+    if (visibleWeekDays.length === 0) {
+      setAppointments([]);
+      setLoading(false);
+      return;
+    }
+
+    const from = format(visibleWeekDays[0], "yyyy-MM-dd");
+    const to = format(visibleWeekDays[visibleWeekDays.length - 1], "yyyy-MM-dd");
 
     let query = supabase
       .from("appointments")
@@ -63,10 +91,11 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
     if (error) {
       toast.error("Failed to load clients");
     } else {
+      console.log("[ClientsTab] fetched weekly appointments:", { from, to, count: data?.length ?? 0, data });
       setAppointments((data as ClientAppointment[]) || []);
     }
     setLoading(false);
-  }, [barberId, isOwner, weekStart]);
+  }, [barberId, isOwner, visibleWeekDays]);
 
   useEffect(() => {
     setLoading(true);
@@ -122,7 +151,7 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
     if (list) list.push(a);
   });
 
-  if (loading) return <p className="text-muted-foreground font-body text-sm p-4">Loading…</p>;
+  if (loading || settingsLoading) return <p className="text-muted-foreground font-body text-sm p-4">Loading…</p>;
 
   return (
     <div className="space-y-4">
@@ -143,7 +172,7 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
       {Array.from(grouped.entries()).map(([dateStr, dayAppts], dayIndex) => (
         <div key={dateStr} className="space-y-2">
           <h4 className="font-serif text-sm font-semibold text-foreground border-b border-border pb-1">
-            {DAY_NAMES[dayIndex]} — {format(parseISO(dateStr), "dd/MM")}
+            {DAY_NAMES[(parseISO(dateStr).getDay() + 6) % 7]} — {format(parseISO(dateStr), "dd/MM")}
           </h4>
           {dayAppts.length === 0 ? (
             <p className="text-xs text-muted-foreground/60 font-body pl-2">Sem agendamentos</p>

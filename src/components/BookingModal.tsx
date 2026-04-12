@@ -129,8 +129,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     fetchBookedSlots();
   }, [selectedBarber, selectedDate]);
 
-  useEffect(() => {
+  const fetchMonthAvailability = useCallback(async () => {
     if (!open || step !== 3) return;
+
     const year = calendarMonth.getFullYear();
     const month = calendarMonth.getMonth();
     const firstDay = format(new Date(year, month, 1), "yyyy-MM-dd");
@@ -147,29 +148,87 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       query.eq("barber_id", selectedBarber);
     }
 
-    query.then(({ data }) => {
-      if (!data) return;
-      const countsByDate: Record<string, number> = {};
-      if (selectedBarber) {
-        data.forEach(row => {
-          const d = row.appointment_date;
-          countsByDate[d] = (countsByDate[d] || 0) + 1;
-        });
-      } else {
-        const byDateBarber: Record<string, Record<string, number>> = {};
-        data.forEach(row => {
-          const d = row.appointment_date;
-          const b = row.barber_id;
-          if (!byDateBarber[d]) byDateBarber[d] = {};
-          byDateBarber[d][b] = (byDateBarber[d][b] || 0) + 1;
-        });
-        Object.entries(byDateBarber).forEach(([date, barberCounts]) => {
-          countsByDate[date] = Math.min(...Object.values(barberCounts));
-        });
+    const { data } = await query;
+
+    if (!data) return;
+
+    const countsByDate: Record<string, number> = {};
+    if (selectedBarber) {
+      data.forEach(row => {
+        const d = row.appointment_date;
+        countsByDate[d] = (countsByDate[d] || 0) + 1;
+      });
+    } else {
+      const byDateBarber: Record<string, Record<string, number>> = {};
+      data.forEach(row => {
+        const d = row.appointment_date;
+        const b = row.barber_id;
+        if (!byDateBarber[d]) byDateBarber[d] = {};
+        byDateBarber[d][b] = (byDateBarber[d][b] || 0) + 1;
+      });
+      Object.entries(byDateBarber).forEach(([date, barberCounts]) => {
+        countsByDate[date] = Math.min(...Object.values(barberCounts));
+      });
+    }
+
+    setMonthAvailability(countsByDate);
+  }, [calendarMonth, open, selectedBarber, step]);
+
+  useEffect(() => {
+    fetchMonthAvailability();
+  }, [fetchMonthAvailability]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const monthFirstDay = format(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1), "yyyy-MM-dd");
+    const monthLastDay = format(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0), "yyyy-MM-dd");
+    const selectedDateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
+
+    const handleRealtimeAppointmentChange = (payload: any) => {
+      const row = payload.new ?? payload.old;
+      const appointmentDate = row?.appointment_date;
+      const appointmentBarberId = row?.barber_id;
+
+      if (!appointmentDate) return;
+
+      const sameBarber = !selectedBarber || appointmentBarberId === selectedBarber;
+      if (!sameBarber) return;
+
+      console.log("[BookingModal] Realtime appointment change detected:", payload);
+
+      if (selectedDateStr && appointmentDate === selectedDateStr) {
+        fetchBookedSlots();
       }
-      setMonthAvailability(countsByDate);
-    });
-  }, [open, step, selectedBarber, calendarMonth]);
+
+      if (appointmentDate >= monthFirstDay && appointmentDate <= monthLastDay) {
+        fetchMonthAvailability();
+      }
+    };
+
+    const channel = supabase
+      .channel(`booking-availability-${selectedBarber || "all"}-${calendarMonth.getFullYear()}-${calendarMonth.getMonth()}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'appointments' },
+        handleRealtimeAppointmentChange
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'appointments' },
+        handleRealtimeAppointmentChange
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'appointments' },
+        handleRealtimeAppointmentChange
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [calendarMonth, fetchBookedSlots, fetchMonthAvailability, open, selectedBarber, selectedDate]);
 
   const getDayAvailabilityClass = (date: Date): string => {
     if (date < new Date(new Date().setHours(0, 0, 0, 0)) || date.getDay() === 0) return "";

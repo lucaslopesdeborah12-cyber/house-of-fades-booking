@@ -37,7 +37,7 @@ type Appointment = Tables<"appointments"> & {
 
 const DAY_NAMES_ALL = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
-const ScheduleTab = ({ barberId, activeTab }: { barberId: string; activeTab?: string }) => {
+const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; activeTab?: string; refreshToken?: number }) => {
   const { settings, loading: settingsLoading, refetch: refetchSettings } = useShopSettings();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,14 +123,19 @@ const ScheduleTab = ({ barberId, activeTab }: { barberId: string; activeTab?: st
     };
   }, [barberId, fetchAppointments]);
 
+  const forceRefresh = useCallback(() => {
+    setLoading(true);
+    breakCheckedRef.current = "";
+    refetchSettings();
+    fetchAppointments();
+  }, [fetchAppointments, refetchSettings]);
+
   // Re-fetch everything when tab becomes active
   useEffect(() => {
     if (activeTab === "schedule") {
-      refetchSettings();
-      fetchAppointments();
-      breakCheckedRef.current = "";
+      forceRefresh();
     }
-  }, [activeTab]);
+  }, [activeTab, refreshToken, forceRefresh]);
 
   useEffect(() => {
     breakCheckedRef.current = "";
