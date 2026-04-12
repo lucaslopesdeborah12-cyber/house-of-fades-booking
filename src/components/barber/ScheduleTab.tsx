@@ -37,8 +37,8 @@ type Appointment = Tables<"appointments"> & {
 
 const DAY_NAMES_ALL = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
-const ScheduleTab = ({ barberId }: { barberId: string }) => {
-  const { settings, loading: settingsLoading } = useShopSettings();
+const ScheduleTab = ({ barberId, activeTab }: { barberId: string; activeTab?: string }) => {
+  const { settings, loading: settingsLoading, refetch: refetchSettings } = useShopSettings();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
