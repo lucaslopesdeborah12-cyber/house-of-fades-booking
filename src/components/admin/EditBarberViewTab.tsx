@@ -334,7 +334,7 @@ const MasterCalendar = () => {
   useEffect(() => { fetchAll(); }, [selectedDate]);
 
   const cancelAppt = async (id: string) => {
-    await supabase.from("appointments").update({ status: "cancelled" }).eq("id", id);
+    await supabase.from("appointments").delete().eq("id", id);
     toast.success("Cancelled");
     fetchAll();
   };
