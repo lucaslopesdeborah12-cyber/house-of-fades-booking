@@ -250,6 +250,7 @@ export type Database = {
           created_at: string
           id: string
           notified_at: string | null
+          response_token: string
           status: string
           time_slot: string
         }
@@ -262,6 +263,7 @@ export type Database = {
           created_at?: string
           id?: string
           notified_at?: string | null
+          response_token?: string
           status?: string
           time_slot: string
         }
@@ -274,6 +276,7 @@ export type Database = {
           created_at?: string
           id?: string
           notified_at?: string | null
+          response_token?: string
           status?: string
           time_slot?: string
         }
