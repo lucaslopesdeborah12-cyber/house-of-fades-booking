@@ -18,7 +18,20 @@ const BarberPortal = () => {
   const [barber, setBarber] = useState<Barber | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("stats");
+  const [scheduleRefreshToken, setScheduleRefreshToken] = useState(0);
   const navigate = useNavigate();
+
+  const forceScheduleRefresh = () => {
+    setScheduleRefreshToken((current) => current + 1);
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+
+    if (value === "schedule") {
+      forceScheduleRefresh();
+    }
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -110,13 +123,21 @@ const BarberPortal = () => {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="stats" onValueChange={(v) => setActiveTab(v)} value={activeTab}>
+        <Tabs defaultValue="stats" onValueChange={handleTabChange} value={activeTab}>
           <TabsList className="bg-card border border-border mb-6">
             <TabsTrigger value="stats" className="font-body data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <BarChart3 size={16} className="mr-1.5" />
               {isOwner ? "Shop Stats" : "My Stats"}
             </TabsTrigger>
-            <TabsTrigger value="schedule" className="font-body data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger
+              value="schedule"
+              className="font-body data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              onClick={() => {
+                if (activeTab === "schedule") {
+                  forceScheduleRefresh();
+                }
+              }}
+            >
               <CalendarDays size={16} className="mr-1.5" />
               My Schedule
             </TabsTrigger>
@@ -130,7 +151,12 @@ const BarberPortal = () => {
             {isOwner ? <OwnerStatsTab /> : <EmployeeStatsTab barberId={barber.id} />}
           </TabsContent>
           <TabsContent value="schedule">
-            <ScheduleTab barberId={barber.id} activeTab={activeTab} />
+            <ScheduleTab
+              key={`${barber.id}-${scheduleRefreshToken}`}
+              barberId={barber.id}
+              activeTab={activeTab}
+              refreshToken={scheduleRefreshToken}
+            />
           </TabsContent>
           <TabsContent value="clients">
             <ClientsTab barberId={barber.id} isOwner={isOwner} />
