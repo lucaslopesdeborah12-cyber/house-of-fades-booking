@@ -13,7 +13,7 @@ import {
   isAfter,
   startOfDay,
 } from "date-fns";
-import { Check, X, Ban, Coffee, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, X, Ban, Coffee, ChevronLeft, ChevronRight, Clock, CalendarDays } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
 import { useShopSettings, getDayCount, generateTimeSlots } from "@/hooks/useShopSettings";
+import MySchedulePanel from "@/components/barber/MySchedulePanel";
 
 type Appointment = Tables<"appointments"> & {
   services: { name: string; price: number } | null;
@@ -38,6 +39,7 @@ type Appointment = Tables<"appointments"> & {
 const DAY_NAMES_ALL = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; activeTab?: string; refreshToken?: number }) => {
+  const [viewMode, setViewMode] = useState<"appointments" | "schedule">("appointments");
   const { settings, loading: settingsLoading, refetch: refetchSettings } = useShopSettings();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -302,6 +304,34 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
   return (
     <div className="space-y-4">
+      {/* View mode toggle */}
+      <div className="flex items-center justify-center gap-2 bg-card border border-border rounded-xl p-1">
+        <button
+          onClick={() => setViewMode("appointments")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-body transition-colors ${
+            viewMode === "appointments"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <CalendarDays size={15} /> Agenda
+        </button>
+        <button
+          onClick={() => setViewMode("schedule")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-body transition-colors ${
+            viewMode === "schedule"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Clock size={15} /> Meu Horário
+        </button>
+      </div>
+
+      {viewMode === "schedule" ? (
+        <MySchedulePanel barberId={barberId} />
+      ) : (
+      <>
       <div className="flex items-center justify-center gap-3">
         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
           <ChevronLeft size={16} />
@@ -388,6 +418,8 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </>
+      )}
     </div>
   );
 };
