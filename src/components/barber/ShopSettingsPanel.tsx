@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Pencil, Save } from "lucide-react";
 import type { ShopSettings } from "@/hooks/useShopSettings";
 
 interface Props {
@@ -16,91 +17,127 @@ const HALF_HOURS = Array.from({ length: 48 }, (_, i) => {
   return `${String(h).padStart(2, "0")}:${m}`;
 });
 
-const ShopSettingsPanel = ({ settings, onSave }: Props) => {
-  const [saving, setSaving] = useState<string | null>(null);
+const LABELS: Record<string, string> = {
+  friday: "Friday (Mon–Fri)",
+  saturday: "Saturday (Mon–Sat)",
+  sunday: "Sunday (Mon–Sun)",
+};
 
-  const handleSave = async (key: keyof ShopSettings, value: string) => {
-    setSaving(key);
-    await onSave(key, value);
-    setSaving(null);
-    toast.success("Setting saved!");
+const ShopSettingsPanel = ({ settings, onSave }: Props) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<ShopSettings>(settings);
+  const [saving, setSaving] = useState(false);
+
+  const handleEdit = () => {
+    setDraft(settings);
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    const keys = Object.keys(draft) as (keyof ShopSettings)[];
+    for (const key of keys) {
+      if (draft[key] !== settings[key]) {
+        await onSave(key, draft[key]);
+      }
+    }
+    setSaving(false);
+    setEditing(false);
+    toast.success("Configurações salvas ✓");
   };
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-      <h3 className="font-serif text-lg font-semibold">Shop Settings</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-serif text-lg font-semibold">Shop Settings</h3>
+        {!editing && (
+          <Button variant="outline" size="sm" onClick={handleEdit} className="font-body gap-1.5">
+            <Pencil size={14} /> Editar
+          </Button>
+        )}
+      </div>
 
       {/* Last working day */}
       <div className="space-y-1">
         <label className="font-body text-xs text-muted-foreground">Last working day of the week</label>
-        <Select
-          value={settings.last_working_day}
-          onValueChange={(v) => handleSave("last_working_day", v)}
-        >
-          <SelectTrigger className="bg-background border-border text-foreground font-body">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="friday">Friday (Mon–Fri)</SelectItem>
-            <SelectItem value="saturday">Saturday (Mon–Sat)</SelectItem>
-            <SelectItem value="sunday">Sunday (Mon–Sun)</SelectItem>
-          </SelectContent>
-        </Select>
+        {editing ? (
+          <Select value={draft.last_working_day} onValueChange={(v) => setDraft((p) => ({ ...p, last_working_day: v as ShopSettings["last_working_day"] }))}>
+            <SelectTrigger className="bg-background border-border text-foreground font-body">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="friday">Friday (Mon–Fri)</SelectItem>
+              <SelectItem value="saturday">Saturday (Mon–Sat)</SelectItem>
+              <SelectItem value="sunday">Sunday (Mon–Sun)</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          <p className="text-sm font-body text-foreground px-3 py-2 bg-muted/30 rounded-md">{LABELS[settings.last_working_day]}</p>
+        )}
       </div>
 
       {/* Default break time */}
       <div className="space-y-1">
         <label className="font-body text-xs text-muted-foreground">Default break time</label>
-        <Select
-          value={settings.default_break_time}
-          onValueChange={(v) => handleSave("default_break_time", v)}
-        >
-          <SelectTrigger className="bg-background border-border text-foreground font-body">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {HALF_HOURS.map((t) => (
-              <SelectItem key={t} value={t}>{t}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {editing ? (
+          <Select value={draft.default_break_time} onValueChange={(v) => setDraft((p) => ({ ...p, default_break_time: v }))}>
+            <SelectTrigger className="bg-background border-border text-foreground font-body">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {HALF_HOURS.map((t) => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <p className="text-sm font-body text-foreground px-3 py-2 bg-muted/30 rounded-md">{settings.default_break_time}</p>
+        )}
       </div>
 
       {/* Working hours */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <label className="font-body text-xs text-muted-foreground">Work start</label>
-          <Select
-            value={settings.work_start}
-            onValueChange={(v) => handleSave("work_start", v)}
-          >
-            <SelectTrigger className="bg-background border-border text-foreground font-body">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {HOURS.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {editing ? (
+            <Select value={draft.work_start} onValueChange={(v) => setDraft((p) => ({ ...p, work_start: v }))}>
+              <SelectTrigger className="bg-background border-border text-foreground font-body">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {HOURS.map((t) => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="text-sm font-body text-foreground px-3 py-2 bg-muted/30 rounded-md">{settings.work_start}</p>
+          )}
         </div>
         <div className="space-y-1">
           <label className="font-body text-xs text-muted-foreground">Work end</label>
-          <Select
-            value={settings.work_end}
-            onValueChange={(v) => handleSave("work_end", v)}
-          >
-            <SelectTrigger className="bg-background border-border text-foreground font-body">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {HOURS.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {editing ? (
+            <Select value={draft.work_end} onValueChange={(v) => setDraft((p) => ({ ...p, work_end: v }))}>
+              <SelectTrigger className="bg-background border-border text-foreground font-body">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {HOURS.map((t) => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="text-sm font-body text-foreground px-3 py-2 bg-muted/30 rounded-md">{settings.work_end}</p>
+          )}
         </div>
       </div>
+
+      {editing && (
+        <Button onClick={handleSave} disabled={saving} className="w-full font-body gap-1.5">
+          <Save size={14} /> {saving ? "Salvando..." : "Salvar Configurações"}
+        </Button>
+      )}
     </div>
   );
 };
