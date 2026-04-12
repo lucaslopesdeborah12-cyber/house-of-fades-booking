@@ -89,22 +89,23 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
 
   const handleCancel = async () => {
     if (!cancelTarget) return;
+    
+    // Notify waiting list before deleting
+    const timeSlot = cancelTarget.time_slot.slice(0, 5);
+    const barberName = cancelTarget.barbers?.name || "";
+    const barberIdForNotify = cancelTarget.barber_id;
+    const dateForNotify = cancelTarget.appointment_date;
+
     const { error } = await supabase
       .from("appointments")
-      .update({ status: "cancelled" })
+      .delete()
       .eq("id", cancelTarget.id);
 
     if (error) {
       toast.error("Failed to cancel");
     } else {
       toast.success("Agendamento cancelado");
-      const timeSlot = cancelTarget.time_slot.slice(0, 5);
-      notifyWaitingList(
-        cancelTarget.barber_id,
-        cancelTarget.appointment_date,
-        timeSlot,
-        cancelTarget.barbers?.name || ""
-      );
+      notifyWaitingList(barberIdForNotify, dateForNotify, timeSlot, barberName);
       fetchAppointments();
     }
     setCancelTarget(null);
