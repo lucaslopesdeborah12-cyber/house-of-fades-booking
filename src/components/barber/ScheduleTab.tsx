@@ -275,9 +275,10 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
   };
 
   const moveBreak = async (breakId: string, dateStr: string, newTime: string) => {
+    // Delete old break, insert new one
     const { error: delErr } = await supabase
       .from("appointments")
-      .update({ status: "cancelled" })
+      .delete()
       .eq("id", breakId);
 
     if (delErr) {
@@ -302,15 +303,6 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
       toast.success("Break moved");
       fetchAppointments();
     }
-  };
-
-  const getFreeSlots = (dateStr: string): string[] => {
-    return TIME_SLOTS.filter((t) => {
-      const occupied = appointments.find(
-        (a) => a.appointment_date === dateStr && a.time_slot.slice(0, 5) === t
-      );
-      return !occupied && !isPast(dateStr, t);
-    });
   };
 
   const getAppt = (dateStr: string, time: string) =>
