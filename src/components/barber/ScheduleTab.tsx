@@ -39,6 +39,7 @@ type Appointment = Tables<"appointments"> & {
 const DAY_NAMES_ALL = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; activeTab?: string; refreshToken?: number }) => {
+  const [viewMode, setViewMode] = useState<"appointments" | "schedule">("appointments");
   const { settings, loading: settingsLoading, refetch: refetchSettings } = useShopSettings();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
