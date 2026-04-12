@@ -117,15 +117,30 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
         return;
       }
 
-      const dayAppointments = appointments.filter((appt) => appt.appointment_date === selectedDateStr);
-      const hasBreak = dayAppointments.some((appt) => appt.client_name === "BREAK");
+      // Query DB directly to avoid race conditions with stale local state
+      const { data: existingBreaks, error: fetchErr } = await supabase
+        .from("appointments")
+        .select("id")
+        .eq("barber_id", barberId)
+        .eq("appointment_date", selectedDateStr)
+        .eq("client_name", "BREAK")
+        .in("status", ["booked", "confirmed"]);
 
-      if (hasBreak) {
+      if (fetchErr) {
+        console.error("Error checking existing breaks:", fetchErr);
+        setAutoBreakKey(checkKey);
+        return;
+      }
+
+      if (existingBreaks && existingBreaks.length > 0) {
+        console.log("Break already exists for this day, skipping auto-insert.");
         setAutoBreakKey(checkKey);
         return;
       }
 
       const timeSlotValue = `${defaultBreakTime}:00`;
+      // Check if default break time is occupied by a real appointment
+      const dayAppointments = appointments.filter((appt) => appt.appointment_date === selectedDateStr);
       const occupied = dayAppointments.some((appt) => appt.time_slot === timeSlotValue);
       if (occupied) {
         setAutoBreakKey(checkKey);
@@ -506,6 +521,7 @@ const SlotRow = ({
     );
   }
 
+  console.log("Appointment object:", JSON.stringify(appt));
   const displayName = appt.client_name;
   const serviceName = appt.services?.name || "";
   const cancellable = canCancel(appt);
