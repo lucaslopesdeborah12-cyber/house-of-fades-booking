@@ -246,24 +246,23 @@ const CountryCodeSelector = ({ selected, onSelect }: Props) => {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1 px-2 h-10 rounded-l-md border border-r-0 border-border bg-muted text-muted-foreground text-sm font-body hover:bg-muted/80 transition-colors shrink-0"
+          className="inline-flex items-center gap-1.5 px-3 h-10 rounded-l-[10px] border-y border-l border-[#2e2e2e] bg-[#1e1e1e] text-sm font-body hover:bg-[#252525] transition-colors shrink-0 focus:outline-none"
         >
           <span className="text-base leading-none">{selected.flag}</span>
-          <span>{selected.dial}</span>
-          <ChevronDown className="h-3 w-3 opacity-50" />
+          <span className="text-[#c9a84c] font-medium">{selected.dial}</span>
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0 bg-card border-border max-h-72 overflow-hidden" align="start">
-        <div className="p-2 border-b border-border">
+      <PopoverContent className="w-72 p-0 bg-[#1e1e1e] border-[#333] rounded-xl max-h-72 overflow-hidden" align="start">
+        <div className="p-2 border-b border-[#333]">
           <Input
-            placeholder="Buscar país..."
+            placeholder="Search country..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 text-sm bg-background border-border text-foreground"
-            
+            className="h-8 text-sm bg-[#161616] border-[#333] text-foreground rounded-lg focus-visible:ring-[#c9a84c]/50"
           />
         </div>
-        <div className="overflow-y-auto max-h-56">
+        <div className="overflow-y-auto max-h-[200px]">
           {filtered.map((c) => (
             <button
               key={c.code}
@@ -274,8 +273,8 @@ const CountryCodeSelector = ({ selected, onSelect }: Props) => {
                 setSearch("");
               }}
               className={cn(
-                "w-full flex items-center gap-2 px-3 py-2 text-sm font-body text-left hover:bg-accent/10 transition-colors",
-                selected.code === c.code && "bg-accent/10 text-foreground"
+                "w-full flex items-center gap-2 px-3 py-2 text-sm font-body text-left hover:bg-[#c9a84c]/10 transition-colors",
+                selected.code === c.code && "bg-[#c9a84c]/10 text-[#c9a84c]"
               )}
             >
               <span className="text-base">{c.flag}</span>
