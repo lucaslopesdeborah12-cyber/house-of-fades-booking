@@ -181,15 +181,15 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
   };
 
   const addBreakAt = async (time: string) => {
-    // Check if slot is already occupied
     if (occupiedSlots.includes(time)) {
       toast.error("Este horário já está ocupado");
+      return;
     }
     const { error } = await supabase.from("appointments").insert({
       barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${time}:00`,
       client_name: "BREAK", status: "booked", client_phone: null, client_email: null, service_id: null,
     });
-    if (error) { toast.error("Erro ao adicionar pausa"); return; }
+    if (error) { console.error("Break insert error:", error); toast.error("Erro ao adicionar pausa"); return; }
     toast.success("Pausa adicionada");
     fetchAppointments();
   };
