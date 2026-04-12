@@ -14,6 +14,16 @@ import {
   startOfDay,
 } from "date-fns";
 import { Check, X, Ban, Coffee, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -36,6 +46,7 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
   );
   const [selectedDay, setSelectedDay] = useState(0);
   const [autoBreakKey, setAutoBreakKey] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
 
   const dayCount = getDayCount(settings.last_working_day);
   const TIME_SLOTS = generateTimeSlots(settings.work_start, settings.work_end);
@@ -327,11 +338,38 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
               onRemoveBreak={removeBreak}
               onMoveBreak={moveBreak}
               onUpdateStatus={updateStatus}
+              onCancelRequest={setCancelTarget}
               canCancel={canCancel}
             />
           );
         })}
       </div>
+
+      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif">Cancelar agendamento?</AlertDialogTitle>
+            <AlertDialogDescription className="font-body">
+              Tens a certeza que queres cancelar o agendamento de{" "}
+              <span className="font-semibold text-foreground">{cancelTarget?.client_name}</span>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="font-body">Não</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-body"
+              onClick={() => {
+                if (cancelTarget) {
+                  updateStatus(cancelTarget.id, "cancelled", cancelTarget);
+                  setCancelTarget(null);
+                }
+              }}
+            >
+              Sim, cancelar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -349,6 +387,7 @@ interface SlotRowProps {
   onRemoveBreak: (id: string) => void;
   onMoveBreak: (breakId: string, dateStr: string, newTime: string) => void;
   onUpdateStatus: (id: string, s: "completed" | "no-show" | "cancelled", a?: Appointment) => void;
+  onCancelRequest: (a: Appointment) => void;
   canCancel: (a: Appointment) => boolean;
 }
 
@@ -363,6 +402,7 @@ const SlotRow = ({
   onRemoveBreak,
   onMoveBreak,
   onUpdateStatus,
+  onCancelRequest,
   canCancel,
 }: SlotRowProps) => {
   if (past && !appt) {
@@ -509,10 +549,10 @@ const SlotRow = ({
               variant="ghost"
               className={`justify-start font-body ${
                 cancellable
-                  ? "text-red-500 hover:bg-red-50"
+                  ? "text-destructive hover:bg-destructive/10"
                   : "text-muted-foreground/50 cursor-not-allowed"
               }`}
-              onClick={() => onUpdateStatus(appt.id, "cancelled", appt)}
+              onClick={() => cancellable && appt && onCancelRequest(appt)}
             >
               <Ban size={14} className="mr-1.5" /> Cancel
             </Button>

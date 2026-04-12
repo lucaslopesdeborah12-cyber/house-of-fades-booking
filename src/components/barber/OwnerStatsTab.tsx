@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useShopSettings } from "@/hooks/useShopSettings";
 import ShopSettingsPanel from "@/components/barber/ShopSettingsPanel";
+import AllAppointmentsList from "@/components/barber/AllAppointmentsList";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { startOfWeek, startOfMonth, format, parseISO, subMonths, eachDayOfInterval, endOfWeek } from "date-fns";
@@ -252,6 +253,9 @@ const OwnerStatsTab = () => {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* All Appointments */}
+      <AllAppointmentsList />
     </div>
   );
 };
