@@ -73,6 +73,8 @@ const MySchedulePanel = ({ barberId }: Props) => {
       client_phone: null,
       client_email: null,
       service_id: null,
+      notes: null,
+      contact_preference: "both",
     };
 
     console.log("Break insert payload:", breakInsert);
