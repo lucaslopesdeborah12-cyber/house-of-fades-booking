@@ -126,12 +126,13 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
         appointment_date: selectedDateStr,
         time_slot: timeSlotValue,
         client_name: "BREAK",
-        client_phone: "",
+        client_phone: null,
         service_id: null,
         status: "booked",
       });
 
       if (error) {
+        console.error("Auto-break insert failed:", error);
         toast.error("Failed to create break");
         return;
       }
@@ -192,12 +193,13 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
       appointment_date: dateStr,
       time_slot: `${time}:00`,
       client_name: "BREAK",
-      client_phone: "",
+      client_phone: null,
       status: "booked",
       service_id: null,
     });
 
     if (error) {
+      console.error("Manual break insert failed:", error);
       toast.error("Failed to add break");
     } else {
       toast.success("Break added");
@@ -235,12 +237,13 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
       appointment_date: dateStr,
       time_slot: `${newTime}:00`,
       client_name: "BREAK",
-      client_phone: "",
+      client_phone: null,
       status: "booked",
       service_id: null,
     });
 
     if (insErr) {
+      console.error("Move break insert failed:", insErr);
       toast.error("Failed to move break");
     } else {
       toast.success("Break moved");
