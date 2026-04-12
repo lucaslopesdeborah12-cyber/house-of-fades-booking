@@ -10,9 +10,8 @@ interface Props {
   onSave: (key: keyof ShopSettings, value: string) => Promise<void>;
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, "0")}:00`);
-const HALF_HOURS = Array.from({ length: 48 }, (_, i) => {
-  const h = Math.floor(i / 2);
+const TIME_SLOTS = Array.from({ length: 30 }, (_, i) => {
+  const h = Math.floor(i / 2) + 7;
   const m = i % 2 === 0 ? "00" : "30";
   return `${String(h).padStart(2, "0")}:${m}`;
 });
@@ -85,7 +84,7 @@ const ShopSettingsPanel = ({ settings, onSave }: Props) => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {HALF_HOURS.map((t) => (
+              {TIME_SLOTS.map((t) => (
                 <SelectItem key={t} value={t}>{t}</SelectItem>
               ))}
             </SelectContent>
@@ -105,7 +104,7 @@ const ShopSettingsPanel = ({ settings, onSave }: Props) => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {HOURS.map((t) => (
+                {TIME_SLOTS.map((t) => (
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>
@@ -122,7 +121,7 @@ const ShopSettingsPanel = ({ settings, onSave }: Props) => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {HOURS.map((t) => (
+                {TIME_SLOTS.map((t) => (
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>
