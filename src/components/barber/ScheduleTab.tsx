@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import {
@@ -45,8 +45,10 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
   const [selectedDay, setSelectedDay] = useState(0);
-  const [autoBreakKey, setAutoBreakKey] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
+
+  // Ref to track which day+barber combo we already ran break logic for
+  const breakCheckedRef = useRef<string>("");
 
   const dayCount = getDayCount(settings.last_working_day);
   const TIME_SLOTS = generateTimeSlots(settings.work_start, settings.work_end);
@@ -90,7 +92,6 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     if (error) {
       toast.error("Failed to load schedule");
     } else if (data) {
-      console.log("[ScheduleTab] Fetched appointments:", data);
       setAppointments(data as Appointment[]);
     }
     setLoading(false);
@@ -101,30 +102,22 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     fetchAppointments();
   }, [fetchAppointments]);
 
+  // Reset break-checked flag when day changes
   useEffect(() => {
-    console.log("[ScheduleTab] selectedDate changed:", selectedDateStr);
-  }, [selectedDateStr]);
+    breakCheckedRef.current = "";
+  }, [selectedDateStr, barberId]);
 
-  useEffect(() => {
-    setAutoBreakKey(null);
-  }, [selectedDateStr, defaultBreakTime, barberId]);
-
+  // Auto-break: runs ONCE per day load
   useEffect(() => {
     const ensureAutoBreak = async () => {
-      if (settingsLoading || loading || !selectedDateStr || !defaultBreakTime) {
-        console.log("[AutoBreak] Skipping: settingsLoading=", settingsLoading, "loading=", loading, "selectedDateStr=", selectedDateStr, "defaultBreakTime=", defaultBreakTime);
-        return;
-      }
+      if (settingsLoading || loading || !selectedDateStr || !defaultBreakTime) return;
 
-      const checkKey = `${barberId}-${selectedDateStr}-${defaultBreakTime}`;
-      if (autoBreakKey === checkKey) return;
+      const checkKey = `${barberId}-${selectedDateStr}`;
+      if (breakCheckedRef.current === checkKey) return;
+      breakCheckedRef.current = checkKey; // Mark immediately to prevent double execution
 
-      const selectedDayDate = startOfDay(parseISO(selectedDateStr));
-      if (isBefore(selectedDayDate, startOfDay(new Date()))) {
-        console.log("[AutoBreak] Skipping past day:", selectedDateStr);
-        setAutoBreakKey(checkKey);
-        return;
-      }
+      // Skip past days
+      if (isBefore(startOfDay(parseISO(selectedDateStr)), startOfDay(new Date()))) return;
 
       const { data: existingBreaks, error: fetchErr } = await supabase
         .from("appointments")
@@ -132,65 +125,57 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
         .eq("barber_id", barberId)
         .eq("appointment_date", selectedDateStr)
         .eq("client_name", "BREAK")
-        .eq("status", "booked")
-        .limit(1);
-
-      console.log("[AutoBreak] Existing breaks query result:", existingBreaks, "error:", fetchErr);
+        .eq("status", "booked");
 
       if (fetchErr) {
-        console.error("[AutoBreak] Error checking existing breaks:", fetchErr);
-        setAutoBreakKey(checkKey);
+        console.error("[AutoBreak] Error:", fetchErr);
         return;
       }
 
-      if ((existingBreaks?.length ?? 0) > 0) {
-        console.log("[AutoBreak] Break already exists, skipping.");
-        setAutoBreakKey(checkKey);
-        return;
+      const count = existingBreaks?.length ?? 0;
+
+      if (count > 1) {
+        // Delete ALL breaks, then insert one
+        await supabase
+          .from("appointments")
+          .delete()
+          .eq("barber_id", barberId)
+          .eq("appointment_date", selectedDateStr)
+          .eq("client_name", "BREAK")
+          .eq("status", "booked");
+
+        await supabase.from("appointments").insert({
+          barber_id: barberId,
+          appointment_date: selectedDateStr,
+          time_slot: `${defaultBreakTime}:00`,
+          client_name: "BREAK",
+          status: "booked",
+          service_id: null,
+          client_phone: null,
+        });
+        await fetchAppointments();
+      } else if (count === 0) {
+        // Insert one break
+        const { error } = await supabase.from("appointments").insert({
+          barber_id: barberId,
+          appointment_date: selectedDateStr,
+          time_slot: `${defaultBreakTime}:00`,
+          client_name: "BREAK",
+          status: "booked",
+          service_id: null,
+          client_phone: null,
+        });
+        if (error) {
+          console.error("[AutoBreak] Insert failed:", error);
+        } else {
+          await fetchAppointments();
+        }
       }
-
-      const timeSlotValue = `${defaultBreakTime}:00`;
-      console.log("[AutoBreak] defaultBreakTime before insert:", defaultBreakTime);
-
-      const dayAppointments = appointments.filter((appt) => appt.appointment_date === selectedDateStr);
-      const occupied = dayAppointments.some((appt) => appt.time_slot === timeSlotValue);
-      if (occupied) {
-        console.log("[AutoBreak] Default break time occupied by existing appointment at", timeSlotValue);
-        setAutoBreakKey(checkKey);
-        return;
-      }
-
-      const breakPayload = {
-        barber_id: barberId,
-        appointment_date: selectedDateStr,
-        time_slot: timeSlotValue,
-        client_name: "BREAK",
-        client_phone: null,
-        service_id: null,
-        status: "booked" as const,
-      };
-
-      console.log("[AutoBreak] Insert attempt:", breakPayload);
-      const { data: insertedBreak, error } = await supabase
-        .from("appointments")
-        .insert(breakPayload)
-        .select("id, time_slot")
-        .maybeSingle();
-
-      console.log("[AutoBreak] Insert result/error:", insertedBreak, error);
-
-      if (error) {
-        console.error("[AutoBreak] Insert failed:", error);
-        toast.error("Failed to create break");
-        return;
-      }
-
-      setAutoBreakKey(checkKey);
-      await fetchAppointments();
+      // count === 1 → do nothing
     };
 
     ensureAutoBreak();
-  }, [appointments, autoBreakKey, barberId, defaultBreakTime, fetchAppointments, loading, selectedDateStr, settingsLoading]);
+  }, [settingsLoading, loading, selectedDateStr, defaultBreakTime, barberId, fetchAppointments]);
 
   const canCancel = (appt: Appointment): boolean => {
     const now = new Date();
@@ -278,7 +263,7 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
   const removeBreak = async (id: string) => {
     const { error } = await supabase
       .from("appointments")
-      .update({ status: "cancelled" })
+      .delete()
       .eq("id", id);
 
     if (error) {
@@ -292,7 +277,7 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
   const moveBreak = async (breakId: string, dateStr: string, newTime: string) => {
     const { error: delErr } = await supabase
       .from("appointments")
-      .update({ status: "cancelled" })
+      .delete()
       .eq("id", breakId);
 
     if (delErr) {
