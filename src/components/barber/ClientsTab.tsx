@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { format, startOfWeek, addDays, addWeeks, subWeeks, parseISO, endOfWeek, isAfter } from "date-fns";
+import { format, addDays, addWeeks, subWeeks, parseISO, endOfWeek } from "date-fns";
 import { Phone, Mail, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   AlertDialog,
@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
-import { useShopSettings, getDayCount } from "@/hooks/useShopSettings";
+import { useShopSettings } from "@/hooks/useShopSettings";
 
  type ClientAppointment = {
   id: string;
