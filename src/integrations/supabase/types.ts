@@ -342,6 +342,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_future_breaks: { Args: { p_new_time: string }; Returns: undefined }
     }
     Enums: {
       barber_role: "owner" | "employee"
