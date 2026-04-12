@@ -415,15 +415,35 @@ const SlotRow = ({
               <span className="text-xs font-body font-medium">Break</span>
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-2" side="top" align="center">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-red-500 hover:text-red-600 hover:bg-red-50 font-body"
-              onClick={() => onRemoveBreak(appt.id)}
-            >
-              <X size={14} className="mr-1.5" /> Remove
-            </Button>
+          <PopoverContent className="w-48 p-2 max-h-60 overflow-y-auto" side="top" align="center">
+            <p className="text-xs font-body text-muted-foreground px-1 mb-1.5">Move break to:</p>
+            <div className="flex flex-col gap-0.5">
+              {freeSlots.length === 0 ? (
+                <p className="text-xs text-muted-foreground/60 font-body px-1">No free slots</p>
+              ) : (
+                freeSlots.map((slot) => (
+                  <Button
+                    key={slot}
+                    size="sm"
+                    variant="ghost"
+                    className="justify-start text-foreground hover:bg-muted font-body text-xs h-8"
+                    onClick={() => onMoveBreak(appt.id, dateStr, slot)}
+                  >
+                    <Coffee size={12} className="mr-1.5 text-amber-600" /> {slot}
+                  </Button>
+                ))
+              )}
+            </div>
+            <div className="border-t border-border mt-1.5 pt-1.5">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="justify-start text-red-500 hover:text-red-600 hover:bg-red-50 font-body text-xs w-full h-8"
+                onClick={() => onRemoveBreak(appt.id)}
+              >
+                <X size={12} className="mr-1.5" /> Remove break
+              </Button>
+            </div>
           </PopoverContent>
         </Popover>
       </div>
