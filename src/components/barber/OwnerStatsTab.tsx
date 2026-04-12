@@ -27,7 +27,8 @@ const OwnerStatsTab = () => {
   const [loading, setLoading] = useState(true);
   const [notifEmail, setNotifEmail] = useState("");
   const [savingEmail, setSavingEmail] = useState(false);
-
+  const { settings, saveSetting, loading: settingsLoading } = useShopSettings();
+  
   useEffect(() => {
     supabase
       .from("owner_settings" as any)
