@@ -84,7 +84,7 @@ const ShopSettingsPanel = ({ settings, onSave }: Props) => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {HALF_HOURS.map((t) => (
+              {TIME_SLOTS.map((t) => (
                 <SelectItem key={t} value={t}>{t}</SelectItem>
               ))}
             </SelectContent>
@@ -104,7 +104,7 @@ const ShopSettingsPanel = ({ settings, onSave }: Props) => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {HOURS.map((t) => (
+                {TIME_SLOTS.map((t) => (
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>
@@ -121,7 +121,7 @@ const ShopSettingsPanel = ({ settings, onSave }: Props) => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {HOURS.map((t) => (
+                {TIME_SLOTS.map((t) => (
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>
