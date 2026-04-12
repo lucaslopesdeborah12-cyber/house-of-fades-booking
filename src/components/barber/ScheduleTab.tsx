@@ -328,8 +328,10 @@ interface SlotRowProps {
   past: boolean;
   isBreak: boolean;
   dateStr: string;
+  freeSlots: string[];
   onAddBreak: (d: string, t: string) => void;
   onRemoveBreak: (id: string) => void;
+  onMoveBreak: (breakId: string, dateStr: string, newTime: string) => void;
   onUpdateStatus: (id: string, s: "completed" | "no-show" | "cancelled", a?: Appointment) => void;
   canCancel: (a: Appointment) => boolean;
 }
@@ -340,8 +342,10 @@ const SlotRow = ({
   past,
   isBreak,
   dateStr,
+  freeSlots,
   onAddBreak,
   onRemoveBreak,
+  onMoveBreak,
   onUpdateStatus,
   canCancel,
 }: SlotRowProps) => {
