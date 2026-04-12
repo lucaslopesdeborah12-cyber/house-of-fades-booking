@@ -208,6 +208,42 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     }
   };
 
+  const moveBreak = async (breakId: string, dateStr: string, newTime: string) => {
+    // Delete old break
+    const { error: delErr } = await supabase
+      .from("appointments")
+      .update({ status: "cancelled" })
+      .eq("id", breakId);
+    if (delErr) {
+      toast.error("Failed to move break");
+      return;
+    }
+    // Insert new break
+    const { error: insErr } = await supabase.from("appointments").insert({
+      barber_id: barberId,
+      appointment_date: dateStr,
+      time_slot: newTime,
+      client_name: "BREAK",
+      status: "booked",
+      service_id: null as any,
+    });
+    if (insErr) {
+      toast.error("Failed to move break");
+    } else {
+      toast.success("Break moved");
+      fetchAppointments();
+    }
+  };
+
+  const getFreeSlots = (dateStr: string): string[] => {
+    return TIME_SLOTS.filter((t) => {
+      const occupied = appointments.find(
+        (a) => a.appointment_date === dateStr && a.time_slot.slice(0, 5) === t
+      );
+      return !occupied && !isPast(dateStr, t);
+    });
+  };
+
   const getAppt = (dateStr: string, time: string) =>
     appointments.find(
       (a) => a.appointment_date === dateStr && a.time_slot.slice(0, 5) === time
@@ -270,8 +306,10 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
               past={past}
               isBreak={isBreak}
               dateStr={selectedDateStr}
+              freeSlots={getFreeSlots(selectedDateStr)}
               onAddBreak={addBreak}
               onRemoveBreak={removeBreak}
+              onMoveBreak={moveBreak}
               onUpdateStatus={updateStatus}
               canCancel={canCancel}
             />
@@ -290,8 +328,10 @@ interface SlotRowProps {
   past: boolean;
   isBreak: boolean;
   dateStr: string;
+  freeSlots: string[];
   onAddBreak: (d: string, t: string) => void;
   onRemoveBreak: (id: string) => void;
+  onMoveBreak: (breakId: string, dateStr: string, newTime: string) => void;
   onUpdateStatus: (id: string, s: "completed" | "no-show" | "cancelled", a?: Appointment) => void;
   canCancel: (a: Appointment) => boolean;
 }
@@ -302,8 +342,10 @@ const SlotRow = ({
   past,
   isBreak,
   dateStr,
+  freeSlots,
   onAddBreak,
   onRemoveBreak,
+  onMoveBreak,
   onUpdateStatus,
   canCancel,
 }: SlotRowProps) => {
@@ -373,15 +415,35 @@ const SlotRow = ({
               <span className="text-xs font-body font-medium">Break</span>
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-2" side="top" align="center">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-red-500 hover:text-red-600 hover:bg-red-50 font-body"
-              onClick={() => onRemoveBreak(appt.id)}
-            >
-              <X size={14} className="mr-1.5" /> Remove
-            </Button>
+          <PopoverContent className="w-48 p-2 max-h-60 overflow-y-auto" side="top" align="center">
+            <p className="text-xs font-body text-muted-foreground px-1 mb-1.5">Move break to:</p>
+            <div className="flex flex-col gap-0.5">
+              {freeSlots.length === 0 ? (
+                <p className="text-xs text-muted-foreground/60 font-body px-1">No free slots</p>
+              ) : (
+                freeSlots.map((slot) => (
+                  <Button
+                    key={slot}
+                    size="sm"
+                    variant="ghost"
+                    className="justify-start text-foreground hover:bg-muted font-body text-xs h-8"
+                    onClick={() => onMoveBreak(appt.id, dateStr, slot)}
+                  >
+                    <Coffee size={12} className="mr-1.5 text-amber-600" /> {slot}
+                  </Button>
+                ))
+              )}
+            </div>
+            <div className="border-t border-border mt-1.5 pt-1.5">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="justify-start text-red-500 hover:text-red-600 hover:bg-red-50 font-body text-xs w-full h-8"
+                onClick={() => onRemoveBreak(appt.id)}
+              >
+                <X size={12} className="mr-1.5" /> Remove break
+              </Button>
+            </div>
           </PopoverContent>
         </Popover>
       </div>
