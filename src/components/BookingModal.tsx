@@ -750,7 +750,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 const phoneDisabled = contactPreference === null;
                 const needsWarning = contactPreference === null && clientName.length > 0;
 
-                // Trigger shake once
                 if (needsWarning && !prefShakeTriggered) {
                   setPrefShakeTriggered(true);
                 }
@@ -760,32 +759,24 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   ((contactPreference === 'sms' || contactPreference === 'call' || contactPreference === 'all') && !clientPhone.trim());
 
                 return (
-                <div style={{ padding: "0 0 14px" }}>
-                  {/* Section label */}
-                  <div style={{
-                    fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 1, textTransform: "uppercase" as const,
-                    fontFamily: "Arial", display: "flex", alignItems: "center", gap: 6, marginBottom: 12,
-                  }}>
-                    <span style={{ width: 14, height: 1, background: "rgba(201,168,76,0.3)", display: "inline-block" }} />
-                    Seus dados
-                  </div>
+                <div style={{ padding: "0 0 14px", fontFamily: "Arial" }}>
 
-                  {/* Contact preference pills */}
-                  <div style={{ opacity: 0, animation: "fadeUpForm 0.38s ease forwards", animationDelay: "0.05s", marginBottom: 10 }}>
+                  {/* Contact preference chips — single row, icon + text */}
+                  <div style={{ opacity: 0, animation: "fadeUpForm 0.38s ease forwards", animationDelay: "0.05s", marginBottom: 14 }}>
                     {needsWarning && (
                       <div style={{ fontSize: 11, color: "#ff4444", fontFamily: "Arial", marginBottom: 8, animation: prefShakeTriggered ? "prefShake 0.4s ease" : "none" }}>
                         ⚠️ Escolha como quer receber a confirmação
                       </div>
                     )}
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.32)", fontFamily: "Arial", marginBottom: 8, lineHeight: 1.4 }}>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.32)", fontFamily: "Arial", marginBottom: 8 }}>
                       Qual a sua <span style={{ color: "#C9A84C" }}>melhor forma</span> de receber confirmação?
                     </div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "nowrap" }}>
+                    <div style={{ display: "flex", gap: 6 }}>
                       {([
-                        { value: 'sms' as const, label: '📱 SMS' },
-                        { value: 'email' as const, label: '✉️ Email' },
-                        { value: 'call' as const, label: '📞 Ligação' },
-                        { value: 'all' as const, label: '🔔 Todos' },
+                        { value: 'sms' as const, icon: '📱', label: 'SMS' },
+                        { value: 'email' as const, icon: '✉️', label: 'Email' },
+                        { value: 'call' as const, icon: '📞', label: 'Ligação' },
+                        { value: 'all' as const, icon: '🔔', label: 'Todos' },
                       ]).map(pill => {
                         const isActive = contactPreference === pill.value;
                         const isRedState = needsWarning;
@@ -793,23 +784,17 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           <button
                             key={pill.value}
                             type="button"
-                            onClick={() => {
-                              setContactPreference(pill.value);
-                              if (!clientName.trim()) {
-                                const nameInput = document.querySelector<HTMLInputElement>('input[placeholder="Nome *"]');
-                                // Focus removed to prevent iOS Safari zoom
-                              }
-                            }}
+                            onClick={() => setContactPreference(pill.value)}
                             style={{
                               flex: 1,
                               background: isActive ? "rgba(201,168,76,0.12)" : isRedState ? "rgba(220,50,50,0.05)" : "rgba(255,255,255,0.04)",
-                              border: `1.5px solid ${isActive ? "#C9A84C" : isRedState ? "rgba(220,50,50,0.6)" : "rgba(255,255,255,0.09)"}`,
+                              border: `1.5px solid ${isActive ? "#C9A84C" : isRedState ? "rgba(220,50,50,0.6)" : "#2e2e2e"}`,
                               borderRadius: 99,
                               padding: "9px 4px",
-                              fontSize: 10,
-                              color: isActive ? "#C9A84C" : isRedState ? "rgba(220,50,50,0.8)" : "rgba(255,255,255,0.35)",
+                              fontSize: 11,
+                              color: isActive ? "#C9A84C" : isRedState ? "rgba(220,50,50,0.8)" : "rgba(255,255,255,0.4)",
                               fontFamily: "Arial",
-                              fontWeight: isActive ? 500 : 400,
+                              fontWeight: isActive ? 600 : 400,
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
@@ -820,150 +805,89 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                               animation: isRedState && !isActive ? "prefPulse 1.5s ease infinite" : "none",
                             }}
                           >
-                            {pill.label}
+                            <span>{pill.icon}</span>
+                            <span>{pill.label}</span>
                           </button>
                         );
                       })}
                     </div>
                   </div>
 
-                  {/* Nome field */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 8, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.12s" }}>
+                  {/* Nome — full width */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 10, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.12s" }}>
                     <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>Nome</span>
-                    <div className="border-run-box" style={{ padding: 1.5, borderRadius: 12, background: "rgba(255,255,255,0.07)" }}>
+                    <input
+                      placeholder="Nome *"
+                      value={clientName}
+                      onChange={e => setClientName(e.target.value)}
+                      style={{ background: "#141414", border: "1px solid #2e2e2e", borderRadius: 12, padding: "13px 14px", fontSize: "16px", color: "#e0e0e0", outline: "none", width: "100%", fontFamily: "Arial", WebkitTextSizeAdjust: "none", touchAction: "manipulation", transition: "border-color 0.2s" }}
+                      onFocus={e => { e.currentTarget.style.borderColor = "#C9A84C"; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = "#2e2e2e"; }}
+                    />
+                  </div>
+
+                  {/* Email — full width */}
+                  {!hideEmailField && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 10, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.18s" }}>
+                      <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>Email</span>
                       <input
-                        placeholder="Nome *"
-                        value={clientName}
-                        onChange={e => setClientName(e.target.value)}
-                        style={{ background: "#181818", border: "none", borderRadius: 11, padding: "13px 14px", fontSize: "16px", color: "#e0e0e0", outline: "none", width: "100%", fontFamily: "Arial", WebkitTextSizeAdjust: "none", touchAction: "manipulation" }}
-                        onFocus={e => {
-                          const box = e.currentTarget.parentElement;
-                          if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
-                          const lbl = box?.parentElement?.querySelector("span");
-                          if (lbl) lbl.style.color = "#C9A84C";
-                        }}
-                        onBlur={e => {
-                          const box = e.currentTarget.parentElement;
-                          if (box) { box.style.background = "rgba(255,255,255,0.07)"; box.style.animation = "none"; }
-                          const lbl = box?.parentElement?.querySelector("span");
-                          if (lbl) lbl.style.color = "rgba(201,168,76,0.5)";
+                        placeholder={emailDisabled ? "Escolha uma opção acima primeiro" : "Email *"}
+                        type="email"
+                        value={clientEmail}
+                        onChange={e => setClientEmail(e.target.value)}
+                        disabled={emailDisabled}
+                        style={{
+                          background: "#141414", border: "1px solid #C9A84C", borderRadius: 12, padding: "13px 14px", fontSize: "16px",
+                          color: "#C9A84C", outline: "none", width: "100%", fontFamily: "Arial",
+                          cursor: emailDisabled ? "not-allowed" : "text",
+                          opacity: emailDisabled ? 0.4 : 1,
+                          WebkitTextSizeAdjust: "none", touchAction: "manipulation",
                         }}
                       />
                     </div>
-                  </div>
+                  )}
 
-                  {/* Email + Phone row */}
-                  <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                    {/* Email */}
-                    {!hideEmailField && (
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.18s" }}>
-                        <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>
-                          Email
-                        </span>
-                        <div className="border-run-box" style={{
-                          padding: 1.5, borderRadius: 12,
-                          background: "rgba(255,255,255,0.07)",
-                          ...(emailDisabled ? { opacity: 0.4 } : {}),
-                        }}>
-                          <input
-                            placeholder={emailDisabled ? "Escolha uma opção acima primeiro" : "Email *"}
-                            type="email"
-                            value={clientEmail}
-                            onChange={e => setClientEmail(e.target.value)}
-                            disabled={emailDisabled}
-                            style={{
-                              background: "#181818",
-                              border: "none",
-                              borderRadius: 11, padding: "13px 14px", fontSize: "16px",
-                              color: "#e0e0e0",
-                              outline: "none", width: "100%", fontFamily: "Arial",
-                              cursor: emailDisabled ? "not-allowed" : "text",
-                              WebkitTextSizeAdjust: "none", touchAction: "manipulation",
-                            }}
-                            onFocus={e => {
-                              if (emailDisabled) return;
-                              const box = e.currentTarget.parentElement;
-                              if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
-                              const lbl = box?.parentElement?.querySelector("span");
-                              if (lbl) lbl.style.color = "#C9A84C";
-                            }}
-                            onBlur={e => {
-                              if (emailDisabled) return;
-                              const box = e.currentTarget.parentElement;
-                              if (box) { box.style.background = "rgba(255,255,255,0.07)"; box.style.animation = "none"; }
-                              const lbl = box?.parentElement?.querySelector("span");
-                              if (lbl) lbl.style.color = "rgba(201,168,76,0.5)";
-                            }}
-                          />
+                  {/* Telefone — full width with country selector */}
+                  {!hidePhoneField && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 14, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.21s", ...(phoneDisabled ? { opacity: 0.4 } : {}) }}>
+                      <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>Telefone</span>
+                      <div style={{ display: "flex", background: "#141414", border: "1px solid #2e2e2e", borderRadius: 12, overflow: "hidden", transition: "border-color 0.2s" }}
+                        onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = "#C9A84C"; }}
+                        onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = "#2e2e2e"; }}
+                      >
+                        <div style={{ flexShrink: 0 }}>
+                          <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
                         </div>
+                        <input
+                          placeholder={selectedCountry.code === "IE" ? "085 123 4567" : t("booking.phone")}
+                          value={clientPhone}
+                          onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                          disabled={phoneDisabled}
+                          style={{ flex: 1, background: "transparent", border: "none", outline: "none", padding: "13px 10px", fontSize: "16px", color: "#e0e0e0", fontFamily: "Arial", WebkitTextSizeAdjust: "none", touchAction: "manipulation", cursor: phoneDisabled ? "not-allowed" : "text" }}
+                        />
                       </div>
-                    )}
-                    {/* Phone */}
-                    {!hidePhoneField && (
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3, opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.21s", ...(phoneDisabled ? { opacity: 0.4 } : {}) }}>
-                        <span style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", letterSpacing: 1.5, textTransform: "uppercase" as const, fontFamily: "Arial" }}>Telefone</span>
-                        <div className="border-run-box" style={{ padding: 1.5, borderRadius: 12, background: "rgba(255,255,255,0.07)", display: "flex", alignItems: "center" }}>
-                          <div style={{ flexShrink: 0 }}>
-                            <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
-                          </div>
-                          <input
-                            placeholder={selectedCountry.code === "IE" ? "085 123 4567" : t("booking.phone")}
-                            value={clientPhone}
-                            onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                            disabled={phoneDisabled}
-                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", padding: "13px 10px", fontSize: "16px", color: "#e0e0e0", fontFamily: "Arial", WebkitTextSizeAdjust: "none", touchAction: "manipulation", cursor: phoneDisabled ? "not-allowed" : "text" }}
-                            onFocus={e => {
-                              if (phoneDisabled) return;
-                              const box = e.currentTarget.parentElement;
-                              if (box) { box.style.background = "linear-gradient(90deg, #A07830, #C9A84C, #f5e49c, #C9A84C, #A07830)"; box.style.backgroundSize = "200% auto"; box.style.animation = "borderRun 1.8s linear infinite"; }
-                              const lbl = box?.parentElement?.querySelector("span");
-                              if (lbl) lbl.style.color = "#C9A84C";
-                            }}
-                            onBlur={e => {
-                              if (phoneDisabled) return;
-                              const box = e.currentTarget.parentElement;
-                              if (box) { box.style.background = "rgba(255,255,255,0.07)"; box.style.animation = "none"; }
-                              const lbl = box?.parentElement?.querySelector("span");
-                              if (lbl) lbl.style.color = "rgba(201,168,76,0.5)";
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Summary card */}
-                  <div style={{
-                    opacity: 0, animation: "fadeUpForm 0.4s ease forwards", animationDelay: "0.2s",
-                    background: "#1a1a1a", borderRadius: 14, padding: "13px 14px", marginBottom: 10,
-                  }}>
-                    <div style={{
-                      fontSize: 8, color: "rgba(201,168,76,0.45)", letterSpacing: 2, textTransform: "uppercase" as const, fontFamily: "Arial",
-                      marginBottom: 9, paddingBottom: 7, borderBottom: "1px solid rgba(255,255,255,0.05)",
-                      display: "flex", justifyContent: "space-between", alignItems: "center",
-                    }}>
-                      <span>Resumo</span>
-                      <span style={{ width: 14, height: 14, borderRadius: "50%", background: "rgba(74,124,47,0.2)", border: "1px solid rgba(74,124,47,0.4)", color: "#4A7C2F", fontSize: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>✓</span>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
-                      {[
-                        { label: "Barbeiro", value: selectedBarberName || "" },
-                        { label: "Serviço", value: selectedServiceObj?.name || "" },
-                        { label: "Data", value: selectedDate ? format(selectedDate, "dd/MM/yyyy") : "" },
-                        { label: "Hora", value: selectedTime },
-                      ].map((row) => (
-                        <div key={row.label} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)", fontFamily: "Arial", marginBottom: 2 }}>{row.label}</div>
-                          <div style={{ fontSize: 12, color: "#e0e0e0", fontWeight: 500 }}>{row.value}</div>
+                  )}
+
+                  {/* Resumo — service/barber left, price right */}
+                  <div style={{
+                    opacity: 0, animation: "fadeUpForm 0.4s ease forwards", animationDelay: "0.26s",
+                    background: "#141414", border: "1px solid #2e2e2e", borderRadius: 14, padding: "14px 16px", marginBottom: 14,
+                  }}>
+                    <div style={{ fontSize: 8, color: "rgba(201,168,76,0.45)", letterSpacing: 2, textTransform: "uppercase" as const, fontFamily: "Arial", marginBottom: 10, paddingBottom: 7, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                      Resumo
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontSize: 13, color: "#e0e0e0", fontWeight: 600, fontFamily: "Arial", marginBottom: 2 }}>
+                          {selectedServiceObj?.name || ""} <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>·</span> {selectedBarberName || ""}
                         </div>
-                      ))}
-                      <div style={{ gridColumn: "span 2", borderTop: "1px solid rgba(255,255,255,0.04)", marginTop: 4, paddingTop: 8 }}>
-                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)", fontFamily: "Arial", marginBottom: 2 }}>Total</div>
-                        <div style={{
-                          background: "linear-gradient(90deg, #C9A84C, #f5e49c, #C9A84C)", backgroundSize: "300% auto",
-                          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                          animation: "shimmerGold 2s linear infinite", fontWeight: "bold", fontFamily: "Georgia", fontSize: 15,
-                        }}>€{Number(selectedServiceObj?.price || 0).toFixed(0)}</div>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Arial" }}>
+                          {selectedDate ? format(selectedDate, "dd/MM/yyyy") : ""} às {selectedTime}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 22, fontWeight: "bold", color: "#C9A84C", fontFamily: "Georgia" }}>
+                        €{Number(selectedServiceObj?.price || 0).toFixed(0)}
                       </div>
                     </div>
                   </div>
@@ -974,13 +898,13 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     disabled={isConfirmDisabled}
                     style={{
                       opacity: 0, animation: "fadeUpForm 0.42s ease forwards", animationDelay: "0.34s",
-                      background: "#C9A84C", border: "none", borderRadius: 14, padding: 15,
-                      width: "100%", fontSize: 15, fontWeight: "bold", color: "#111", fontFamily: "Georgia", letterSpacing: 0.3,
+                      background: "#C9A84C", border: "none", borderRadius: 12, padding: 15,
+                      width: "100%", fontSize: 15, fontWeight: "bold", color: "#111", fontFamily: "Arial", letterSpacing: 0.3,
                       cursor: isConfirmDisabled ? "not-allowed" : "pointer",
                       ...(isConfirmDisabled ? { filter: "opacity(0.5)" } : {}),
                     }}
                   >
-                    {submitting ? t("booking.confirming") : "Confirmar →"}
+                    {submitting ? t("booking.confirming") : "Confirmar reserva →"}
                   </button>
 
                   {/* Back button */}
