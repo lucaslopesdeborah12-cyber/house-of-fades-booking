@@ -182,9 +182,6 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
           <ChevronLeft size={16} />
         </Button>
-        <Button variant="outline" size="sm" className="font-body text-xs" onClick={goToday}>
-          Hoje
-        </Button>
         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
           <ChevronRight size={16} />
         </Button>
