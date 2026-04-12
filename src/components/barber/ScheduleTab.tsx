@@ -123,6 +123,15 @@ const ScheduleTab = ({ barberId, activeTab }: { barberId: string; activeTab?: st
     };
   }, [barberId, fetchAppointments]);
 
+  // Re-fetch everything when tab becomes active
+  useEffect(() => {
+    if (activeTab === "schedule") {
+      refetchSettings();
+      fetchAppointments();
+      breakCheckedRef.current = "";
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     breakCheckedRef.current = "";
   }, [selectedDateStr, barberId]);
