@@ -100,6 +100,29 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     fetchAppointments();
   }, [fetchAppointments]);
 
+  // Realtime subscription for instant schedule updates
+  useEffect(() => {
+    const channel = supabase
+      .channel(`schedule-${barberId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: `barber_id=eq.${barberId}`,
+        },
+        () => {
+          fetchAppointments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [barberId, fetchAppointments]);
+
   useEffect(() => {
     breakCheckedRef.current = "";
   }, [selectedDateStr, barberId]);

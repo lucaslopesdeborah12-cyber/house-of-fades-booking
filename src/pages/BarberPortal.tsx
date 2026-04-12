@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut, BarChart3, CalendarDays } from "lucide-react";
+import { LogOut, BarChart3, CalendarDays, Users } from "lucide-react";
 import OwnerStatsTab from "@/components/barber/OwnerStatsTab";
 import EmployeeStatsTab from "@/components/barber/EmployeeStatsTab";
 import ScheduleTab from "@/components/barber/ScheduleTab";
+import ClientsTab from "@/components/barber/ClientsTab";
 import BarberLogin from "@/components/barber/BarberLogin";
 
 type Barber = Tables<"barbers">;
@@ -118,6 +119,10 @@ const BarberPortal = () => {
               <CalendarDays size={16} className="mr-1.5" />
               My Schedule
             </TabsTrigger>
+            <TabsTrigger value="clients" className="font-body data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Users size={16} className="mr-1.5" />
+              Clients
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="stats">
@@ -125,6 +130,9 @@ const BarberPortal = () => {
           </TabsContent>
           <TabsContent value="schedule">
             <ScheduleTab barberId={barber.id} />
+          </TabsContent>
+          <TabsContent value="clients">
+            <ClientsTab barberId={barber.id} isOwner={isOwner} />
           </TabsContent>
         </Tabs>
       </div>
