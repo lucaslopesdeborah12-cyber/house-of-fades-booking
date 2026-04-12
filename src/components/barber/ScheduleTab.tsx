@@ -531,7 +531,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                     <Button
                       className="w-full font-body text-sm gap-2"
                       variant="outline"
-                      onClick={() => { onUpdateStatus(modalAppt.id, "completed"); closeModal(); }}
+                      onClick={() => { updateStatus(modalAppt.id, "completed"); closeModal(); }}
                     >
                       <Check size={16} /> Marcar como concluído
                     </Button>
@@ -755,7 +755,5 @@ function isPastStatic(dateStr: string, time: string): boolean {
   return isBefore(date, now);
 }
 
-// Fix: reference to updateStatus from within JSX was using wrong name
-const onUpdateStatus = async (...args: any[]) => {};
 
 export default ScheduleTab;
