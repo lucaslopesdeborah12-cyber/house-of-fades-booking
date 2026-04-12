@@ -63,10 +63,6 @@ const MySchedulePanel = ({ barberId }: Props) => {
       toast.error("Este horário já está ocupado");
       return;
     }
-    if (breaks.length > 0) {
-      toast.error("Já existe um break neste dia. Remove o existente primeiro.");
-      return;
-    }
     const { error } = await supabase.from("appointments").insert({
       barber_id: barberId,
       appointment_date: selectedDateStr,
