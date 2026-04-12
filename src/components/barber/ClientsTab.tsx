@@ -41,36 +41,17 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
   const [cancelTarget, setCancelTarget] = useState<ClientAppointment | null>(null);
   const dayCount = getDayCount(settings.last_working_day);
   const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
-  const today = new Date();
-  const todayWeekStart = startOfWeek(today, { weekStartsOn: 1 });
-  const isCurrentWeekView = format(weekStart, "yyyy-MM-dd") === format(todayWeekStart, "yyyy-MM-dd");
-  const visibleWeekDays = isCurrentWeekView
-    ? weekDays.filter((day) => format(day, "yyyy-MM-dd") >= format(today, "yyyy-MM-dd"))
-    : weekDays;
+  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const currentWeekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
 
   useEffect(() => {
     if (settingsLoading) return;
-
-    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const currentWeekLastWorkingDay = addDays(currentWeekStart, dayCount - 1);
-
-    if (format(today, "yyyy-MM-dd") > format(currentWeekLastWorkingDay, "yyyy-MM-dd")) {
-      setWeekStart(addDays(currentWeekStart, 7));
-      return;
-    }
-
     setWeekStart(currentWeekStart);
   }, [dayCount, settingsLoading]);
 
   const fetchAppointments = useCallback(async () => {
-    if (visibleWeekDays.length === 0) {
-      setAppointments([]);
-      setLoading(false);
-      return;
-    }
-
-    const from = format(visibleWeekDays[0], "yyyy-MM-dd");
-    const to = format(visibleWeekDays[visibleWeekDays.length - 1], "yyyy-MM-dd");
+    const from = format(currentWeekStart, "yyyy-MM-dd");
+    const to = format(currentWeekEnd, "yyyy-MM-dd");
 
     let query = supabase
       .from("appointments")
@@ -95,7 +76,7 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
       setAppointments((data as ClientAppointment[]) || []);
     }
     setLoading(false);
-  }, [barberId, isOwner, visibleWeekDays]);
+  }, [barberId, currentWeekEnd, currentWeekStart, isOwner]);
 
   useEffect(() => {
     setLoading(true);

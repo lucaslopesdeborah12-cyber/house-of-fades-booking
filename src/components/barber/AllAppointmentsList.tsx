@@ -72,7 +72,7 @@ const AllAppointmentsList = () => {
     if (!cancelTarget) return;
     const { error } = await supabase
       .from("appointments")
-      .update({ status: "cancelled" })
+      .delete()
       .eq("id", cancelTarget.id);
 
     if (error) {
