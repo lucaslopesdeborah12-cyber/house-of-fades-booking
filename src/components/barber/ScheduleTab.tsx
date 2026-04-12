@@ -306,8 +306,10 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
               past={past}
               isBreak={isBreak}
               dateStr={selectedDateStr}
+              freeSlots={getFreeSlots(selectedDateStr)}
               onAddBreak={addBreak}
               onRemoveBreak={removeBreak}
+              onMoveBreak={moveBreak}
               onUpdateStatus={updateStatus}
               canCancel={canCancel}
             />
