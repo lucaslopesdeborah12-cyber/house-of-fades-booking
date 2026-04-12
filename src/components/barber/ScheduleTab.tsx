@@ -243,14 +243,18 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
       return;
     }
 
-    const { error } = await supabase.from("appointments").update({ status }).eq("id", id);
+    const query = status === "cancelled"
+      ? supabase.from("appointments").delete().eq("id", id)
+      : supabase.from("appointments").update({ status }).eq("id", id);
+
+    const { error } = await query;
 
     if (error) {
       toast.error("Failed to update");
       return;
     }
 
-    toast.success(`Marked as ${status}`);
+    toast.success(status === "cancelled" ? "Appointment cancelled" : `Marked as ${status}`);
     await fetchAppointments();
 
     if (status === "cancelled" && appt) {

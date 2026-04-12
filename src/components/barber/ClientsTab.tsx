@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -41,36 +41,27 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
   const [cancelTarget, setCancelTarget] = useState<ClientAppointment | null>(null);
   const dayCount = getDayCount(settings.last_working_day);
   const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
-  const today = new Date();
-  const todayWeekStart = startOfWeek(today, { weekStartsOn: 1 });
-  const isCurrentWeekView = format(weekStart, "yyyy-MM-dd") === format(todayWeekStart, "yyyy-MM-dd");
-  const visibleWeekDays = isCurrentWeekView
-    ? weekDays.filter((day) => format(day, "yyyy-MM-dd") >= format(today, "yyyy-MM-dd"))
-    : weekDays;
+  const { currentWeekStartStr, currentWeekEndStr } = useMemo(() => {
+    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const currentWeekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
+
+    return {
+      currentWeekStartStr: format(currentWeekStart, "yyyy-MM-dd"),
+      currentWeekEndStr: format(currentWeekEnd, "yyyy-MM-dd"),
+    };
+  }, []);
 
   useEffect(() => {
     if (settingsLoading) return;
+    setWeekStart(parseISO(currentWeekStartStr));
+  }, [currentWeekStartStr, settingsLoading]);
 
-    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const currentWeekLastWorkingDay = addDays(currentWeekStart, dayCount - 1);
-
-    if (format(today, "yyyy-MM-dd") > format(currentWeekLastWorkingDay, "yyyy-MM-dd")) {
-      setWeekStart(addDays(currentWeekStart, 7));
-      return;
-    }
-
-    setWeekStart(currentWeekStart);
-  }, [dayCount, settingsLoading]);
+  const currentWeekStart = parseISO(currentWeekStartStr);
+  const currentWeekEnd = parseISO(currentWeekEndStr);
 
   const fetchAppointments = useCallback(async () => {
-    if (visibleWeekDays.length === 0) {
-      setAppointments([]);
-      setLoading(false);
-      return;
-    }
-
-    const from = format(visibleWeekDays[0], "yyyy-MM-dd");
-    const to = format(visibleWeekDays[visibleWeekDays.length - 1], "yyyy-MM-dd");
+    const from = currentWeekStartStr;
+    const to = currentWeekEndStr;
 
     let query = supabase
       .from("appointments")
@@ -95,7 +86,7 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
       setAppointments((data as ClientAppointment[]) || []);
     }
     setLoading(false);
-  }, [barberId, isOwner, visibleWeekDays]);
+  }, [barberId, currentWeekEndStr, currentWeekStartStr, isOwner]);
 
   useEffect(() => {
     setLoading(true);
@@ -143,7 +134,7 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
   // Group by day
   const grouped = new Map<string, ClientAppointment[]>();
   for (let i = 0; i < 7; i++) {
-    const dateStr = format(addDays(weekStart, i), "yyyy-MM-dd");
+    const dateStr = format(addDays(currentWeekStart, i), "yyyy-MM-dd");
     grouped.set(dateStr, []);
   }
   appointments.forEach((a) => {
@@ -157,13 +148,13 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
     <div className="space-y-4">
       {/* Week navigation */}
       <div className="flex items-center justify-center gap-3">
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart(addDays(weekStart, -7))}>
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled>
           <ChevronLeft size={16} />
         </Button>
         <span className="text-sm font-body text-muted-foreground">
-          {format(weekStart, "dd/MM")} — {format(addDays(weekStart, 6), "dd/MM")}
+          {format(currentWeekStart, "dd/MM")} — {format(currentWeekEnd, "dd/MM")}
         </span>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart(addDays(weekStart, 7))}>
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled>
           <ChevronRight size={16} />
         </Button>
       </div>
