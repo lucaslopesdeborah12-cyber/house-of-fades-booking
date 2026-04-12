@@ -32,16 +32,14 @@ import { useShopSettings, getDayCount } from "@/hooks/useShopSettings";
 
 const DAY_NAMES = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
-const getCurrentVisibleWeekStart = (lastWorkingDay: string) => {
-  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const dayCount = getDayCount(lastWorkingDay);
-  const currentWeekLastWorkingDay = addDays(currentWeekStart, dayCount - 1);
-
-  currentWeekLastWorkingDay.setHours(23, 59, 59, 999);
-
-  return isAfter(new Date(), currentWeekLastWorkingDay)
-    ? addWeeks(currentWeekStart, 1)
-    : currentWeekStart;
+const getCurrentVisibleWeekStart = (_lastWorkingDay: string) => {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const diffToMonday = dayOfWeek === 0 ? 1 : 1 - dayOfWeek;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
 };
 
 const ClientsTab = ({
