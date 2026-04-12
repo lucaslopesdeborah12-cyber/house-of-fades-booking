@@ -18,7 +18,6 @@ const BarberPortal = () => {
   const [barber, setBarber] = useState<Barber | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("stats");
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
