@@ -13,7 +13,7 @@ import {
   isAfter,
   startOfDay,
 } from "date-fns";
-import { Check, X, Ban, Coffee, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, X, Ban, Coffee, ChevronLeft, ChevronRight, Clock, CalendarDays } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
