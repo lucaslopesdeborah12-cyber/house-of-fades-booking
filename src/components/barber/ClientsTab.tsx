@@ -56,6 +56,9 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
     setWeekStart(parseISO(currentWeekStartStr));
   }, [currentWeekStartStr, settingsLoading]);
 
+  const currentWeekStart = parseISO(currentWeekStartStr);
+  const currentWeekEnd = parseISO(currentWeekEndStr);
+
   const fetchAppointments = useCallback(async () => {
     const from = currentWeekStartStr;
     const to = currentWeekEndStr;
@@ -131,7 +134,7 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
   // Group by day
   const grouped = new Map<string, ClientAppointment[]>();
   for (let i = 0; i < 7; i++) {
-    const dateStr = format(addDays(weekStart, i), "yyyy-MM-dd");
+    const dateStr = format(addDays(currentWeekStart, i), "yyyy-MM-dd");
     grouped.set(dateStr, []);
   }
   appointments.forEach((a) => {
@@ -145,13 +148,13 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
     <div className="space-y-4">
       {/* Week navigation */}
       <div className="flex items-center justify-center gap-3">
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart(addDays(weekStart, -7))}>
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled>
           <ChevronLeft size={16} />
         </Button>
         <span className="text-sm font-body text-muted-foreground">
-          {format(weekStart, "dd/MM")} — {format(addDays(weekStart, 6), "dd/MM")}
+          {format(currentWeekStart, "dd/MM")} — {format(currentWeekEnd, "dd/MM")}
         </span>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart(addDays(weekStart, 7))}>
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled>
           <ChevronRight size={16} />
         </Button>
       </div>
