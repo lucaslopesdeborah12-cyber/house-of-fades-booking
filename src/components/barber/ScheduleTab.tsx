@@ -128,15 +128,27 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
   // Auto-insert default break
   const insertDefaultBreak = useCallback(async () => {
+    const { data: services, error: serviceError } = await supabase
+      .from("services")
+      .select("id")
+      .limit(1);
+
+    if (serviceError || !services?.length) {
+      console.error("Failed to load service for break:", serviceError);
+      toast.error("Failed to create break");
+      return false;
+    }
+
     const breakInsert = {
       barber_id: barberId,
+      service_id: services[0].id,
       appointment_date: selectedDateStr,
       time_slot: `${defaultBreakTime}:00`,
       client_name: "BREAK",
-      status: "booked",
       client_phone: null,
       client_email: null,
-      service_id: null,
+      contact_preference: "both",
+      status: "booked",
     };
 
     console.log("Default break insert payload:", breakInsert);
@@ -199,17 +211,27 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
       return;
     }
 
+    const { data: services, error: serviceError } = await supabase
+      .from("services")
+      .select("id")
+      .limit(1);
+
+    if (serviceError || !services?.length) {
+      console.error("Failed to load service for break:", serviceError);
+      toast.error("Erro ao adicionar pausa");
+      return;
+    }
+
     const breakInsert = {
       barber_id: barberId,
+      service_id: services[0].id,
       appointment_date: selectedDateStr,
       time_slot: `${time}:00`,
       client_name: "BREAK",
-      status: "booked",
       client_phone: null,
       client_email: null,
-      service_id: null,
-      notes: null,
       contact_preference: "both",
+      status: "booked",
     };
 
     console.log("Break insert payload:", breakInsert);
