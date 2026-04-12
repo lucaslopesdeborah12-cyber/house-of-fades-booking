@@ -463,7 +463,7 @@ const SlotRow = ({
     );
   }
 
-  const firstName = appt.client_name.split(" ")[0];
+  const displayName = appt.client_name;
   const serviceName = appt.services?.name || "";
   const cancellable = canCancel(appt);
 
@@ -472,7 +472,7 @@ const SlotRow = ({
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted-foreground/40 font-body w-12 text-right">{time}</span>
         <div className="flex-1 h-10 rounded-xl bg-red-900/20 flex items-center px-3 text-muted-foreground/50">
-          <span className="text-xs font-body truncate">{firstName} · {serviceName}</span>
+          <span className="text-xs font-body truncate">{displayName}{serviceName ? ` · ${serviceName}` : ""}</span>
         </div>
       </div>
     );
@@ -484,7 +484,7 @@ const SlotRow = ({
       <Popover>
         <PopoverTrigger asChild>
           <button className="flex-1 h-10 rounded-xl bg-red-900/40 border border-red-800/30 flex items-center px-3 text-red-200 hover:bg-red-900/50 transition-colors">
-            <span className="text-xs font-body font-medium truncate">{firstName} · {serviceName}</span>
+            <span className="text-xs font-body font-medium truncate">{displayName}{serviceName ? ` · ${serviceName}` : ""}</span>
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-3 space-y-2" side="top" align="center">
