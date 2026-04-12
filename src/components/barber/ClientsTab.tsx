@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { format, startOfWeek, addDays, addWeeks, subWeeks, parseISO, endOfWeek } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, subWeeks, parseISO, endOfWeek, isAfter } from "date-fns";
 import { Phone, Mail, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   AlertDialog,
@@ -15,9 +15,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
-import { useShopSettings } from "@/hooks/useShopSettings";
+import { useShopSettings, getDayCount } from "@/hooks/useShopSettings";
 
-type ClientAppointment = {
+ type ClientAppointment = {
   id: string;
   appointment_date: string;
   time_slot: string;
@@ -32,6 +32,18 @@ type ClientAppointment = {
 
 const DAY_NAMES = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
+const getCurrentVisibleWeekStart = (lastWorkingDay: string) => {
+  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const dayCount = getDayCount(lastWorkingDay);
+  const currentWeekLastWorkingDay = addDays(currentWeekStart, dayCount - 1);
+
+  currentWeekLastWorkingDay.setHours(23, 59, 59, 999);
+
+  return isAfter(new Date(), currentWeekLastWorkingDay)
+    ? addWeeks(currentWeekStart, 1)
+    : currentWeekStart;
+};
+
 const ClientsTab = ({
   barberId,
   isOwner,
@@ -43,24 +55,26 @@ const ClientsTab = ({
   activeTab?: string;
   refreshToken?: number;
 }) => {
-  const { loading: settingsLoading } = useShopSettings();
+  const { settings, loading: settingsLoading } = useShopSettings();
   const [appointments, setAppointments] = useState<ClientAppointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [weekStart, setWeekStart] = useState(() => getCurrentVisibleWeekStart("saturday"));
   const [cancelTarget, setCancelTarget] = useState<ClientAppointment | null>(null);
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-  const weekStartStr = format(weekStart, "yyyy-MM-dd");
-  const weekEndStr = format(weekEnd, "yyyy-MM-dd");
 
-  const fetchAppointments = useCallback(async () => {
-    console.log("[ClientsTab] fetching for range:", weekStartStr, "to", weekEndStr);
+  const fetchAppointments = useCallback(async (targetWeekStart = weekStart) => {
+    const targetWeekEnd = endOfWeek(targetWeekStart, { weekStartsOn: 1 });
+    const targetWeekStartStr = format(targetWeekStart, "yyyy-MM-dd");
+    const targetWeekEndStr = format(targetWeekEnd, "yyyy-MM-dd");
+
+    console.log("[ClientsTab] fetching for range:", targetWeekStartStr, "to", targetWeekEndStr);
 
     let query = supabase
       .from("appointments")
       .select("id, appointment_date, time_slot, client_name, client_email, client_phone, status, barber_id, services(name), barbers(name)")
-      .gte("appointment_date", weekStartStr)
-      .lte("appointment_date", weekEndStr)
+      .gte("appointment_date", targetWeekStartStr)
+      .lte("appointment_date", targetWeekEndStr)
       .in("status", ["booked", "confirmed"])
       .neq("client_name", "BREAK")
       .order("appointment_date")
@@ -76,27 +90,38 @@ const ClientsTab = ({
       console.error("[ClientsTab] query error:", error);
       toast.error("Failed to load clients");
     } else {
-      console.log("[ClientsTab] query result:", { from: weekStartStr, to: weekEndStr, count: data?.length ?? 0, data });
+      console.log("[ClientsTab] query result:", { from: targetWeekStartStr, to: targetWeekEndStr, count: data?.length ?? 0, data });
       setAppointments((data as ClientAppointment[]) || []);
     }
 
     setLoading(false);
-  }, [barberId, isOwner, weekStartStr, weekEndStr]);
+  }, [barberId, isOwner, weekStart]);
+
+  useEffect(() => {
+    if (settingsLoading) return;
+
+    const currentVisibleWeekStart = getCurrentVisibleWeekStart(settings.last_working_day);
+    setWeekStart(currentVisibleWeekStart);
+    setLoading(true);
+    fetchAppointments(currentVisibleWeekStart);
+  }, [settings.last_working_day, settingsLoading, fetchAppointments]);
 
   // Fetch on mount and when week changes
   useEffect(() => {
+    if (settingsLoading) return;
     setLoading(true);
     fetchAppointments();
-  }, [fetchAppointments]);
+  }, [fetchAppointments, settingsLoading]);
 
-  // Reset to current week and refetch when tab becomes active
+  // Reset to the correct current week and refetch when tab becomes active
   useEffect(() => {
-    if (activeTab !== "clients") return;
-    const currentMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
-    setWeekStart(currentMonday);
+    if (activeTab !== "clients" || settingsLoading) return;
+
+    const currentVisibleWeekStart = getCurrentVisibleWeekStart(settings.last_working_day);
+    setWeekStart(currentVisibleWeekStart);
     setLoading(true);
-    fetchAppointments();
-  }, [activeTab, refreshToken, fetchAppointments]);
+    fetchAppointments(currentVisibleWeekStart);
+  }, [activeTab, refreshToken, settings.last_working_day, settingsLoading, fetchAppointments]);
 
   // Realtime subscription for INSERT/DELETE
   useEffect(() => {
