@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -41,17 +41,24 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
   const [cancelTarget, setCancelTarget] = useState<ClientAppointment | null>(null);
   const dayCount = getDayCount(settings.last_working_day);
   const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
-  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const currentWeekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
+  const { currentWeekStartStr, currentWeekEndStr } = useMemo(() => {
+    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const currentWeekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
+
+    return {
+      currentWeekStartStr: format(currentWeekStart, "yyyy-MM-dd"),
+      currentWeekEndStr: format(currentWeekEnd, "yyyy-MM-dd"),
+    };
+  }, []);
 
   useEffect(() => {
     if (settingsLoading) return;
-    setWeekStart(currentWeekStart);
-  }, [dayCount, settingsLoading]);
+    setWeekStart(parseISO(currentWeekStartStr));
+  }, [currentWeekStartStr, settingsLoading]);
 
   const fetchAppointments = useCallback(async () => {
-    const from = format(currentWeekStart, "yyyy-MM-dd");
-    const to = format(currentWeekEnd, "yyyy-MM-dd");
+    const from = currentWeekStartStr;
+    const to = currentWeekEndStr;
 
     let query = supabase
       .from("appointments")
@@ -76,7 +83,7 @@ const ClientsTab = ({ barberId, isOwner }: { barberId: string; isOwner: boolean 
       setAppointments((data as ClientAppointment[]) || []);
     }
     setLoading(false);
-  }, [barberId, currentWeekEnd, currentWeekStart, isOwner]);
+  }, [barberId, currentWeekEndStr, currentWeekStartStr, isOwner]);
 
   useEffect(() => {
     setLoading(true);
