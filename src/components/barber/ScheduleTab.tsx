@@ -146,11 +146,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
       const { data: existing, error } = await supabase
         .from("appointments").select("id").eq("barber_id", barberId).eq("appointment_date", selectedDateStr).eq("client_name", "BREAK");
       if (error) { breakCheckedRef.current = ""; return; }
-      const count = existing?.length ?? 0;
-      if (count === 1) return;
-      if (count > 1) {
-        await supabase.from("appointments").delete().eq("barber_id", barberId).eq("appointment_date", selectedDateStr).eq("client_name", "BREAK");
-      }
+      if ((existing?.length ?? 0) > 0) return; // Already has break(s), don't auto-insert
       const inserted = await insertDefaultBreak();
       if (inserted) await fetchAppointments();
       else breakCheckedRef.current = "";
