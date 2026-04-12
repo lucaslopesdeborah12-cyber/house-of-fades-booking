@@ -250,6 +250,7 @@ export type Database = {
           created_at: string
           id: string
           notified_at: string | null
+          response_token: string
           status: string
           time_slot: string
         }
@@ -262,6 +263,7 @@ export type Database = {
           created_at?: string
           id?: string
           notified_at?: string | null
+          response_token?: string
           status?: string
           time_slot: string
         }
@@ -274,6 +276,7 @@ export type Database = {
           created_at?: string
           id?: string
           notified_at?: string | null
+          response_token?: string
           status?: string
           time_slot?: string
         }
@@ -310,6 +313,35 @@ export type Database = {
         Returns: Database["public"]["Enums"]["barber_role"]
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      move_daily_break: {
+        Args: {
+          p_appointment_date: string
+          p_barber_id: string
+          p_break_id: string
+          p_new_time_slot: string
+        }
+        Returns: {
+          appointment_date: string
+          barber_id: string
+          client_email: string | null
+          client_name: string
+          client_phone: string | null
+          contact_preference: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          service_id: string | null
+          status: string
+          time_slot: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "appointments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       barber_role: "owner" | "employee"
