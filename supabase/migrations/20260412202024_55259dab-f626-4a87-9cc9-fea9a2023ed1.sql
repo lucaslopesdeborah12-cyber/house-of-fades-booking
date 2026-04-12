@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS public.appointments_one_booked_break_per_day_idx;
+DROP INDEX IF EXISTS public.appointments_one_break_per_day_idx;
