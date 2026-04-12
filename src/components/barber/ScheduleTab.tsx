@@ -11,6 +11,7 @@ import {
   isBefore,
   isToday,
   isAfter,
+  startOfDay,
 } from "date-fns";
 import { Check, X, Ban, Coffee, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,32 +35,28 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
   const [selectedDay, setSelectedDay] = useState(0);
-  const [autoBreakChecked, setAutoBreakChecked] = useState<Set<string>>(new Set());
+  const [autoBreakKey, setAutoBreakKey] = useState<string | null>(null);
 
   const dayCount = getDayCount(settings.last_working_day);
   const TIME_SLOTS = generateTimeSlots(settings.work_start, settings.work_end);
   const DAY_NAMES = DAY_NAMES_ALL.slice(0, dayCount);
+  const defaultBreakTime = settings.default_break_time;
 
-  // Auto-advance week if today is past the last working day
   useEffect(() => {
     if (settingsLoading) return;
     const today = new Date();
     const lastDay = addDays(weekStart, dayCount - 1);
-    // Set end of last working day
     lastDay.setHours(23, 59, 59, 999);
 
     if (isAfter(today, lastDay)) {
-      // Jump to next week
-      const nextWeek = addWeeks(weekStart, 1);
-      setWeekStart(nextWeek);
+      setWeekStart(addWeeks(weekStart, 1));
     }
-  }, [settingsLoading, settings.last_working_day]);
+  }, [settingsLoading, weekStart, dayCount]);
 
   const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
   const selectedDate = weekDays[selectedDay] || weekDays[0];
   const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
 
-  // Auto-select today or first day
   useEffect(() => {
     const todayIdx = weekDays.findIndex((d) => isToday(d));
     setSelectedDay(todayIdx >= 0 ? todayIdx : 0);
@@ -71,7 +68,7 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
 
     const { data, error } = await supabase
       .from("appointments")
-      .select("*, services(name, price), barbers(name)")
+      .select("id, appointment_date, barber_id, client_email, client_name, client_phone, contact_preference, created_at, notes, service_id, status, time_slot, updated_at, services(name, price), barbers(name)")
       .eq("barber_id", barberId)
       .gte("appointment_date", from)
       .lte("appointment_date", to)
@@ -79,7 +76,11 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
       .order("appointment_date")
       .order("time_slot");
 
-    if (!error && data) setAppointments(data as Appointment[]);
+    if (error) {
+      toast.error("Failed to load schedule");
+    } else if (data) {
+      setAppointments(data as Appointment[]);
+    }
     setLoading(false);
   }, [barberId, weekStart, dayCount]);
 
@@ -88,50 +89,59 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     fetchAppointments();
   }, [fetchAppointments]);
 
-  // Auto-break: insert default break for selected day if not already present
   useEffect(() => {
-    if (settingsLoading || loading) return;
-    const dateStr = selectedDateStr;
-    const breakTime = settings.default_break_time;
-    const cacheKey = `${dateStr}-${breakTime}`;
+    setAutoBreakKey(null);
+  }, [selectedDateStr, defaultBreakTime, barberId]);
 
-    if (autoBreakChecked.has(cacheKey)) return;
-    setAutoBreakChecked((prev) => new Set(prev).add(cacheKey));
+  useEffect(() => {
+    const ensureAutoBreak = async () => {
+      if (settingsLoading || loading || !selectedDateStr || !defaultBreakTime) return;
 
-    // Check if a break already exists at that time
-    const existing = appointments.find(
-      (a) =>
-        a.appointment_date === dateStr &&
-        a.time_slot.slice(0, 5) === breakTime &&
-        a.client_name === "BREAK"
-    );
-    // Also check if any appointment exists at that time (don't overwrite)
-    const occupied = appointments.find(
-      (a) => a.appointment_date === dateStr && a.time_slot.slice(0, 5) === breakTime
-    );
+      const checkKey = `${barberId}-${selectedDateStr}-${defaultBreakTime}`;
+      if (autoBreakKey === checkKey) return;
 
-    if (!existing && !occupied) {
-      // Check if date is not in the past
-      const [h, m] = breakTime.split(":").map(Number);
-      const slotDate = parseISO(dateStr);
-      slotDate.setHours(h, m, 0, 0);
-      if (!isBefore(slotDate, new Date())) {
-        supabase
-          .from("appointments")
-          .insert({
-            barber_id: barberId,
-            appointment_date: dateStr,
-            time_slot: breakTime,
-            client_name: "BREAK",
-            status: "booked",
-            service_id: null as any,
-          })
-          .then(({ error }) => {
-            if (!error) fetchAppointments();
-          });
+      const selectedDayDate = startOfDay(parseISO(selectedDateStr));
+      if (isBefore(selectedDayDate, startOfDay(new Date()))) {
+        setAutoBreakKey(checkKey);
+        return;
       }
-    }
-  }, [selectedDateStr, settingsLoading, loading, settings.default_break_time]);
+
+      const dayAppointments = appointments.filter((appt) => appt.appointment_date === selectedDateStr);
+      const hasBreak = dayAppointments.some((appt) => appt.client_name === "BREAK");
+
+      if (hasBreak) {
+        setAutoBreakKey(checkKey);
+        return;
+      }
+
+      const timeSlotValue = `${defaultBreakTime}:00`;
+      const occupied = dayAppointments.some((appt) => appt.time_slot === timeSlotValue);
+      if (occupied) {
+        setAutoBreakKey(checkKey);
+        return;
+      }
+
+      const { error } = await supabase.from("appointments").insert({
+        barber_id: barberId,
+        appointment_date: selectedDateStr,
+        time_slot: timeSlotValue,
+        client_name: "BREAK",
+        client_phone: "",
+        service_id: null,
+        status: "booked",
+      });
+
+      if (error) {
+        toast.error("Failed to create break");
+        return;
+      }
+
+      setAutoBreakKey(checkKey);
+      await fetchAppointments();
+    };
+
+    ensureAutoBreak();
+  }, [appointments, autoBreakKey, barberId, defaultBreakTime, fetchAppointments, loading, selectedDateStr, settingsLoading]);
 
   const canCancel = (appt: Appointment): boolean => {
     const now = new Date();
@@ -180,10 +190,11 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     const { error } = await supabase.from("appointments").insert({
       barber_id: barberId,
       appointment_date: dateStr,
-      time_slot: time,
+      time_slot: `${time}:00`,
       client_name: "BREAK",
+      client_phone: "",
       status: "booked",
-      service_id: null as any,
+      service_id: null,
     });
 
     if (error) {
@@ -209,24 +220,26 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
   };
 
   const moveBreak = async (breakId: string, dateStr: string, newTime: string) => {
-    // Delete old break
     const { error: delErr } = await supabase
       .from("appointments")
       .update({ status: "cancelled" })
       .eq("id", breakId);
+
     if (delErr) {
       toast.error("Failed to move break");
       return;
     }
-    // Insert new break
+
     const { error: insErr } = await supabase.from("appointments").insert({
       barber_id: barberId,
       appointment_date: dateStr,
-      time_slot: newTime,
+      time_slot: `${newTime}:00`,
       client_name: "BREAK",
+      client_phone: "",
       status: "booked",
-      service_id: null as any,
+      service_id: null,
     });
+
     if (insErr) {
       toast.error("Failed to move break");
     } else {
@@ -450,7 +463,7 @@ const SlotRow = ({
     );
   }
 
-  const firstName = appt.client_name.split(" ")[0];
+  const displayName = appt.client_name;
   const serviceName = appt.services?.name || "";
   const cancellable = canCancel(appt);
 
@@ -459,7 +472,7 @@ const SlotRow = ({
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted-foreground/40 font-body w-12 text-right">{time}</span>
         <div className="flex-1 h-10 rounded-xl bg-red-900/20 flex items-center px-3 text-muted-foreground/50">
-          <span className="text-xs font-body truncate">{firstName} · {serviceName}</span>
+          <span className="text-xs font-body truncate">{displayName}{serviceName ? ` · ${serviceName}` : ""}</span>
         </div>
       </div>
     );
@@ -471,7 +484,7 @@ const SlotRow = ({
       <Popover>
         <PopoverTrigger asChild>
           <button className="flex-1 h-10 rounded-xl bg-red-900/40 border border-red-800/30 flex items-center px-3 text-red-200 hover:bg-red-900/50 transition-colors">
-            <span className="text-xs font-body font-medium truncate">{firstName} · {serviceName}</span>
+            <span className="text-xs font-body font-medium truncate">{displayName}{serviceName ? ` · ${serviceName}` : ""}</span>
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-3 space-y-2" side="top" align="center">
