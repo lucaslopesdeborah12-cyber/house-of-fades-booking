@@ -13,7 +13,7 @@ import {
   isAfter,
   startOfDay,
 } from "date-fns";
-import { Check, X, Ban, Coffee, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, X, Ban, Coffee, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,19 +41,18 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
   const { settings, loading: settingsLoading } = useShopSettings();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [weekStart, setWeekStart] = useState(() =>
-    startOfWeek(new Date(), { weekStartsOn: 1 })
-  );
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedDay, setSelectedDay] = useState(0);
   const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
-
-  // Ref to track which day+barber combo we already ran break logic for
   const breakCheckedRef = useRef<string>("");
 
   const dayCount = getDayCount(settings.last_working_day);
-  const TIME_SLOTS = generateTimeSlots(settings.work_start, settings.work_end);
-  const DAY_NAMES = DAY_NAMES_ALL.slice(0, dayCount);
+  const timeSlots = generateTimeSlots(settings.work_start, settings.work_end);
+  const dayNames = DAY_NAMES_ALL.slice(0, dayCount);
   const defaultBreakTime = settings.default_break_time;
+  const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
+  const selectedDate = weekDays[selectedDay] || weekDays[0];
+  const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
 
   useEffect(() => {
     if (settingsLoading) return;
@@ -66,13 +65,9 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     }
   }, [settingsLoading, weekStart, dayCount]);
 
-  const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
-  const selectedDate = weekDays[selectedDay] || weekDays[0];
-  const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
-
   useEffect(() => {
-    const todayIdx = weekDays.findIndex((d) => isToday(d));
-    setSelectedDay(todayIdx >= 0 ? todayIdx : 0);
+    const todayIndex = weekDays.findIndex((day) => isToday(day));
+    setSelectedDay(todayIndex >= 0 ? todayIndex : 0);
   }, [weekStart, dayCount]);
 
   const fetchAppointments = useCallback(async () => {
@@ -81,7 +76,9 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
 
     const { data, error } = await supabase
       .from("appointments")
-      .select("id, appointment_date, barber_id, client_email, client_name, client_phone, contact_preference, created_at, notes, service_id, status, time_slot, updated_at, services(name, price), barbers(name)")
+      .select(
+        "id, appointment_date, barber_id, client_email, client_name, client_phone, contact_preference, created_at, notes, service_id, status, time_slot, updated_at, services(name, price), barbers(name)"
+      )
       .eq("barber_id", barberId)
       .gte("appointment_date", from)
       .lte("appointment_date", to)
@@ -91,9 +88,10 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
 
     if (error) {
       toast.error("Failed to load schedule");
-    } else if (data) {
-      setAppointments(data as Appointment[]);
+    } else {
+      setAppointments((data || []) as Appointment[]);
     }
+
     setLoading(false);
   }, [barberId, weekStart, dayCount]);
 
@@ -102,95 +100,100 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     fetchAppointments();
   }, [fetchAppointments]);
 
-  // Reset break-checked flag when day changes
   useEffect(() => {
     breakCheckedRef.current = "";
   }, [selectedDateStr, barberId]);
 
-  // Auto-break: runs ONCE per day load
+  const insertDefaultBreak = useCallback(async () => {
+    const { error } = await supabase.from("appointments").insert({
+      barber_id: barberId,
+      appointment_date: selectedDateStr,
+      time_slot: `${defaultBreakTime}:00`,
+      client_name: "BREAK",
+      status: "booked",
+      client_phone: null,
+      client_email: null,
+      service_id: null,
+    });
+
+    if (error) {
+      console.error("[BreakSystem] Failed to insert default break:", error);
+      toast.error("Failed to create break");
+      return false;
+    }
+
+    return true;
+  }, [barberId, selectedDateStr, defaultBreakTime]);
+
   useEffect(() => {
-    const ensureAutoBreak = async () => {
+    const ensureSingleBreakForDay = async () => {
       if (settingsLoading || loading || !selectedDateStr || !defaultBreakTime) return;
 
-      const checkKey = `${barberId}-${selectedDateStr}`;
-      if (breakCheckedRef.current === checkKey) return;
-      breakCheckedRef.current = checkKey; // Mark immediately to prevent double execution
+      const selectedDayStart = startOfDay(parseISO(selectedDateStr));
+      if (isBefore(selectedDayStart, startOfDay(new Date()))) return;
 
-      // Skip past days
-      if (isBefore(startOfDay(parseISO(selectedDateStr)), startOfDay(new Date()))) return;
+      const guardKey = `${barberId}-${selectedDateStr}`;
+      if (breakCheckedRef.current === guardKey) return;
+      breakCheckedRef.current = guardKey;
 
-      const { data: existingBreaks, error: fetchErr } = await supabase
+      const { data: existingBreaks, error } = await supabase
         .from("appointments")
         .select("id")
         .eq("barber_id", barberId)
         .eq("appointment_date", selectedDateStr)
-        .eq("client_name", "BREAK")
-        .eq("status", "booked");
+        .eq("client_name", "BREAK");
 
-      if (fetchErr) {
-        console.error("[AutoBreak] Error:", fetchErr);
+      if (error) {
+        console.error("[BreakSystem] Failed to fetch breaks:", error);
+        breakCheckedRef.current = "";
         return;
       }
 
-      const count = existingBreaks?.length ?? 0;
+      const breakCount = existingBreaks?.length ?? 0;
 
-      if (count > 1) {
-        // Delete ALL breaks, then insert one
-        await supabase
+      if (breakCount === 1) return;
+
+      if (breakCount > 1) {
+        const { error: deleteError } = await supabase
           .from("appointments")
           .delete()
           .eq("barber_id", barberId)
           .eq("appointment_date", selectedDateStr)
-          .eq("client_name", "BREAK")
-          .eq("status", "booked");
+          .eq("client_name", "BREAK");
 
-        await supabase.from("appointments").insert({
-          barber_id: barberId,
-          appointment_date: selectedDateStr,
-          time_slot: `${defaultBreakTime}:00`,
-          client_name: "BREAK",
-          status: "booked",
-          service_id: null,
-          client_phone: null,
-        });
-        await fetchAppointments();
-      } else if (count === 0) {
-        // Insert one break
-        const { error } = await supabase.from("appointments").insert({
-          barber_id: barberId,
-          appointment_date: selectedDateStr,
-          time_slot: `${defaultBreakTime}:00`,
-          client_name: "BREAK",
-          status: "booked",
-          service_id: null,
-          client_phone: null,
-        });
-        if (error) {
-          console.error("[AutoBreak] Insert failed:", error);
-        } else {
-          await fetchAppointments();
+        if (deleteError) {
+          console.error("[BreakSystem] Failed to delete duplicate breaks:", deleteError);
+          toast.error("Failed to reset break");
+          breakCheckedRef.current = "";
+          return;
         }
       }
-      // count === 1 → do nothing
+
+      const inserted = await insertDefaultBreak();
+      if (inserted) {
+        await fetchAppointments();
+      } else {
+        breakCheckedRef.current = "";
+      }
     };
 
-    ensureAutoBreak();
-  }, [settingsLoading, loading, selectedDateStr, defaultBreakTime, barberId, fetchAppointments]);
+    ensureSingleBreakForDay();
+  }, [barberId, defaultBreakTime, fetchAppointments, insertDefaultBreak, loading, selectedDateStr, settingsLoading]);
 
   const canCancel = (appt: Appointment): boolean => {
     const now = new Date();
-    const [h, m] = appt.time_slot.split(":").map(Number);
-    const apptDate = parseISO(appt.appointment_date);
-    apptDate.setHours(h, m, 0, 0);
-    return apptDate.getTime() - now.getTime() >= 2 * 60 * 60 * 1000;
+    const [hour, minute] = appt.time_slot.split(":").map(Number);
+    const appointmentDate = parseISO(appt.appointment_date);
+    appointmentDate.setHours(hour, minute, 0, 0);
+    return appointmentDate.getTime() - now.getTime() >= 2 * 60 * 60 * 1000;
   };
 
   const isPast = (dateStr: string, time: string): boolean => {
     const now = new Date();
-    const [h, m] = time.split(":").map(Number);
-    const d = parseISO(dateStr);
-    d.setHours(h, m, 0, 0);
-    return isBefore(d, now);
+    const [hour, minute] = time.split(":").map(Number);
+    const date = parseISO(dateStr);
+    date.setHours(hour, minute, 0, 0);
+    return isBefore(date, now);
   };
 
   const updateStatus = async (
@@ -203,126 +206,61 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
       return;
     }
 
-    const { error } = await supabase
-      .from("appointments")
-      .update({ status })
-      .eq("id", id);
+    const { error } = await supabase.from("appointments").update({ status }).eq("id", id);
 
     if (error) {
       toast.error("Failed to update");
-    } else {
-      toast.success(`Marked as ${status}`);
-      fetchAppointments();
-      if (status === "cancelled" && appt) {
-        const timeSlot = appt.time_slot.slice(0, 5);
-        notifyWaitingList(appt.barber_id, appt.appointment_date, timeSlot, appt.barbers?.name || "");
-      }
-    }
-  };
-
-  const addBreak = async (dateStr: string, time: string) => {
-    const { data: existingBreaks, error: checkError } = await supabase
-      .from("appointments")
-      .select("id")
-      .eq("barber_id", barberId)
-      .eq("appointment_date", dateStr)
-      .eq("client_name", "BREAK")
-      .eq("status", "booked")
-      .limit(1);
-
-    if (checkError) {
-      console.error("Manual break check failed:", checkError);
-      toast.error("Failed to add break");
       return;
     }
 
-    if ((existingBreaks?.length ?? 0) > 0) {
-      toast.error("Já existe um break neste dia");
-      return;
-    }
+    toast.success(`Marked as ${status}`);
+    await fetchAppointments();
 
-    const { error } = await supabase.from("appointments").insert({
-      barber_id: barberId,
-      appointment_date: dateStr,
-      time_slot: `${time}:00`,
-      client_name: "BREAK",
-      client_phone: null,
-      status: "booked",
-      service_id: null,
-    });
-
-    if (error) {
-      console.error("Manual break insert failed:", error);
-      toast.error("Failed to add break");
-    } else {
-      toast.success("Break added");
-      fetchAppointments();
-    }
-  };
-
-  const removeBreak = async (id: string) => {
-    const { error } = await supabase
-      .from("appointments")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      toast.error("Failed to remove break");
-    } else {
-      toast.success("Break removed");
-      fetchAppointments();
+    if (status === "cancelled" && appt) {
+      const timeSlot = appt.time_slot.slice(0, 5);
+      notifyWaitingList(appt.barber_id, appt.appointment_date, timeSlot, appt.barbers?.name || "");
     }
   };
 
   const moveBreak = async (breakId: string, dateStr: string, newTime: string) => {
-    const { error: delErr } = await supabase
-      .from("appointments")
-      .delete()
-      .eq("id", breakId);
+    const { error } = await (supabase.rpc as any)("move_daily_break", {
+      p_break_id: breakId,
+      p_barber_id: barberId,
+      p_appointment_date: dateStr,
+      p_new_time_slot: `${newTime}:00`,
+    });
 
-    if (delErr) {
+    if (error) {
+      console.error("[BreakSystem] Failed to move break:", error);
       toast.error("Failed to move break");
       return;
     }
 
-    const { error: insErr } = await supabase.from("appointments").insert({
-      barber_id: barberId,
-      appointment_date: dateStr,
-      time_slot: `${newTime}:00`,
-      client_name: "BREAK",
-      client_phone: null,
-      status: "booked",
-      service_id: null,
-    });
-
-    if (insErr) {
-      console.error("Move break insert failed:", insErr);
-      toast.error("Failed to move break");
-    } else {
-      toast.success("Break moved");
-      fetchAppointments();
-    }
+    toast.success("Break moved");
+    await fetchAppointments();
   };
 
   const getFreeSlots = (dateStr: string): string[] => {
-    return TIME_SLOTS.filter((t) => {
+    return timeSlots.filter((time) => {
       const occupied = appointments.find(
-        (a) => a.appointment_date === dateStr && a.time_slot.slice(0, 5) === t
+        (appointment) => appointment.appointment_date === dateStr && appointment.time_slot.slice(0, 5) === time
       );
-      return !occupied && !isPast(dateStr, t);
+      return !occupied && !isPast(dateStr, time);
     });
   };
 
-  const getAppt = (dateStr: string, time: string) =>
-    appointments.find(
-      (a) => a.appointment_date === dateStr && a.time_slot.slice(0, 5) === time
+  const getAppointment = (dateStr: string, time: string) => {
+    return appointments.find(
+      (appointment) => appointment.appointment_date === dateStr && appointment.time_slot.slice(0, 5) === time
     );
+  };
 
-  if (loading || settingsLoading) return <p className="text-muted-foreground font-body p-4">Loading…</p>;
+  if (loading || settingsLoading) {
+    return <p className="text-muted-foreground font-body p-4">Loading…</p>;
+  }
 
   return (
     <div className="space-y-4">
-      {/* Week navigation */}
       <div className="flex items-center justify-center gap-3">
         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
           <ChevronLeft size={16} />
@@ -332,25 +270,25 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
         </Button>
       </div>
 
-      {/* Day selector */}
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {weekDays.map((d, i) => {
-          const active = i === selectedDay;
-          const today = isToday(d);
+        {weekDays.map((day, index) => {
+          const active = index === selectedDay;
+          const today = isToday(day);
+
           return (
             <button
-              key={i}
-              onClick={() => setSelectedDay(i)}
+              key={index}
+              onClick={() => setSelectedDay(index)}
               className={`flex-shrink-0 flex flex-col items-center justify-center rounded-xl px-4 py-2 min-w-[56px] transition-colors ${
                 active
                   ? "bg-primary text-primary-foreground shadow-md"
                   : today
-                  ? "bg-primary/10 text-primary border border-primary/30"
-                  : "bg-card text-muted-foreground border border-border"
+                    ? "bg-primary/10 text-primary border border-primary/30"
+                    : "bg-card text-muted-foreground border border-border"
               }`}
             >
-              <span className="text-[10px] font-body uppercase tracking-wider">{DAY_NAMES[i]}</span>
-              <span className="text-lg font-bold font-body">{format(d, "d")}</span>
+              <span className="text-[10px] font-body uppercase tracking-wider">{dayNames[index]}</span>
+              <span className="text-lg font-bold font-body">{format(day, "d")}</span>
             </button>
           );
         })}
@@ -360,10 +298,9 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
         {format(selectedDate, "EEEE, dd/MM/yyyy")}
       </p>
 
-      {/* Time slots */}
       <div className="space-y-1.5">
-        {TIME_SLOTS.map((time) => {
-          const appt = getAppt(selectedDateStr, time);
+        {timeSlots.map((time) => {
+          const appt = getAppointment(selectedDateStr, time);
           const past = isPast(selectedDateStr, time);
           const isBreak = appt?.client_name === "BREAK";
 
@@ -376,8 +313,6 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
               isBreak={isBreak}
               dateStr={selectedDateStr}
               freeSlots={getFreeSlots(selectedDateStr)}
-              onAddBreak={addBreak}
-              onRemoveBreak={removeBreak}
               onMoveBreak={moveBreak}
               onUpdateStatus={updateStatus}
               onCancelRequest={setCancelTarget}
@@ -387,7 +322,7 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
         })}
       </div>
 
-      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+      <AlertDialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="font-serif">Cancelar agendamento?</AlertDialogTitle>
@@ -416,8 +351,6 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
   );
 };
 
-/* ── Slot Row ── */
-
 interface SlotRowProps {
   time: string;
   appt: Appointment | undefined;
@@ -425,12 +358,10 @@ interface SlotRowProps {
   isBreak: boolean;
   dateStr: string;
   freeSlots: string[];
-  onAddBreak: (d: string, t: string) => void;
-  onRemoveBreak: (id: string) => void;
   onMoveBreak: (breakId: string, dateStr: string, newTime: string) => void;
-  onUpdateStatus: (id: string, s: "completed" | "no-show" | "cancelled", a?: Appointment) => void;
-  onCancelRequest: (a: Appointment) => void;
-  canCancel: (a: Appointment) => boolean;
+  onUpdateStatus: (id: string, status: "completed" | "no-show" | "cancelled", appt?: Appointment) => void;
+  onCancelRequest: (appt: Appointment) => void;
+  canCancel: (appt: Appointment) => boolean;
 }
 
 const SlotRow = ({
@@ -440,8 +371,6 @@ const SlotRow = ({
   isBreak,
   dateStr,
   freeSlots,
-  onAddBreak,
-  onRemoveBreak,
   onMoveBreak,
   onUpdateStatus,
   onCancelRequest,
@@ -460,37 +389,28 @@ const SlotRow = ({
     return (
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted-foreground font-body w-12 text-right">{time}</span>
-        <Popover>
-          <PopoverTrigger asChild>
-            <button className="flex-1 h-10 rounded-xl border border-dashed border-border/60 bg-card/50 flex items-center justify-center gap-1.5 text-muted-foreground/60 hover:border-primary/40 hover:text-primary/80 transition-colors">
-              <Plus size={14} />
-              <span className="text-xs font-body">livre</span>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-2" side="top" align="center">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 font-body"
-              onClick={() => onAddBreak(dateStr, time)}
-            >
-              <Coffee size={14} className="mr-1.5" /> Break
-            </Button>
-          </PopoverContent>
-        </Popover>
+        <div className="flex-1 h-10 rounded-xl border border-dashed border-border/60 bg-card/50 flex items-center justify-center text-muted-foreground/60">
+          <span className="text-xs font-body">livre</span>
+        </div>
       </div>
     );
   }
 
+  console.log("Appointment object:", appt);
+
   if (isBreak) {
+    const breakLabel = appt.client_name;
+
     const pill = (
-      <div className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 ${
-        past
-          ? "bg-amber-500/10 text-amber-600/40"
-          : "bg-amber-500/20 border border-amber-500/30 text-amber-600"
-      }`}>
+      <div
+        className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 ${
+          past
+            ? "bg-amber-500/10 text-amber-600/40"
+            : "bg-amber-500/20 border border-amber-500/30 text-amber-600"
+        }`}
+      >
         <Coffee size={14} />
-        <span className="text-xs font-body font-medium">Break</span>
+        <span className="text-xs font-body font-medium">{breakLabel}</span>
       </div>
     );
 
@@ -510,7 +430,7 @@ const SlotRow = ({
           <PopoverTrigger asChild>
             <button className="flex-1 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-1.5 text-amber-600 hover:bg-amber-500/30 transition-colors">
               <Coffee size={14} />
-              <span className="text-xs font-body font-medium">Break</span>
+              <span className="text-xs font-body font-medium">{breakLabel}</span>
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-48 p-2 max-h-60 overflow-y-auto" side="top" align="center">
@@ -532,23 +452,12 @@ const SlotRow = ({
                 ))
               )}
             </div>
-            <div className="border-t border-border mt-1.5 pt-1.5">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="justify-start text-red-500 hover:text-red-600 hover:bg-red-50 font-body text-xs w-full h-8"
-                onClick={() => onRemoveBreak(appt.id)}
-              >
-                <X size={12} className="mr-1.5" /> Remove break
-              </Button>
-            </div>
           </PopoverContent>
         </Popover>
       </div>
     );
   }
 
-  console.log("Appointment object:", JSON.stringify(appt));
   const displayName = appt.client_name;
   const serviceName = appt.services?.name || "";
   const cancellable = canCancel(appt);
@@ -558,7 +467,10 @@ const SlotRow = ({
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted-foreground/40 font-body w-12 text-right">{time}</span>
         <div className="flex-1 h-10 rounded-xl bg-red-900/20 flex items-center px-3 text-muted-foreground/50">
-          <span className="text-xs font-body truncate">{displayName}{serviceName ? ` · ${serviceName}` : ""}</span>
+          <span className="text-xs font-body truncate">
+            {displayName}
+            {serviceName ? ` · ${serviceName}` : ""}
+          </span>
         </div>
       </div>
     );
@@ -570,13 +482,18 @@ const SlotRow = ({
       <Popover>
         <PopoverTrigger asChild>
           <button className="flex-1 h-10 rounded-xl bg-red-900/40 border border-red-800/30 flex items-center px-3 text-red-200 hover:bg-red-900/50 transition-colors">
-            <span className="text-xs font-body font-medium truncate">{displayName}{serviceName ? ` · ${serviceName}` : ""}</span>
+            <span className="text-xs font-body font-medium truncate">
+              {displayName}
+              {serviceName ? ` · ${serviceName}` : ""}
+            </span>
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-3 space-y-2" side="top" align="center">
           <div className="px-1">
             <p className="text-sm font-body font-semibold text-foreground">{appt.client_name}</p>
-            <p className="text-xs text-muted-foreground font-body">{serviceName} — {time}</p>
+            <p className="text-xs text-muted-foreground font-body">
+              {serviceName} — {time}
+            </p>
           </div>
           <div className="flex flex-col gap-1">
             <Button
@@ -591,11 +508,9 @@ const SlotRow = ({
               size="sm"
               variant="ghost"
               className={`justify-start font-body ${
-                cancellable
-                  ? "text-destructive hover:bg-destructive/10"
-                  : "text-muted-foreground/50 cursor-not-allowed"
+                cancellable ? "text-destructive hover:bg-destructive/10" : "text-muted-foreground/50 cursor-not-allowed"
               }`}
-              onClick={() => cancellable && appt && onCancelRequest(appt)}
+              onClick={() => cancellable && onCancelRequest(appt)}
             >
               <Ban size={14} className="mr-1.5" /> Cancel
             </Button>
