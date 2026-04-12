@@ -246,20 +246,35 @@ const CountryCodeSelector = ({ selected, onSelect }: Props) => {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 px-3 h-10 rounded-l-[10px] border-y border-l border-[#2e2e2e] bg-[#1e1e1e] text-sm font-body hover:bg-[#252525] transition-colors shrink-0 focus:outline-none"
+          className="inline-flex items-center gap-1 px-3 h-full rounded-l-md text-sm shrink-0 hover:opacity-80 transition-opacity focus:outline-none"
+          style={{
+            background: "transparent",
+            border: "none",
+            borderRight: "1px solid rgba(201,168,76,0.2)",
+            color: "#c9a84c",
+            fontFamily: "Arial",
+            fontSize: 13,
+            cursor: "pointer",
+            padding: "13px 10px",
+          }}
         >
           <span className="text-base leading-none">{selected.flag}</span>
-          <span className="text-[#c9a84c] font-medium">{selected.dial}</span>
-          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          <span style={{ color: "#c9a84c", fontWeight: 500 }}>{selected.dial}</span>
+          <ChevronDown className="h-3 w-3" style={{ color: "rgba(201,168,76,0.5)" }} />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0 bg-[#1e1e1e] border-[#333] rounded-xl max-h-72 overflow-hidden" align="start">
-        <div className="p-2 border-b border-[#333]">
+      <PopoverContent
+        className="w-72 p-0 max-h-72 overflow-hidden"
+        align="start"
+        style={{ background: "#1a1a1a", border: "1px solid #2e2e2e", borderRadius: 12, color: "#eee" }}
+      >
+        <div style={{ padding: 8, borderBottom: "1px solid #2e2e2e" }}>
           <Input
             placeholder="Search country..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 text-sm bg-[#161616] border-[#333] text-foreground rounded-lg focus-visible:ring-[#c9a84c]/50"
+            className="h-8 text-sm focus-visible:ring-[#c9a84c]/50"
+            style={{ background: "#141414", border: "1px solid #333", color: "#eee", borderRadius: 8, fontFamily: "Arial", fontSize: 13 }}
           />
         </div>
         <div className="overflow-y-auto max-h-[200px]">
@@ -273,13 +288,14 @@ const CountryCodeSelector = ({ selected, onSelect }: Props) => {
                 setSearch("");
               }}
               className={cn(
-                "w-full flex items-center gap-2 px-3 py-2 text-sm font-body text-left hover:bg-[#c9a84c]/10 transition-colors",
-                selected.code === c.code && "bg-[#c9a84c]/10 text-[#c9a84c]"
+                "w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[#c9a84c]/10 transition-colors",
+                selected.code === c.code && "bg-[#c9a84c]/10"
               )}
+              style={{ background: "transparent", border: "none", color: "#ddd", fontFamily: "Arial", fontSize: 13 }}
             >
               <span className="text-base">{c.flag}</span>
-              <span className="flex-1 text-foreground truncate">{c.name}</span>
-              <span className="text-muted-foreground text-xs">{c.dial}</span>
+              <span className="flex-1 truncate" style={{ color: selected.code === c.code ? "#c9a84c" : "#ddd" }}>{c.name}</span>
+              <span style={{ color: "#888", fontSize: 11 }}>{c.dial}</span>
             </button>
           ))}
         </div>
