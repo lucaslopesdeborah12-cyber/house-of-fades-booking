@@ -8,9 +8,8 @@ import {
   subWeeks,
   addDays,
   parseISO,
-  isToday,
   isBefore,
-  startOfDay,
+  isToday,
 } from "date-fns";
 import { Check, X, Ban, Coffee, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ type Appointment = Tables<"appointments"> & {
 
 const HOURS_START = 9;
 const HOURS_END = 19;
-const SLOT_MINUTES = 30;
 
 function generateTimeSlots() {
   const slots: string[] = [];
@@ -37,6 +35,7 @@ function generateTimeSlots() {
 }
 
 const TIME_SLOTS = generateTimeSlots();
+const DAY_NAMES = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 const ScheduleTab = ({ barberId }: { barberId: string }) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -44,12 +43,20 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
   const [weekStart, setWeekStart] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
+  const todayDayIndex = () => {
+    const dow = new Date().getDay(); // 0=Sun
+    const idx = dow === 0 ? 5 : dow - 1; // Mon=0 … Sat=5
+    return Math.min(idx, 5);
+  };
+  const [selectedDay, setSelectedDay] = useState(todayDayIndex);
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const weekDays = Array.from({ length: 6 }, (_, i) => addDays(weekStart, i)); // Mon–Sat
+  const selectedDate = weekDays[selectedDay];
+  const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
 
   const fetchAppointments = useCallback(async () => {
     const from = format(weekStart, "yyyy-MM-dd");
-    const to = format(addDays(weekStart, 6), "yyyy-MM-dd");
+    const to = format(addDays(weekStart, 5), "yyyy-MM-dd");
 
     const { data, error } = await supabase
       .from("appointments")
@@ -69,6 +76,18 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
     setLoading(true);
     fetchAppointments();
   }, [fetchAppointments]);
+
+  // When week changes, select today if it's in view, otherwise Monday
+  useEffect(() => {
+    const now = new Date();
+    const ws = weekStart.getTime();
+    const we = addDays(weekStart, 5).getTime();
+    if (now.getTime() >= ws && now.getTime() <= we + 86400000) {
+      setSelectedDay(todayDayIndex());
+    } else {
+      setSelectedDay(0);
+    }
+  }, [weekStart]);
 
   const canCancel = (appt: Appointment): boolean => {
     const now = new Date();
@@ -150,224 +169,254 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
       (a) => a.appointment_date === dateStr && a.time_slot.slice(0, 5) === time
     );
 
-  const goToday = () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const goToday = () => {
+    setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  };
 
   if (loading) return <p className="text-muted-foreground font-body p-4">Loading…</p>;
 
   return (
     <div className="space-y-4">
       {/* Week navigation */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
-            <ChevronLeft size={16} />
-          </Button>
-          <Button variant="outline" size="sm" onClick={goToday}>
-            Today
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
-            <ChevronRight size={16} />
-          </Button>
-        </div>
-        <span className="font-body text-sm text-muted-foreground">
-          {format(weekStart, "dd MMM")} – {format(addDays(weekStart, 6), "dd MMM yyyy")}
-        </span>
+      <div className="flex items-center justify-center gap-3">
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
+          <ChevronLeft size={16} />
+        </Button>
+        <Button variant="outline" size="sm" className="font-body text-xs" onClick={goToday}>
+          Hoje
+        </Button>
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
+          <ChevronRight size={16} />
+        </Button>
       </div>
 
-      {/* Calendar grid */}
-      <div className="overflow-x-auto border border-border rounded-lg">
-        <table className="w-full min-w-[700px] text-xs">
-          <thead>
-            <tr className="border-b border-border bg-card">
-              <th className="p-2 text-left text-muted-foreground font-body w-16">Time</th>
-              {weekDays.map((d) => (
-                <th
-                  key={d.toISOString()}
-                  className={`p-2 text-center font-body ${
-                    isToday(d) ? "text-primary font-semibold" : "text-muted-foreground"
-                  }`}
-                >
-                  <div>{format(d, "EEE")}</div>
-                  <div className="text-[10px]">{format(d, "dd/MM")}</div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {TIME_SLOTS.map((time) => (
-              <tr key={time} className="border-b border-border/50">
-                <td className="p-1.5 text-muted-foreground font-body font-medium">{time}</td>
-                {weekDays.map((d) => {
-                  const dateStr = format(d, "yyyy-MM-dd");
-                  const appt = getAppt(dateStr, time);
-                  const past = isPast(dateStr, time);
-                  const isBreak = appt?.client_name === "BREAK";
+      {/* Day selector – horizontal scroll */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {weekDays.map((d, i) => {
+          const active = i === selectedDay;
+          const today = isToday(d);
+          return (
+            <button
+              key={i}
+              onClick={() => setSelectedDay(i)}
+              className={`flex-shrink-0 flex flex-col items-center justify-center rounded-xl px-4 py-2 min-w-[56px] transition-colors ${
+                active
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : today
+                  ? "bg-primary/10 text-primary border border-primary/30"
+                  : "bg-card text-muted-foreground border border-border"
+              }`}
+            >
+              <span className="text-[10px] font-body uppercase tracking-wider">{DAY_NAMES[i]}</span>
+              <span className="text-lg font-bold font-body">{format(d, "d")}</span>
+            </button>
+          );
+        })}
+      </div>
 
-                  return (
-                    <td key={dateStr + time} className="p-0.5">
-                      <SlotCell
-                        appt={appt}
-                        past={past}
-                        isBreak={isBreak}
-                        dateStr={dateStr}
-                        time={time}
-                        onAddBreak={addBreak}
-                        onRemoveBreak={removeBreak}
-                        onUpdateStatus={updateStatus}
-                        canCancel={canCancel}
-                      />
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <p className="text-center text-xs text-muted-foreground font-body">
+        {format(selectedDate, "EEEE, dd/MM/yyyy")}
+      </p>
+
+      {/* Time slots */}
+      <div className="space-y-1.5">
+        {TIME_SLOTS.map((time) => {
+          const appt = getAppt(selectedDateStr, time);
+          const past = isPast(selectedDateStr, time);
+          const isBreak = appt?.client_name === "BREAK";
+
+          return (
+            <SlotRow
+              key={time}
+              time={time}
+              appt={appt}
+              past={past}
+              isBreak={isBreak}
+              dateStr={selectedDateStr}
+              onAddBreak={addBreak}
+              onRemoveBreak={removeBreak}
+              onUpdateStatus={updateStatus}
+              canCancel={canCancel}
+            />
+          );
+        })}
       </div>
     </div>
   );
 };
 
-/* ── Slot Cell ── */
+/* ── Slot Row ── */
 
-interface SlotCellProps {
+interface SlotRowProps {
+  time: string;
   appt: Appointment | undefined;
   past: boolean;
   isBreak: boolean;
   dateStr: string;
-  time: string;
   onAddBreak: (d: string, t: string) => void;
   onRemoveBreak: (id: string) => void;
   onUpdateStatus: (id: string, s: "completed" | "no-show" | "cancelled", a?: Appointment) => void;
   canCancel: (a: Appointment) => boolean;
 }
 
-const SlotCell = ({
+const SlotRow = ({
+  time,
   appt,
   past,
   isBreak,
   dateStr,
-  time,
   onAddBreak,
   onRemoveBreak,
   onUpdateStatus,
   canCancel,
-}: SlotCellProps) => {
+}: SlotRowProps) => {
+  // Past & empty
   if (past && !appt) {
-    return <div className="h-8 rounded bg-muted/30" />;
+    return (
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground/40 font-body w-12 text-right">{time}</span>
+        <div className="flex-1 h-10 rounded-xl bg-muted/20" />
+      </div>
+    );
   }
 
+  // Free slot
   if (!appt) {
-    if (past) return <div className="h-8 rounded bg-muted/30" />;
     return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <button className="h-8 w-full rounded border border-dashed border-border/40 flex items-center justify-center text-muted-foreground/40 hover:border-primary/40 hover:text-primary/60 transition-colors">
-            <Plus size={12} />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-2" side="right" align="start">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 font-body"
-            onClick={() => onAddBreak(dateStr, time)}
-          >
-            <Coffee size={14} className="mr-1.5" /> Add Break
-          </Button>
-        </PopoverContent>
-      </Popover>
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground font-body w-12 text-right">{time}</span>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="flex-1 h-10 rounded-xl border border-dashed border-border/60 bg-card/50 flex items-center justify-center gap-1.5 text-muted-foreground/60 hover:border-primary/40 hover:text-primary/80 transition-colors">
+              <Plus size={14} />
+              <span className="text-xs font-body">livre</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-2" side="top" align="center">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 font-body"
+              onClick={() => onAddBreak(dateStr, time)}
+            >
+              <Coffee size={14} className="mr-1.5" /> Break
+            </Button>
+          </PopoverContent>
+        </Popover>
+      </div>
     );
   }
 
   // Break slot
   if (isBreak) {
+    const pill = (
+      <div className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 ${
+        past
+          ? "bg-amber-500/10 text-amber-600/40"
+          : "bg-amber-500/20 border border-amber-500/30 text-amber-600"
+      }`}>
+        <Coffee size={14} />
+        <span className="text-xs font-body font-medium">Break</span>
+      </div>
+    );
+
     if (past) {
       return (
-        <div className="h-8 rounded bg-amber-500/10 flex items-center justify-center gap-1 text-amber-600/50">
-          <Coffee size={10} />
-          <span className="text-[10px] font-body">Break</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground/40 font-body w-12 text-right">{time}</span>
+          {pill}
         </div>
       );
     }
+
     return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <button className="h-8 w-full rounded bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-1 text-amber-600 hover:bg-amber-500/30 transition-colors">
-            <Coffee size={10} />
-            <span className="text-[10px] font-body font-medium">Break</span>
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-2" side="right" align="start">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-red-500 hover:text-red-600 hover:bg-red-50 font-body"
-            onClick={() => onRemoveBreak(appt.id)}
-          >
-            <X size={14} className="mr-1.5" /> Remove Break
-          </Button>
-        </PopoverContent>
-      </Popover>
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground font-body w-12 text-right">{time}</span>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="flex-1 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-1.5 text-amber-600 hover:bg-amber-500/30 transition-colors">
+              <Coffee size={14} />
+              <span className="text-xs font-body font-medium">Break</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-2" side="top" align="center">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-red-500 hover:text-red-600 hover:bg-red-50 font-body"
+              onClick={() => onRemoveBreak(appt.id)}
+            >
+              <X size={14} className="mr-1.5" /> Remove
+            </Button>
+          </PopoverContent>
+        </Popover>
+      </div>
     );
   }
 
   // Client slot
   const firstName = appt.client_name.split(" ")[0];
+  const serviceName = appt.services?.name || "";
   const cancellable = canCancel(appt);
 
   if (past) {
     return (
-      <div className="h-8 rounded bg-primary/10 flex items-center justify-center text-muted-foreground/60">
-        <span className="text-[10px] font-body truncate px-1">{firstName}</span>
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground/40 font-body w-12 text-right">{time}</span>
+        <div className="flex-1 h-10 rounded-xl bg-red-900/20 flex items-center px-3 text-muted-foreground/50">
+          <span className="text-xs font-body truncate">{firstName} · {serviceName}</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button className="h-8 w-full rounded bg-primary/20 border border-primary/30 flex items-center justify-center text-primary hover:bg-primary/30 transition-colors">
-          <span className="text-[10px] font-body font-medium truncate px-1">{firstName}</span>
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-2 space-y-1" side="right" align="start">
-        <p className="text-xs font-body font-medium text-foreground px-2 py-1">
-          {appt.client_name}
-          {appt.services?.name && <span className="text-muted-foreground"> — {appt.services.name}</span>}
-        </p>
-        <div className="flex flex-col gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="justify-start text-accent hover:bg-accent/10 font-body"
-            onClick={() => onUpdateStatus(appt.id, "completed")}
-          >
-            <Check size={14} className="mr-1.5" /> Completed
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className={`justify-start font-body ${
-              cancellable
-                ? "text-red-500 hover:bg-red-50"
-                : "text-muted-foreground/50 cursor-not-allowed"
-            }`}
-            onClick={() => onUpdateStatus(appt.id, "cancelled", appt)}
-          >
-            <Ban size={14} className="mr-1.5" /> Cancel
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="justify-start text-foreground hover:bg-muted font-body"
-            onClick={() => onUpdateStatus(appt.id, "no-show")}
-          >
-            <X size={14} className="mr-1.5" /> No-show
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+    <div className="flex items-center gap-3">
+      <span className="text-xs text-muted-foreground font-body w-12 text-right">{time}</span>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className="flex-1 h-10 rounded-xl bg-red-900/40 border border-red-800/30 flex items-center px-3 text-red-200 hover:bg-red-900/50 transition-colors">
+            <span className="text-xs font-body font-medium truncate">{firstName} · {serviceName}</span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-3 space-y-2" side="top" align="center">
+          <div className="px-1">
+            <p className="text-sm font-body font-semibold text-foreground">{appt.client_name}</p>
+            <p className="text-xs text-muted-foreground font-body">{serviceName} — {time}</p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="justify-start text-accent hover:bg-accent/10 font-body"
+              onClick={() => onUpdateStatus(appt.id, "completed")}
+            >
+              <Check size={14} className="mr-1.5" /> Completed
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className={`justify-start font-body ${
+                cancellable
+                  ? "text-red-500 hover:bg-red-50"
+                  : "text-muted-foreground/50 cursor-not-allowed"
+              }`}
+              onClick={() => onUpdateStatus(appt.id, "cancelled", appt)}
+            >
+              <Ban size={14} className="mr-1.5" /> Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="justify-start text-foreground hover:bg-muted font-body"
+              onClick={() => onUpdateStatus(appt.id, "no-show")}
+            >
+              <X size={14} className="mr-1.5" /> No-show
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 };
 
