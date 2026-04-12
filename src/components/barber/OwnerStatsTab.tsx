@@ -253,6 +253,9 @@ const OwnerStatsTab = () => {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* All Appointments */}
+      <AllAppointmentsList />
     </div>
   );
 };
