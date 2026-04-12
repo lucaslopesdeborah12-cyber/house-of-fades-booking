@@ -62,6 +62,16 @@ export function useShopSettings() {
       { onConflict: "key" }
     );
 
+    // When break time changes, update all future breaks in the database
+    if (key === "default_break_time") {
+      const { error } = await (supabase.rpc as any)("update_future_breaks", {
+        p_new_time: value,
+      });
+      if (error) {
+        console.error("[ShopSettings] Failed to update future breaks:", error);
+      }
+    }
+
     await fetchSettings();
     window.dispatchEvent(new CustomEvent(SHOP_SETTINGS_UPDATED_EVENT));
   };
