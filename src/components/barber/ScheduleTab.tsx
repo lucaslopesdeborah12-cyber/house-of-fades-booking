@@ -418,6 +418,8 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </>
+      )}
     </div>
   );
 };
