@@ -126,12 +126,13 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
         appointment_date: selectedDateStr,
         time_slot: timeSlotValue,
         client_name: "BREAK",
-        client_phone: "",
+        client_phone: null,
         service_id: null,
         status: "booked",
       });
 
       if (error) {
+        console.error("Auto-break insert failed:", error);
         toast.error("Failed to create break");
         return;
       }
