@@ -181,6 +181,17 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
   };
 
   const addBreakAt = async (time: string) => {
+    // Check if slot is already occupied
+    if (occupiedSlots.includes(time)) {
+      toast.error("Este horário já está ocupado");
+      return;
+    }
+    // Check if a break already exists for this barber on this day
+    const existingBreak = dayAppointments.find(a => a.client_name === "BREAK");
+    if (existingBreak) {
+      toast.error("Já existe um break neste dia. Remove o existente primeiro.");
+      return;
+    }
     const { error } = await supabase.from("appointments").insert({
       barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${time}:00`,
       client_name: "BREAK", status: "booked", client_phone: null, client_email: null, service_id: null,
@@ -191,6 +202,11 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
   };
 
   const addBlockAt = async (time: string) => {
+    // Check if slot is already occupied
+    if (occupiedSlots.includes(time)) {
+      toast.error("Este horário já está ocupado");
+      return;
+    }
     const { error } = await supabase.from("appointments").insert({
       barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${time}:00`,
       client_name: "BLOCKED", status: "booked", client_phone: null, client_email: null, service_id: null,
