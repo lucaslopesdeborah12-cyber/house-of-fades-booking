@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useShopSettings } from "@/hooks/useShopSettings";
+import ShopSettingsPanel from "@/components/barber/ShopSettingsPanel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { startOfWeek, startOfMonth, format, parseISO, subMonths, eachDayOfInterval, endOfWeek } from "date-fns";
@@ -25,7 +27,8 @@ const OwnerStatsTab = () => {
   const [loading, setLoading] = useState(true);
   const [notifEmail, setNotifEmail] = useState("");
   const [savingEmail, setSavingEmail] = useState(false);
-
+  const { settings, saveSetting, loading: settingsLoading } = useShopSettings();
+  
   useEffect(() => {
     supabase
       .from("owner_settings" as any)
@@ -154,6 +157,9 @@ const OwnerStatsTab = () => {
           </Button>
         </div>
       </div>
+
+      {/* Shop Settings */}
+      <ShopSettingsPanel settings={settings} onSave={saveSetting} />
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

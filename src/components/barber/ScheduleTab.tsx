@@ -10,53 +10,64 @@ import {
   parseISO,
   isBefore,
   isToday,
+  isAfter,
 } from "date-fns";
 import { Check, X, Ban, Coffee, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
+import { useShopSettings, getDayCount, generateTimeSlots } from "@/hooks/useShopSettings";
 
 type Appointment = Tables<"appointments"> & {
   services: { name: string; price: number } | null;
   barbers: { name: string } | null;
 };
 
-const HOURS_START = 9;
-const HOURS_END = 19;
-
-function generateTimeSlots() {
-  const slots: string[] = [];
-  for (let h = HOURS_START; h < HOURS_END; h++) {
-    slots.push(`${String(h).padStart(2, "0")}:00`);
-    slots.push(`${String(h).padStart(2, "0")}:30`);
-  }
-  return slots;
-}
-
-const TIME_SLOTS = generateTimeSlots();
-const DAY_NAMES = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const DAY_NAMES_ALL = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 const ScheduleTab = ({ barberId }: { barberId: string }) => {
+  const { settings, loading: settingsLoading } = useShopSettings();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekStart, setWeekStart] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
-  const todayDayIndex = () => {
-    const dow = new Date().getDay(); // 0=Sun
-    const idx = dow === 0 ? 5 : dow - 1; // Mon=0 … Sat=5
-    return Math.min(idx, 5);
-  };
-  const [selectedDay, setSelectedDay] = useState(todayDayIndex);
+  const [selectedDay, setSelectedDay] = useState(0);
+  const [autoBreakChecked, setAutoBreakChecked] = useState<Set<string>>(new Set());
 
-  const weekDays = Array.from({ length: 6 }, (_, i) => addDays(weekStart, i)); // Mon–Sat
-  const selectedDate = weekDays[selectedDay];
+  const dayCount = getDayCount(settings.last_working_day);
+  const TIME_SLOTS = generateTimeSlots(settings.work_start, settings.work_end);
+  const DAY_NAMES = DAY_NAMES_ALL.slice(0, dayCount);
+
+  // Auto-advance week if today is past the last working day
+  useEffect(() => {
+    if (settingsLoading) return;
+    const today = new Date();
+    const lastDay = addDays(weekStart, dayCount - 1);
+    // Set end of last working day
+    lastDay.setHours(23, 59, 59, 999);
+
+    if (isAfter(today, lastDay)) {
+      // Jump to next week
+      const nextWeek = addWeeks(weekStart, 1);
+      setWeekStart(nextWeek);
+    }
+  }, [settingsLoading, settings.last_working_day]);
+
+  const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
+  const selectedDate = weekDays[selectedDay] || weekDays[0];
   const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+
+  // Auto-select today or first day
+  useEffect(() => {
+    const todayIdx = weekDays.findIndex((d) => isToday(d));
+    setSelectedDay(todayIdx >= 0 ? todayIdx : 0);
+  }, [weekStart, dayCount]);
 
   const fetchAppointments = useCallback(async () => {
     const from = format(weekStart, "yyyy-MM-dd");
-    const to = format(addDays(weekStart, 5), "yyyy-MM-dd");
+    const to = format(addDays(weekStart, dayCount - 1), "yyyy-MM-dd");
 
     const { data, error } = await supabase
       .from("appointments")
@@ -70,24 +81,57 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
 
     if (!error && data) setAppointments(data as Appointment[]);
     setLoading(false);
-  }, [barberId, weekStart]);
+  }, [barberId, weekStart, dayCount]);
 
   useEffect(() => {
     setLoading(true);
     fetchAppointments();
   }, [fetchAppointments]);
 
-  // When week changes, select today if it's in view, otherwise Monday
+  // Auto-break: insert default break for selected day if not already present
   useEffect(() => {
-    const now = new Date();
-    const ws = weekStart.getTime();
-    const we = addDays(weekStart, 5).getTime();
-    if (now.getTime() >= ws && now.getTime() <= we + 86400000) {
-      setSelectedDay(todayDayIndex());
-    } else {
-      setSelectedDay(0);
+    if (settingsLoading || loading) return;
+    const dateStr = selectedDateStr;
+    const breakTime = settings.default_break_time;
+    const cacheKey = `${dateStr}-${breakTime}`;
+
+    if (autoBreakChecked.has(cacheKey)) return;
+    setAutoBreakChecked((prev) => new Set(prev).add(cacheKey));
+
+    // Check if a break already exists at that time
+    const existing = appointments.find(
+      (a) =>
+        a.appointment_date === dateStr &&
+        a.time_slot.slice(0, 5) === breakTime &&
+        a.client_name === "BREAK"
+    );
+    // Also check if any appointment exists at that time (don't overwrite)
+    const occupied = appointments.find(
+      (a) => a.appointment_date === dateStr && a.time_slot.slice(0, 5) === breakTime
+    );
+
+    if (!existing && !occupied) {
+      // Check if date is not in the past
+      const [h, m] = breakTime.split(":").map(Number);
+      const slotDate = parseISO(dateStr);
+      slotDate.setHours(h, m, 0, 0);
+      if (!isBefore(slotDate, new Date())) {
+        supabase
+          .from("appointments")
+          .insert({
+            barber_id: barberId,
+            appointment_date: dateStr,
+            time_slot: breakTime,
+            client_name: "BREAK",
+            status: "booked",
+            service_id: null as any,
+          })
+          .then(({ error }) => {
+            if (!error) fetchAppointments();
+          });
+      }
     }
-  }, [weekStart]);
+  }, [selectedDateStr, settingsLoading, loading, settings.default_break_time]);
 
   const canCancel = (appt: Appointment): boolean => {
     const now = new Date();
@@ -169,11 +213,7 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
       (a) => a.appointment_date === dateStr && a.time_slot.slice(0, 5) === time
     );
 
-  const goToday = () => {
-    setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
-  };
-
-  if (loading) return <p className="text-muted-foreground font-body p-4">Loading…</p>;
+  if (loading || settingsLoading) return <p className="text-muted-foreground font-body p-4">Loading…</p>;
 
   return (
     <div className="space-y-4">
@@ -187,7 +227,7 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
         </Button>
       </div>
 
-      {/* Day selector – horizontal scroll */}
+      {/* Day selector */}
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {weekDays.map((d, i) => {
           const active = i === selectedDay;
@@ -267,7 +307,6 @@ const SlotRow = ({
   onUpdateStatus,
   canCancel,
 }: SlotRowProps) => {
-  // Past & empty
   if (past && !appt) {
     return (
       <div className="flex items-center gap-3">
@@ -277,7 +316,6 @@ const SlotRow = ({
     );
   }
 
-  // Free slot
   if (!appt) {
     return (
       <div className="flex items-center gap-3">
@@ -304,7 +342,6 @@ const SlotRow = ({
     );
   }
 
-  // Break slot
   if (isBreak) {
     const pill = (
       <div className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 ${
@@ -351,7 +388,6 @@ const SlotRow = ({
     );
   }
 
-  // Client slot
   const firstName = appt.client_name.split(" ")[0];
   const serviceName = appt.services?.name || "";
   const cancellable = canCancel(appt);
