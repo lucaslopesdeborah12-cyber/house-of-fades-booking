@@ -10,10 +10,11 @@ interface Props {
   onSave: (key: keyof ShopSettings, value: string) => Promise<void>;
 }
 
-const TIME_SLOTS = Array.from({ length: 30 }, (_, i) => {
-  const h = Math.floor(i / 2) + 7;
-  const m = i % 2 === 0 ? "00" : "30";
-  return `${String(h).padStart(2, "0")}:${m}`;
+const TIME_SLOTS = Array.from({ length: 37 }, (_, i) => {
+  const totalMin = 7 * 60 + i * 20;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 });
 
 const LABELS: Record<string, string> = {

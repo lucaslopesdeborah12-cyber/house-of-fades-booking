@@ -90,15 +90,14 @@ export function getDayCount(lastDay: string): number {
 
 export function generateTimeSlots(start: string, end: string): string[] {
   const [sh, sm] = start.split(":").map(Number);
-  const [eh] = end.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const startMin = sh * 60 + sm;
+  const endMin = eh * 60 + (em || 0);
   const slots: string[] = [];
-  for (let h = sh; h < eh; h++) {
-    if (h === sh && sm === 30) {
-      slots.push(`${String(h).padStart(2, "0")}:30`);
-    } else {
-      slots.push(`${String(h).padStart(2, "0")}:00`);
-      slots.push(`${String(h).padStart(2, "0")}:30`);
-    }
+  for (let m = startMin; m < endMin; m += 20) {
+    const h = Math.floor(m / 60);
+    const min = m % 60;
+    slots.push(`${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`);
   }
   return slots;
 }
