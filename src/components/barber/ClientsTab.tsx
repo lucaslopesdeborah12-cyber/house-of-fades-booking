@@ -89,9 +89,11 @@ const ClientsTab = ({
     fetchAppointments();
   }, [fetchAppointments]);
 
-  // Refetch when tab becomes active
+  // Reset to current week and refetch when tab becomes active
   useEffect(() => {
     if (activeTab !== "clients") return;
+    const currentMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
+    setWeekStart(currentMonday);
     setLoading(true);
     fetchAppointments();
   }, [activeTab, refreshToken, fetchAppointments]);
