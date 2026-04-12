@@ -14,6 +14,16 @@ import {
   startOfDay,
 } from "date-fns";
 import { Check, X, Ban, Coffee, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -36,6 +46,7 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
   );
   const [selectedDay, setSelectedDay] = useState(0);
   const [autoBreakKey, setAutoBreakKey] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
 
   const dayCount = getDayCount(settings.last_working_day);
   const TIME_SLOTS = generateTimeSlots(settings.work_start, settings.work_end);
@@ -332,6 +343,32 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
           );
         })}
       </div>
+
+      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif">Cancelar agendamento?</AlertDialogTitle>
+            <AlertDialogDescription className="font-body">
+              Tens a certeza que queres cancelar o agendamento de{" "}
+              <span className="font-semibold text-foreground">{cancelTarget?.client_name}</span>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="font-body">Não</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-body"
+              onClick={() => {
+                if (cancelTarget) {
+                  updateStatus(cancelTarget.id, "cancelled", cancelTarget);
+                  setCancelTarget(null);
+                }
+              }}
+            >
+              Sim, cancelar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
