@@ -43,7 +43,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
-          service_id: string
+          service_id: string | null
           status: string
           time_slot: string
           updated_at: string
@@ -58,7 +58,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
-          service_id: string
+          service_id?: string | null
           status?: string
           time_slot: string
           updated_at?: string
@@ -73,7 +73,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
-          service_id?: string
+          service_id?: string | null
           status?: string
           time_slot?: string
           updated_at?: string
