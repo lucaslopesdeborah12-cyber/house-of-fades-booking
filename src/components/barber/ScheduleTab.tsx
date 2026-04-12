@@ -128,11 +128,24 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
   // Auto-insert default break
   const insertDefaultBreak = useCallback(async () => {
-    const { error } = await supabase.from("appointments").insert({
-      barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${defaultBreakTime}:00`,
-      client_name: "BREAK", status: "booked", client_phone: null, client_email: null, service_id: null,
-    });
-    if (error) { toast.error("Failed to create break"); return false; }
+    const breakInsert = {
+      barber_id: barberId,
+      appointment_date: selectedDateStr,
+      time_slot: `${defaultBreakTime}:00`,
+      client_name: "BREAK",
+      status: "booked",
+      client_phone: null,
+      client_email: null,
+      service_id: null,
+    };
+
+    console.log("Default break insert payload:", breakInsert);
+    const { error } = await supabase.from("appointments").insert(breakInsert);
+    if (error) {
+      console.error("Default break insert error:", error);
+      toast.error("Failed to create break");
+      return false;
+    }
     return true;
   }, [barberId, selectedDateStr, defaultBreakTime]);
 
@@ -185,11 +198,27 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
       toast.error("Este horário já está ocupado");
       return;
     }
-    const { error } = await supabase.from("appointments").insert({
-      barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${time}:00`,
-      client_name: "BREAK", status: "booked", client_phone: null, client_email: null, service_id: null,
-    });
-    if (error) { console.error("Break insert error:", error); toast.error("Erro ao adicionar pausa"); return; }
+
+    const breakInsert = {
+      barber_id: barberId,
+      appointment_date: selectedDateStr,
+      time_slot: `${time}:00`,
+      client_name: "BREAK",
+      status: "booked",
+      client_phone: null,
+      client_email: null,
+      service_id: null,
+      notes: null,
+      contact_preference: "both",
+    };
+
+    console.log("Break insert payload:", breakInsert);
+    const { error } = await supabase.from("appointments").insert(breakInsert);
+    if (error) {
+      console.error("Break insert error:", error);
+      toast.error("Erro ao adicionar pausa");
+      return;
+    }
     toast.success("Pausa adicionada");
     fetchAppointments();
   };
