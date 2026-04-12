@@ -1,7 +1,4 @@
 import { useState, useMemo } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 
 export type Country = {
@@ -213,11 +210,9 @@ const COUNTRIES: Country[] = [
   { code: "ZW", name: "Zimbabwe", dial: "+263", flag: "🇿🇼" },
 ];
 
-/** Strip leading zero for Ireland, return clean number for international format */
 export const formatPhoneForSubmit = (phone: string, country: Country): string => {
   const digits = phone.replace(/[^0-9]/g, "");
   if (!digits) return "";
-  // Ireland: remove leading 0
   if (country.code === "IE" && digits.startsWith("0")) {
     return `${country.dial}${digits.slice(1)}`;
   }
@@ -237,70 +232,120 @@ const CountryCodeSelector = ({ selected, onSelect }: Props) => {
     if (!search.trim()) return COUNTRIES;
     const q = search.toLowerCase();
     return COUNTRIES.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.dial.includes(q) || c.code.toLowerCase().includes(q)
+      (c) => c.name.toLowerCase().includes(q) || c.dial.includes(q) || c.code.toLowerCase().includes(q),
     );
   }, [search]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 px-3 h-full rounded-l-md text-sm shrink-0 hover:opacity-80 transition-opacity focus:outline-none"
+    <div style={{ position: "relative", display: "inline-block" }}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          background: "transparent",
+          border: "none",
+          borderRight: "1px solid rgba(201,168,76,0.3)",
+          color: "#c9a84c",
+          fontFamily: "Arial",
+          fontSize: 13,
+          fontWeight: 500,
+          cursor: "pointer",
+          padding: "0 12px",
+          height: "100%",
+          minHeight: 46,
+          outline: "none",
+        }}
+      >
+        <span style={{ fontSize: 18 }}>{selected.flag}</span>
+        <span style={{ color: "#c9a84c", fontWeight: 600 }}>{selected.dial}</span>
+        <span style={{ color: "rgba(201,168,76,0.5)", fontSize: 10 }}>▼</span>
+      </button>
+
+      {open && (
+        <div
           style={{
-            background: "transparent",
-            border: "none",
-            borderRight: "1px solid rgba(201,168,76,0.2)",
-            color: "#c9a84c",
-            fontFamily: "Arial",
-            fontSize: 13,
-            cursor: "pointer",
-            padding: "13px 10px",
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            width: 280,
+            background: "#1a1a1a",
+            border: "1px solid #2e2e2e",
+            borderRadius: 12,
+            zIndex: 99999,
+            overflow: "hidden",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
           }}
         >
-          <span className="text-base leading-none">{selected.flag}</span>
-          <span style={{ color: "#c9a84c", fontWeight: 500 }}>{selected.dial}</span>
-          <ChevronDown className="h-3 w-3" style={{ color: "rgba(201,168,76,0.5)" }} />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-72 p-0 max-h-72 overflow-hidden"
-        align="start"
-        style={{ background: "#1a1a1a", border: "1px solid #2e2e2e", borderRadius: 12, color: "#eee" }}
-      >
-        <div style={{ padding: 8, borderBottom: "1px solid #2e2e2e" }}>
-          <Input
-            placeholder="Search country..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-8 text-sm focus-visible:ring-[#c9a84c]/50"
-            style={{ background: "#141414", border: "1px solid #333", color: "#eee", borderRadius: 8, fontFamily: "Arial", fontSize: 13 }}
-          />
-        </div>
-        <div className="overflow-y-auto max-h-[200px]">
-          {filtered.map((c) => (
-            <button
-              key={c.code}
-              type="button"
-              onClick={() => {
-                onSelect(c);
-                setOpen(false);
-                setSearch("");
+          <div style={{ padding: 10, borderBottom: "1px solid #2e2e2e" }}>
+            <input
+              autoFocus
+              placeholder="Pesquisar país..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: "100%",
+                background: "#141414",
+                border: "1px solid #333",
+                borderRadius: 8,
+                padding: "8px 10px",
+                color: "#eee",
+                fontFamily: "Arial",
+                fontSize: 13,
+                outline: "none",
+                boxSizing: "border-box",
               }}
-              className={cn(
-                "w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[#c9a84c]/10 transition-colors",
-                selected.code === c.code && "bg-[#c9a84c]/10"
-              )}
-              style={{ background: "transparent", border: "none", color: "#ddd", fontFamily: "Arial", fontSize: 13 }}
-            >
-              <span className="text-base">{c.flag}</span>
-              <span className="flex-1 truncate" style={{ color: selected.code === c.code ? "#c9a84c" : "#ddd" }}>{c.name}</span>
-              <span style={{ color: "#888", fontSize: 11 }}>{c.dial}</span>
-            </button>
-          ))}
+            />
+          </div>
+          <div style={{ maxHeight: 220, overflowY: "auto" }}>
+            {filtered.map((c) => (
+              <button
+                key={c.code}
+                type="button"
+                onClick={() => {
+                  onSelect(c);
+                  setOpen(false);
+                  setSearch("");
+                }}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 14px",
+                  background: selected.code === c.code ? "rgba(201,168,76,0.1)" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.08)")}
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = selected.code === c.code ? "rgba(201,168,76,0.1)" : "transparent")
+                }
+              >
+                <span style={{ fontSize: 18 }}>{c.flag}</span>
+                <span
+                  style={{
+                    flex: 1,
+                    color: selected.code === c.code ? "#c9a84c" : "#ccc",
+                    fontFamily: "Arial",
+                    fontSize: 13,
+                  }}
+                >
+                  {c.name}
+                </span>
+                <span style={{ color: "#888", fontFamily: "Arial", fontSize: 11 }}>{c.dial}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </PopoverContent>
-    </Popover>
+      )}
+
+      {open && <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 99998 }} />}
+    </div>
   );
 };
 
