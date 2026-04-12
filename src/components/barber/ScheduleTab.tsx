@@ -37,8 +37,8 @@ type Appointment = Tables<"appointments"> & {
 
 const DAY_NAMES_ALL = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
-const ScheduleTab = ({ barberId }: { barberId: string }) => {
-  const { settings, loading: settingsLoading } = useShopSettings();
+const ScheduleTab = ({ barberId, activeTab }: { barberId: string; activeTab?: string }) => {
+  const { settings, loading: settingsLoading, refetch: refetchSettings } = useShopSettings();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -122,6 +122,15 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
       supabase.removeChannel(channel);
     };
   }, [barberId, fetchAppointments]);
+
+  // Re-fetch everything when tab becomes active
+  useEffect(() => {
+    if (activeTab === "schedule") {
+      refetchSettings();
+      fetchAppointments();
+      breakCheckedRef.current = "";
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     breakCheckedRef.current = "";

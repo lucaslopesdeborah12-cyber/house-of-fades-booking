@@ -17,6 +17,7 @@ const BarberPortal = () => {
   const [session, setSession] = useState<any>(null);
   const [barber, setBarber] = useState<Barber | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("stats");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -109,7 +110,7 @@ const BarberPortal = () => {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="stats">
+        <Tabs defaultValue="stats" onValueChange={(v) => setActiveTab(v)} value={activeTab}>
           <TabsList className="bg-card border border-border mb-6">
             <TabsTrigger value="stats" className="font-body data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <BarChart3 size={16} className="mr-1.5" />
@@ -129,7 +130,7 @@ const BarberPortal = () => {
             {isOwner ? <OwnerStatsTab /> : <EmployeeStatsTab barberId={barber.id} />}
           </TabsContent>
           <TabsContent value="schedule">
-            <ScheduleTab barberId={barber.id} />
+            <ScheduleTab barberId={barber.id} activeTab={activeTab} />
           </TabsContent>
           <TabsContent value="clients">
             <ClientsTab barberId={barber.id} isOwner={isOwner} />
