@@ -338,6 +338,7 @@ const ScheduleTab = ({ barberId }: { barberId: string }) => {
               onRemoveBreak={removeBreak}
               onMoveBreak={moveBreak}
               onUpdateStatus={updateStatus}
+              onCancelRequest={setCancelTarget}
               canCancel={canCancel}
             />
           );
@@ -386,6 +387,7 @@ interface SlotRowProps {
   onRemoveBreak: (id: string) => void;
   onMoveBreak: (breakId: string, dateStr: string, newTime: string) => void;
   onUpdateStatus: (id: string, s: "completed" | "no-show" | "cancelled", a?: Appointment) => void;
+  onCancelRequest: (a: Appointment) => void;
   canCancel: (a: Appointment) => boolean;
 }
 
@@ -400,6 +402,7 @@ const SlotRow = ({
   onRemoveBreak,
   onMoveBreak,
   onUpdateStatus,
+  onCancelRequest,
   canCancel,
 }: SlotRowProps) => {
   if (past && !appt) {
@@ -546,10 +549,10 @@ const SlotRow = ({
               variant="ghost"
               className={`justify-start font-body ${
                 cancellable
-                  ? "text-red-500 hover:bg-red-50"
+                  ? "text-destructive hover:bg-destructive/10"
                   : "text-muted-foreground/50 cursor-not-allowed"
               }`}
-              onClick={() => onUpdateStatus(appt.id, "cancelled", appt)}
+              onClick={() => cancellable && appt && onCancelRequest(appt)}
             >
               <Ban size={14} className="mr-1.5" /> Cancel
             </Button>
