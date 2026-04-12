@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { format, addDays, addWeeks, subWeeks, parseISO, endOfWeek } from "date-fns";
-import { Phone, Mail, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Phone, Mail, Trash2, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +17,7 @@ import {
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
 import { useShopSettings } from "@/hooks/useShopSettings";
 
- type ClientAppointment = {
+type ClientAppointment = {
   id: string;
   appointment_date: string;
   time_slot: string;
@@ -32,10 +32,10 @@ import { useShopSettings } from "@/hooks/useShopSettings";
 
 const DAY_NAMES = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
-const getCurrentVisibleWeekStart = (_lastWorkingDay: string) => {
+const getCurrentWeekMonday = () => {
   const today = new Date();
-  const dayOfWeek = today.getDay();
-  const diffToMonday = dayOfWeek === 0 ? 1 : 1 - dayOfWeek;
+  const dayOfWeek = today.getDay(); // 0=Sun,1=Mon...
+  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   const monday = new Date(today);
   monday.setDate(today.getDate() + diffToMonday);
   monday.setHours(0, 0, 0, 0);
@@ -56,23 +56,39 @@ const ClientsTab = ({
   const { settings, loading: settingsLoading } = useShopSettings();
   const [appointments, setAppointments] = useState<ClientAppointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [weekStart, setWeekStart] = useState(() => getCurrentVisibleWeekStart("saturday"));
+  const [error, setError] = useState<string | null>(null);
+  const [weekStart, setWeekStart] = useState(() => getCurrentWeekMonday());
   const [cancelTarget, setCancelTarget] = useState<ClientAppointment | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const mountedRef = useRef(true);
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
 
-  const fetchAppointments = useCallback(async (targetWeekStart = weekStart) => {
-    const targetWeekEnd = endOfWeek(targetWeekStart, { weekStartsOn: 1 });
-    const targetWeekStartStr = format(targetWeekStart, "yyyy-MM-dd");
-    const targetWeekEndStr = format(targetWeekEnd, "yyyy-MM-dd");
+  // Wait for auth session to be ready
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(() => {
+      if (!cancelled) setAuthReady(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
-    console.log("[ClientsTab] fetching for range:", targetWeekStartStr, "to", targetWeekEndStr);
+  // Stable fetch function using refs to avoid dependency issues
+  const fetchAppointments = useCallback(async (targetWeekStart: Date) => {
+    if (!mountedRef.current) return;
+
+    const targetWeekEnd = endOfWeek(targetWeekStart, { weekStartsOn: 1 });
+    const startStr = format(targetWeekStart, "yyyy-MM-dd");
+    const endStr = format(targetWeekEnd, "yyyy-MM-dd");
+
+    setLoading(true);
+    setError(null);
 
     let query = supabase
       .from("appointments")
       .select("id, appointment_date, time_slot, client_name, client_email, client_phone, status, barber_id, services(name), barbers(name)")
-      .gte("appointment_date", targetWeekStartStr)
-      .lte("appointment_date", targetWeekEndStr)
+      .gte("appointment_date", startStr)
+      .lte("appointment_date", endStr)
       .in("status", ["booked", "confirmed"])
       .neq("client_name", "BREAK")
       .order("appointment_date")
@@ -82,55 +98,46 @@ const ClientsTab = ({
       query = query.eq("barber_id", barberId);
     }
 
-    const { data, error } = await query;
+    const { data, error: queryError } = await query;
 
-    if (error) {
-      console.error("[ClientsTab] query error:", error);
-      toast.error("Failed to load clients");
+    if (!mountedRef.current) return;
+
+    if (queryError) {
+      console.error("[ClientsTab] query error:", queryError);
+      setError("Falha ao carregar clientes");
     } else {
-      console.log("[ClientsTab] query result:", { from: targetWeekStartStr, to: targetWeekEndStr, count: data?.length ?? 0, data });
       setAppointments((data as ClientAppointment[]) || []);
     }
 
     setLoading(false);
-  }, [barberId, isOwner, weekStart]);
+  }, [barberId, isOwner]);
 
+  // Fetch when auth is ready and weekStart changes
   useEffect(() => {
-    if (settingsLoading) return;
+    if (!authReady || settingsLoading) return;
+    fetchAppointments(weekStart);
+  }, [authReady, settingsLoading, weekStart, fetchAppointments]);
 
-    const currentVisibleWeekStart = getCurrentVisibleWeekStart(settings.last_working_day);
-    setWeekStart(currentVisibleWeekStart);
-    setLoading(true);
-    fetchAppointments(currentVisibleWeekStart);
-  }, [settings.last_working_day, settingsLoading, fetchAppointments]);
-
-  // Fetch on mount and when week changes
+  // Reset to current week when tab becomes active
   useEffect(() => {
-    if (settingsLoading) return;
-    setLoading(true);
-    fetchAppointments();
-  }, [fetchAppointments, settingsLoading]);
+    if (activeTab !== "clients" || !authReady || settingsLoading) return;
+    const monday = getCurrentWeekMonday();
+    setWeekStart(monday);
+  }, [activeTab, refreshToken, authReady, settingsLoading]);
 
-  // Reset to the correct current week and refetch when tab becomes active
+  // Realtime subscription
   useEffect(() => {
-    if (activeTab !== "clients" || settingsLoading) return;
+    if (!authReady) return;
 
-    const currentVisibleWeekStart = getCurrentVisibleWeekStart(settings.last_working_day);
-    setWeekStart(currentVisibleWeekStart);
-    setLoading(true);
-    fetchAppointments(currentVisibleWeekStart);
-  }, [activeTab, refreshToken, settings.last_working_day, settingsLoading, fetchAppointments]);
-
-  // Realtime subscription for INSERT/DELETE
-  useEffect(() => {
     const channel = supabase
       .channel(`clients-realtime-${barberId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "appointments" },
-        (payload: any) => {
-          console.log("[ClientsTab] realtime event:", payload);
-          fetchAppointments();
+        () => {
+          if (mountedRef.current) {
+            fetchAppointments(weekStart);
+          }
         }
       )
       .subscribe();
@@ -138,7 +145,13 @@ const ClientsTab = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [barberId, fetchAppointments]);
+  }, [barberId, authReady, weekStart, fetchAppointments]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const handleCancel = async () => {
     if (!cancelTarget) return;
@@ -158,13 +171,12 @@ const ClientsTab = ({
     } else {
       toast.success("Agendamento cancelado");
       notifyWaitingList(barberIdForNotify, dateForNotify, timeSlot, barberName);
-      fetchAppointments();
+      fetchAppointments(weekStart);
     }
 
     setCancelTarget(null);
   };
 
-  // Week navigation
   const goToPreviousWeek = () => setWeekStart((prev) => subWeeks(prev, 1));
   const goToNextWeek = () => setWeekStart((prev) => addWeeks(prev, 1));
 
@@ -174,19 +186,32 @@ const ClientsTab = ({
     const dateStr = format(addDays(weekStart, i), "yyyy-MM-dd");
     grouped.set(dateStr, []);
   }
-
-  appointments.forEach((appointment) => {
-    const list = grouped.get(appointment.appointment_date);
-    if (list) list.push(appointment);
+  appointments.forEach((a) => {
+    const list = grouped.get(a.appointment_date);
+    if (list) list.push(a);
   });
 
-  if (loading || settingsLoading) {
+  if (!authReady || settingsLoading) {
+    return <p className="text-muted-foreground font-body text-sm p-4">Loading…</p>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center gap-3 p-6">
+        <p className="text-destructive font-body text-sm">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => fetchAppointments(weekStart)}>
+          <RefreshCw size={14} className="mr-1.5" /> Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
+  if (loading) {
     return <p className="text-muted-foreground font-body text-sm p-4">Loading…</p>;
   }
 
   return (
     <div className="space-y-4">
-      {/* Week navigation */}
       <div className="flex items-center justify-center gap-3">
         <Button variant="outline" size="icon" className="h-8 w-8" onClick={goToPreviousWeek}>
           <ChevronLeft size={16} />
@@ -199,7 +224,6 @@ const ClientsTab = ({
         </Button>
       </div>
 
-      {/* Day groups */}
       {Array.from(grouped.entries()).map(([dateStr, dayAppts]) => (
         <div key={dateStr} className="space-y-2">
           <h4 className="font-serif text-sm font-semibold text-foreground border-b border-border pb-1">
@@ -210,22 +234,15 @@ const ClientsTab = ({
           ) : (
             <div className="space-y-1.5">
               {dayAppts.map((a) => (
-                <div
-                  key={a.id}
-                  className="flex items-center gap-3 bg-card border border-border rounded-lg px-3 py-2"
-                >
+                <div key={a.id} className="flex items-center gap-3 bg-card border border-border rounded-lg px-3 py-2">
                   <span className="text-xs font-body text-muted-foreground w-12 text-right shrink-0">
                     {a.time_slot.slice(0, 5)}
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-body font-medium text-foreground truncate">{a.client_name}</p>
                     <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                      {a.services?.name && (
-                        <span className="text-xs text-muted-foreground font-body">{a.services.name}</span>
-                      )}
-                      {isOwner && a.barbers?.name && (
-                        <span className="text-xs text-primary/70 font-body">{a.barbers.name}</span>
-                      )}
+                      {a.services?.name && <span className="text-xs text-muted-foreground font-body">{a.services.name}</span>}
+                      {isOwner && a.barbers?.name && <span className="text-xs text-primary/70 font-body">{a.barbers.name}</span>}
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                       {a.client_email && (
