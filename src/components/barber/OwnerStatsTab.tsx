@@ -158,6 +158,9 @@ const OwnerStatsTab = () => {
         </div>
       </div>
 
+      {/* Shop Settings */}
+      <ShopSettingsPanel settings={settings} onSave={saveSetting} />
+
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="This Week" value={weekAppts.length} sub="cuts" />
