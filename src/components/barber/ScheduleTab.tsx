@@ -29,6 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
 import { useShopSettings, getDayCount, generateTimeSlots } from "@/hooks/useShopSettings";
+import MySchedulePanel from "@/components/barber/MySchedulePanel";
 
 type Appointment = Tables<"appointments"> & {
   services: { name: string; price: number } | null;
