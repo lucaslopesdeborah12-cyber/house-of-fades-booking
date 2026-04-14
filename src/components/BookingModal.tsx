@@ -425,8 +425,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   <span className="font-sans text-sm text-foreground/80">{selectedDate && format(selectedDate, "dd/MM/yyyy")}</span>
                 </div>
                 <div className="flex justify-between py-2" style={{ borderBottom: '0.5px solid rgba(255,255,255,0.04)' }}>
-                  <span className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/30">Hora</span>
-                  <span className="font-sans text-sm text-foreground/80">{selectedTime}</span>
+                  <span className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/30">Horário</span>
+                  <span className="font-sans text-sm text-foreground/80">{selectedTime || "—"}</span>
                 </div>
               </div>
 
@@ -452,14 +452,14 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors"
                   style={{ border: '0.5px solid rgba(201,168,76,0.3)', borderRadius: 0, background: 'transparent' }}
                 >
-                  <CalendarDownloadIcon size={14} className="mr-3" /> Descarregar .ics (Apple Calendar)
+                  <CalendarDownloadIcon size={14} className="mr-3" /> Guardar no Apple Calendar
                 </button>
                 <button
                   onClick={() => { reset(); }}
                   className="font-sans text-[10px] font-light uppercase tracking-[0.15em] w-full h-10 text-foreground/30 hover:text-foreground/50 transition-colors"
                   style={{ border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 0, background: 'transparent' }}
                 >
-                  Nova Reserva
+                  Fazer outra reserva
                 </button>
                 <button onClick={() => handleClose(false)} className="font-sans text-[10px] text-foreground/20 hover:text-foreground/40 transition-colors mt-2">
                   Fechar
