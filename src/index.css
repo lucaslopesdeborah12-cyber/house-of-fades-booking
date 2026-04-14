@@ -351,3 +351,19 @@ html {
   position: fixed !important;
   inset: 0 !important;
 }
+
+/* Full day hourglass indicator in calendar */
+.calendar-day-full {
+  position: relative !important;
+  text-decoration: none !important;
+}
+.calendar-day-full::after {
+  content: '⏳';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  line-height: 1;
+  pointer-events: none;
+}
