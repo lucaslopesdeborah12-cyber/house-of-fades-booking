@@ -331,7 +331,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
           if (data?.value) {
             emailjs.send(
               "service_jq26o2f",
-              "template_9wigrr6",
+              "owner_booking_notification",
               {
                 to_name: "Owner",
                 to_email: data.value,
