@@ -642,7 +642,18 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     <Calendar
                       mode="single"
                       selected={selectedDate}
-                      onSelect={(date) => setSelectedDate(date)}
+                      onSelect={(date) => {
+                        if (date) {
+                          const key = format(date, "yyyy-MM-dd");
+                          const booked = monthAvailability[key] || 0;
+                          if (booked >= TOTAL_SLOTS) {
+                            setSelectedDate(date);
+                            setWaitingListOpen(true);
+                            return;
+                          }
+                        }
+                        setSelectedDate(date);
+                      }}
                       onMonthChange={setCalendarMonth}
                       locale={pt}
                       disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0)) || date.getDay() === 0}
@@ -666,7 +677,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                         gold: "!text-[#c9a84c] !underline !underline-offset-4 !decoration-[#c9a84c]/30 !decoration-[0.5px]",
                         filling: "!text-[#c9a84c]/70 !underline !underline-offset-4 !decoration-[#c9a84c]/20 !decoration-[0.5px]",
                         almostFull: "!text-[#c9a84c]/50 !underline !underline-offset-4 !decoration-[#c9a84c]/15 !decoration-[0.5px]",
-                        full: "!text-foreground/20 !line-through !opacity-50",
+                        full: "calendar-day-full !text-foreground/30 !opacity-70",
                       }}
                       classNames={{
                         day_selected: "!bg-[#c9a84c] !text-[#050505] !font-bold !rounded-none",
@@ -676,11 +687,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   </div>
 
                   {/* Legend in Portuguese */}
-                  <div className="flex flex-wrap gap-4 justify-center font-sans text-[9px] font-light uppercase tracking-[0.15em] text-foreground/25">
+                   <div className="flex flex-wrap gap-4 justify-center font-sans text-[9px] font-light uppercase tracking-[0.15em] text-foreground/25">
                     <span className="flex items-center gap-1.5"><span className="w-2 h-[1px] bg-[#c9a84c] inline-block" /> Disponível</span>
                     <span className="flex items-center gap-1.5"><span className="w-2 h-[1px] bg-[#c9a84c]/60 inline-block" /> A encher</span>
                     <span className="flex items-center gap-1.5"><span className="w-2 h-[1px] bg-[#c9a84c]/30 inline-block" /> Quase cheio</span>
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-[1px] bg-foreground/15 inline-block" /> Últimas vagas</span>
+                    <span className="flex items-center gap-1.5">⏳ Esgotado</span>
                   </div>
 
                   {selectedDate && (
