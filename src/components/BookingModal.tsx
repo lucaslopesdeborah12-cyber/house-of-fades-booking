@@ -304,8 +304,10 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
           },
         }).catch(console.error);
       }
+      console.log("[BookingModal] Booking successful, sending notifications...");
       const emailToSend = clientEmail.trim();
       if (emailToSend) {
+        console.log("[BookingModal] Sending client confirmation email to:", emailToSend);
         emailjs.send(
           "service_jq26o2f",
           "template_7i3p8r9",
@@ -319,37 +321,46 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
             price: `€${Number(selectedServiceObj?.price || 0).toFixed(0)}`,
           },
           "TBNWeHLfrq6OuvZhQ"
-        ).catch((err) => console.error("EmailJS error:", err));
+        ).then(() => console.log("[BookingModal] Client confirmation email sent OK"))
+         .catch((err) => console.error("[BookingModal] Client EmailJS error:", err));
       }
-      // Notify owner
+      // Notify owner via email
+      console.log("[BookingModal] Fetching owner notification_email from settings...");
       supabase
         .from("owner_settings" as any)
         .select("value")
         .eq("key", "notification_email")
         .maybeSingle()
         .then(({ data }: any) => {
+          console.log("[BookingModal] notification_email setting result:", data);
           if (data?.value) {
+            const ownerPayload = {
+              to_name: "Owner",
+              to_email: data.value,
+              client_name: clientName.trim(),
+              client_email: clientEmail.trim() || "N/A",
+              client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : "N/A",
+              barber_name: selectedBarberName || "",
+              service_name: selectedServiceObj?.name || "",
+              appointment_date: format(selectedDate!, "dd/MM/yyyy"),
+              appointment_time: selectedTime,
+              service_price: `€${Number(selectedServiceObj?.price || 0).toFixed(0)}`,
+              date: format(selectedDate!, "dd/MM/yyyy"),
+              time: selectedTime,
+            };
+            console.log("[BookingModal] Sending owner email with payload:", JSON.stringify(ownerPayload));
             emailjs.send(
               "service_jq26o2f",
-              "owner_booking_notification",
-              {
-                to_name: "Owner",
-                to_email: data.value,
-                client_name: clientName.trim(),
-                client_email: clientEmail.trim(),
-                client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : "N/A",
-                barber_name: selectedBarberName || "",
-                service_name: selectedServiceObj?.name || "",
-                appointment_date: format(selectedDate!, "dd/MM/yyyy"),
-                appointment_time: selectedTime,
-                service_price: `€${Number(selectedServiceObj?.price || 0).toFixed(0)}`,
-                date: format(selectedDate!, "dd/MM/yyyy"),
-                time: selectedTime,
-              },
+              "template_7i3p8r9",
+              ownerPayload,
               "TBNWeHLfrq6OuvZhQ"
-            ).catch((err) => console.error("Owner notification error:", err));
+            ).then(() => console.log("[BookingModal] Owner notification email sent OK"))
+             .catch((err) => console.error("[BookingModal] Owner EmailJS error:", err));
+          } else {
+            console.warn("[BookingModal] No notification_email in owner_settings — owner NOT notified.");
           }
         });
+
     }
   };
 
