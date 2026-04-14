@@ -285,14 +285,15 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
             action: "confirmation",
             phone: formatPhoneForSubmit(clientPhone, selectedCountry),
             clientName: clientName.trim(),
-            barberName: selectedBarberName || "",
-            serviceName: selectedServiceObj?.name || "",
-            date: format(selectedDate!, "dd/MM/yyyy"),
+            barberName: barberNameForEmail,
+            serviceName: serviceNameForEmail,
+            date: dateForEmail,
             time: selectedTime,
           },
         }).catch(console.error);
       }
       console.log("[BookingModal] Booking successful, sending notifications...");
+      console.log("[BookingModal] Email data - barber:", barberNameForEmail, "service:", serviceNameForEmail, "price:", servicePriceForEmail);
       const emailToSend = clientEmail.trim();
       if (emailToSend) {
         console.log("[BookingModal] Sending client confirmation email to:", emailToSend);
@@ -302,11 +303,14 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
           {
             to_name: clientName.trim(),
             to_email: emailToSend,
-            date: format(selectedDate!, "dd/MM/yyyy"),
+            date: dateForEmail,
             time: selectedTime,
-            service: selectedServiceObj?.name || "",
-            barber: selectedBarberName || "",
-            price: `€${Number(selectedServiceObj?.price || 0).toFixed(0)}`,
+            service: serviceNameForEmail,
+            barber: barberNameForEmail,
+            price: servicePriceForEmail,
+            service_name: serviceNameForEmail,
+            barber_name: barberNameForEmail,
+            service_price: servicePriceForEmail,
           },
           "TBNWeHLfrq6OuvZhQ"
         ).then(() => console.log("[BookingModal] Client confirmation email sent OK"))
@@ -327,12 +331,15 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               client_name: clientName.trim(),
               client_email: clientEmail.trim() || "N/A",
               client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : "N/A",
-              barber_name: selectedBarberName || "",
-              service_name: selectedServiceObj?.name || "",
-              appointment_date: format(selectedDate!, "dd/MM/yyyy"),
+              barber_name: barberNameForEmail,
+              service_name: serviceNameForEmail,
+              appointment_date: dateForEmail,
               appointment_time: selectedTime,
-              service_price: `€${Number(selectedServiceObj?.price || 0).toFixed(0)}`,
-              date: format(selectedDate!, "dd/MM/yyyy"),
+              service_price: servicePriceForEmail,
+              barber: barberNameForEmail,
+              service: serviceNameForEmail,
+              price: servicePriceForEmail,
+              date: dateForEmail,
               time: selectedTime,
             };
             console.log("[BookingModal] Sending owner email with payload:", JSON.stringify(ownerPayload));
