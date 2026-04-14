@@ -1,24 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
-import { ClipboardList, Check } from "lucide-react";
-import emailjs from "@emailjs/browser";
+import { Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { useLanguage } from "@/i18n/LanguageContext";
 import CountryCodeSelector, { COUNTRIES, formatPhoneForSubmit, type Country } from "@/components/CountryCodeSelector";
-
-const TIME_SLOTS = [
-  "09:00", "09:20", "09:40", "10:00", "10:20", "10:40",
-  "11:00", "11:20", "11:40", "12:00", "12:20", "12:40",
-  "13:00", "13:20", "13:40", "14:00", "14:20", "14:40",
-  "15:00", "15:20", "15:40", "16:00", "16:20", "16:40",
-  "17:00", "17:20", "17:40", "18:00", "18:20", "18:40",
-  "19:00",
-];
 
 interface WaitingListFormProps {
   open: boolean;
@@ -29,8 +16,6 @@ interface WaitingListFormProps {
 }
 
 const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: WaitingListFormProps) => {
-  const [takenSlots, setTakenSlots] = useState<string[]>([]);
-  const [selectedTime, setSelectedTime] = useState("");
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPhone, setClientPhone] = useState("");
@@ -40,22 +25,9 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
   const { t } = useLanguage();
 
   const dateStr = format(date, "yyyy-MM-dd");
-
-  useEffect(() => {
-    if (!open) return;
-    supabase
-      .from("waiting_list")
-      .select("time_slot")
-      .eq("barber_id", barberId)
-      .eq("appointment_date", dateStr)
-      .in("status", ["pending", "notified"])
-      .then(({ data }) => {
-        if (data) setTakenSlots(data.map(d => (d.time_slot as string).slice(0, 5)));
-      });
-  }, [open, barberId, dateStr]);
+  const dateDisplay = format(date, "dd/MM/yyyy");
 
   const reset = () => {
-    setSelectedTime("");
     setClientName("");
     setClientEmail("");
     setClientPhone("");
@@ -68,14 +40,13 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
   };
 
   const handleSubmit = async () => {
-    if (!clientName.trim()) { toast.error(t("booking.enterName")); return; }
-    if (!clientEmail.trim()) { toast.error(t("booking.enterEmail")); return; }
-    if (!selectedTime) { toast.error("Please select a time slot"); return; }
+    if (!clientName.trim()) { toast.error("Introduza o seu nome"); return; }
+    if (!clientEmail.trim()) { toast.error("Introduza o seu email"); return; }
 
     setSubmitting(true);
     const { error } = await supabase.from("waiting_list").insert({
       appointment_date: dateStr,
-      time_slot: selectedTime,
+      time_slot: "09:00",
       barber_id: barberId,
       client_name: clientName.trim(),
       client_email: clientEmail.trim(),
@@ -84,7 +55,7 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
     setSubmitting(false);
 
     if (error) {
-      toast.error("Error joining waiting list. Please try again.");
+      toast.error("Erro ao entrar na lista. Tente novamente.");
       console.error(error);
     } else {
       setSuccess(true);
@@ -94,20 +65,25 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
   if (success) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-accent/20 text-foreground max-w-md mx-auto">
-          <div className="text-center py-8 space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-full bg-[#4A7C2F]/20 flex items-center justify-center">
-              <Check size={32} className="text-[#4A7C2F]" />
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-[#050505] border-[#c9a84c]/15 text-foreground max-w-md mx-auto" style={{ borderRadius: 2 }}>
+          <div className="text-center py-10 space-y-5">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04]">
+                <Check size={200} strokeWidth={0.5} className="text-[#c9a84c]" />
+              </div>
+              <h2 className="font-serif text-2xl italic text-[#c9a84c] relative z-10">
+                Na lista!
+              </h2>
             </div>
-            <p className="font-body text-foreground font-medium">
-              You're on the waiting list for {format(date, "dd/MM/yyyy")} at {selectedTime}.
+            <p className="font-cormorant text-base italic text-foreground/40">
+              Avisamos assim que uma vaga abrir no dia {dateDisplay}.
             </p>
-            <p className="font-body text-muted-foreground text-sm">
-              We'll email and text you the moment a slot opens!
-            </p>
-            <Button onClick={() => handleClose(false)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-body mt-4">
-              {t("booking.close")}
-            </Button>
+            <button
+              onClick={() => handleClose(false)}
+              className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/25 hover:text-foreground/40 transition-colors mt-4"
+            >
+              Fechar
+            </button>
           </div>
         </DialogContent>
       </Dialog>
@@ -116,76 +92,84 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-accent/20 text-foreground max-w-md mx-auto max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="font-serif text-2xl gold-title-gradient flex items-center gap-2">
-            <ClipboardList size={24} /> Join Waiting List
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <p className="font-body text-sm text-muted-foreground">
-            All slots for {barberName} on {format(date, "dd/MM/yyyy")} are booked. Join the waiting list and we'll notify you when a slot opens!
-          </p>
-
+      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-[#050505] border-[#c9a84c]/15 text-foreground max-w-md mx-auto" style={{ borderRadius: 2 }}>
+        <div className="space-y-6 py-2">
           <div>
-            <p className="font-body text-sm text-muted-foreground mb-2">Choose desired time slot:</p>
-            <div className="grid grid-cols-3 gap-2">
-              {TIME_SLOTS.map(tm => {
-                const taken = takenSlots.includes(tm);
-                return (
-                  <button
-                    key={tm}
-                    disabled={taken}
-                    onClick={() => setSelectedTime(tm)}
-                    className={cn(
-                      "py-2 rounded text-sm font-body transition-all border",
-                      taken
-                        ? "border-border text-muted-foreground/40 cursor-not-allowed line-through bg-muted/20"
-                        : selectedTime === tm
-                          ? "border-accent bg-accent/20 text-foreground"
-                          : "border-border hover:border-accent/50 text-foreground"
-                    )}
-                  >
-                    {tm}
-                  </button>
-                );
-              })}
-            </div>
+            <h2 className="font-serif text-2xl italic text-[#c9a84c] mb-1">Lista de Espera</h2>
+            <p className="font-sans text-[10px] font-light uppercase tracking-[0.15em] text-foreground/25 mb-3">
+              {dateDisplay} · {barberName}
+            </p>
+            <p className="font-cormorant text-sm italic text-foreground/35 leading-relaxed">
+              Todos os horários estão ocupados. Entra na lista de espera e avisamos assim que uma vaga abrir.
+            </p>
           </div>
 
-          <div className="space-y-3">
-            <Input
-              placeholder={t("booking.name")}
+          {/* Nome */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <span style={{ fontSize: 9, color: "rgba(201,168,76,0.4)", letterSpacing: 2, textTransform: "uppercase", fontFamily: "'Inter', sans-serif", fontWeight: 200 }}>Nome</span>
+            <input
+              placeholder="Nome completo *"
               value={clientName}
               onChange={e => setClientName(e.target.value)}
-              className="bg-background border-border text-foreground font-body"
+              style={{ background: "transparent", borderBottom: "0.5px solid rgba(201,168,76,0.15)", borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0, padding: "12px 0", fontSize: "16px", color: "#e0e0e0", outline: "none", width: "100%", fontFamily: "'Inter', sans-serif", fontWeight: 300, transition: "border-color 0.2s" }}
+              onFocus={e => { e.currentTarget.style.borderBottomColor = "#c9a84c"; }}
+              onBlur={e => { e.currentTarget.style.borderBottomColor = "rgba(201,168,76,0.15)"; }}
             />
-            <Input
-              placeholder={t("booking.email")}
+          </div>
+
+          {/* Email */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <span style={{ fontSize: 9, color: "rgba(201,168,76,0.4)", letterSpacing: 2, textTransform: "uppercase", fontFamily: "'Inter', sans-serif", fontWeight: 200 }}>Email</span>
+            <input
+              placeholder="Email *"
               type="email"
               value={clientEmail}
               onChange={e => setClientEmail(e.target.value)}
-              className="bg-background border-border text-foreground font-body"
+              style={{ background: "transparent", borderBottom: "0.5px solid #c9a84c", borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0, padding: "12px 0", fontSize: "16px", color: "#c9a84c", outline: "none", width: "100%", fontFamily: "'Inter', sans-serif", fontWeight: 300, transition: "border-color 0.2s" }}
             />
-            <div className="flex">
-              <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
-              <Input
+          </div>
+
+          {/* Telefone */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <span style={{ fontSize: 9, color: "rgba(201,168,76,0.4)", letterSpacing: 2, textTransform: "uppercase", fontFamily: "'Inter', sans-serif", fontWeight: 200 }}>Telefone</span>
+            <div style={{ display: "flex", borderBottom: "0.5px solid rgba(201,168,76,0.15)", transition: "border-color 0.2s" }}
+              onFocus={e => { (e.currentTarget as HTMLElement).style.borderBottomColor = "#c9a84c"; }}
+              onBlur={e => { (e.currentTarget as HTMLElement).style.borderBottomColor = "rgba(201,168,76,0.15)"; }}
+            >
+              <div style={{ flexShrink: 0 }}>
+                <CountryCodeSelector selected={selectedCountry} onSelect={setSelectedCountry} />
+              </div>
+              <input
                 placeholder={selectedCountry.code === "IE" ? "085 123 4567" : t("booking.phone")}
                 value={clientPhone}
                 onChange={e => setClientPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                className="bg-background border-border text-foreground font-body rounded-l-none"
+                style={{ flex: 1, background: "transparent", border: "none", outline: "none", padding: "12px 10px", fontSize: "16px", color: "#e0e0e0", fontFamily: "'Inter', sans-serif", fontWeight: 300 }}
               />
             </div>
           </div>
 
-          <Button
+          {/* Submit button */}
+          <button
             onClick={handleSubmit}
-            disabled={submitting || !clientName.trim() || !clientEmail.trim() || !selectedTime}
-            className="w-full bg-accent hover:bg-accent/90 text-background font-body"
+            disabled={submitting || !clientName.trim() || !clientEmail.trim()}
+            style={{
+              background: "#c9a84c", border: "none", borderRadius: 0, padding: 16,
+              width: "100%", fontSize: 11, fontWeight: 500, color: "#050505", fontFamily: "'Inter', sans-serif", letterSpacing: "3px", textTransform: "uppercase",
+              cursor: (submitting || !clientName.trim() || !clientEmail.trim()) ? "not-allowed" : "pointer",
+              ...((submitting || !clientName.trim() || !clientEmail.trim()) ? { filter: "opacity(0.4)" } : {}),
+            }}
           >
-            {submitting ? "Joining..." : "📋 Join Waiting List"}
-          </Button>
+            {submitting ? "A entrar..." : "ENTRAR NA LISTA"}
+          </button>
+
+          {/* Cancel */}
+          <button
+            onClick={() => handleClose(false)}
+            className="w-full font-sans text-[10px] font-light uppercase tracking-[0.15em] text-foreground/20 hover:text-foreground/40 transition-colors"
+            style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px 0" }}
+          >
+            Cancelar
+          </button>
         </div>
       </DialogContent>
     </Dialog>
