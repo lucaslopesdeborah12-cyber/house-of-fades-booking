@@ -572,7 +572,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               {step === 2 && (
                 <div className="space-y-3">
                   <p className="font-sans text-[10px] font-light uppercase tracking-[0.3em] text-foreground/30 flex items-center gap-2"><Scissors size={12} /> {t("booking.chooseService")}</p>
-                  <div style={{ padding: "4px 0 8px" }}>
+                  <div style={{ padding: "2px 0 4px" }}>
                     {services.map((s, index) => {
                       const isSelected = selectedService === s.id;
                       const delays = [0.06, 0.14, 0.22, 0.30, 0.38];
@@ -585,7 +585,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             alignItems: "baseline",
                             justifyContent: "space-between",
                             width: "100%",
-                            padding: "16px 0",
+                            padding: "8px 0",
                             position: "relative",
                             cursor: "pointer",
                             borderBottom: index < services.length - 1 ? "0.5px solid rgba(201,168,76,0.08)" : "none",
