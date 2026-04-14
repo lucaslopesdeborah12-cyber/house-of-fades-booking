@@ -251,6 +251,14 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     if (contactPreference === null) { toast.error("Escolha como quer receber a confirmação"); return; }
     if ((contactPreference === 'email' || contactPreference === 'all') && !clientEmail.trim()) { toast.error(t("booking.enterEmail")); return; }
     if ((contactPreference === 'sms' || contactPreference === 'call' || contactPreference === 'all') && !clientPhone.trim()) { toast.error("Introduza o seu telefone"); return; }
+    
+    // Capture these values before any state changes to ensure they're available for emails
+    const barberNameForEmail = barbers.find(b => b.id === selectedBarber)?.name || "";
+    const serviceObjForEmail = services.find(s => s.id === selectedService);
+    const serviceNameForEmail = serviceObjForEmail?.name || "";
+    const servicePriceForEmail = `€${Number(serviceObjForEmail?.price || 0).toFixed(0)}`;
+    const dateForEmail = format(selectedDate!, "dd/MM/yyyy");
+    
     setSubmitting(true);
     const { data: bookResult, error } = await supabase.functions.invoke("book-appointment", {
       body: {
