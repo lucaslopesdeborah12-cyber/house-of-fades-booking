@@ -448,10 +448,10 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 </a>
                 <button
                   onClick={handleDownloadCalendar}
-                  className="font-sans text-[10px] font-light uppercase tracking-[0.15em] w-full h-10 text-[#c9a84c]"
+                  className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors"
                   style={{ border: '0.5px solid rgba(201,168,76,0.3)', borderRadius: 0, background: 'transparent' }}
                 >
-                  Descarregar .ics (Apple Calendar)
+                  <CalendarDownloadIcon size={14} className="mr-3" /> Descarregar .ics (Apple Calendar)
                 </button>
                 <button
                   onClick={() => { reset(); }}
