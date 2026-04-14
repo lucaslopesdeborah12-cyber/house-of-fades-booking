@@ -311,6 +311,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
             service_name: serviceNameForEmail,
             barber_name: barberNameForEmail,
             service_price: servicePriceForEmail,
+            footer_note: "Enganou-se? Pode modificar ou cancelar a sua reserva respondendo a este email.",
           },
           "TBNWeHLfrq6OuvZhQ"
         ).then(() => console.log("[BookingModal] Client confirmation email sent OK"))
