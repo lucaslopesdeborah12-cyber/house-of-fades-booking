@@ -743,11 +743,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               )}
 
               {step === 4 && (() => {
-                const showEmailField = (contactPreference === 'email' || contactPreference === 'all');
-                const hideEmailField = (contactPreference === 'sms' || contactPreference === 'call');
+                const showEmailField = true;
+                const hideEmailField = false;
                 const emailDisabled = contactPreference === null;
-                const showPhoneField = contactPreference === 'sms' || contactPreference === 'call' || contactPreference === 'all';
-                const hidePhoneField = contactPreference === 'email';
+                const showPhoneField = true;
+                const hidePhoneField = false;
                 const phoneDisabled = contactPreference === null;
                 const needsWarning = contactPreference === null && clientName.length > 0;
 
