@@ -90,6 +90,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [slotTakenMessage, setSlotTakenMessage] = useState("");
   const [waitingListOpen, setWaitingListOpen] = useState(false);
   const [contactPreference, setContactPreference] = useState<"sms" | "email" | "call" | "all" | null>(null);
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
