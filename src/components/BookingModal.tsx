@@ -90,27 +90,10 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [slotTakenMessage, setSlotTakenMessage] = useState("");
   const [waitingListOpen, setWaitingListOpen] = useState(false);
-  const [contactPreferences, setContactPreferences] = useState<Set<"sms" | "email" | "call">>(new Set());
+  const [contactPreference, setContactPreference] = useState<"sms" | "email" | "call" | "all" | null>(null);
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
   const { t } = useLanguage();
-
-  // Auto-fill name and email from logged-in user
-  useEffect(() => {
-    const fillFromAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        if (!clientEmail) setClientEmail(session.user.email || "");
-        if (!clientName) {
-          const meta = session.user.user_metadata;
-          const name = meta?.full_name || meta?.name || "";
-          if (name) setClientName(name);
-        }
-      }
-    };
-    if (open) fillFromAuth();
-  }, [open]);
 
   const allSlotsBooked = selectedDate && bookedSlots.length >= TOTAL_SLOTS;
   const availableSlots = selectedDate ? TOTAL_SLOTS - bookedSlots.length : 0;
@@ -273,9 +256,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setClientPhone("");
     setClientEmail("");
     setSuccess(false);
-    setContactPreferences(new Set());
+    setContactPreference(null);
     setPrefShakeTriggered(false);
-    setSlotTakenMessage("");
   };
 
   const handleClose = (v: boolean) => {
@@ -288,15 +270,18 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       toast.error(t("booking.enterName"));
       return;
     }
-    if (contactPreferences.size === 0) {
+    if (contactPreference === null) {
       toast.error("Escolha como quer receber a confirmação");
       return;
     }
-    if (!clientEmail.trim()) {
+    if ((contactPreference === "email" || contactPreference === "all") && !clientEmail.trim()) {
       toast.error(t("booking.enterEmail"));
       return;
     }
-    if (!clientPhone.trim()) {
+    if (
+      (contactPreference === "sms" || contactPreference === "call" || contactPreference === "all") &&
+      !clientPhone.trim()
+    ) {
       toast.error("Introduza o seu telefone");
       return;
     }
@@ -315,21 +300,17 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         client_name: clientName.trim(),
         client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : null,
         client_email: clientEmail.trim() || null,
-        contact_preference: contactPreferences.size === 1 ? Array.from(contactPreferences)[0] : "all",
+        contact_preference: contactPreference || "sms",
       },
     });
     setSubmitting(false);
     if (error || (bookResult && bookResult.error)) {
-      // If slot was taken by another client, go back to time selection
+      const errMsg = bookResult?.error || t("booking.errorBooking");
+      toast.error(errMsg);
+      console.error(error || bookResult?.error);
       if (bookResult?.slot_taken) {
-        setSelectedTime("");
-        setSlotTakenMessage("Este horário acabou de ser reservado. Escolha outro horário.");
-        setStep(3);
         fetchBookedSlots();
-      } else {
-        const errMsg = bookResult?.error || t("booking.errorBooking");
-        toast.error(errMsg);
-        console.error(error || bookResult?.error);
+        setSelectedTime("");
       }
     } else {
       setSuccess(true);
@@ -401,11 +382,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 },
                 "TBNWeHLfrq6OuvZhQ",
               )
-           .catch(console.error);
+              .catch(console.error);
           }
         });
-
-      // Bland.ai voice calls to client (confirmation + scheduled reminder)
       if (clientPhone.trim()) {
         supabase.functions
           .invoke("bland-call", {
@@ -427,16 +406,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const selectedBarberName = barbers.find((b) => b.id === selectedBarber)?.name;
   const selectedServiceObj = services.find((s) => s.id === selectedService);
 
-  const handleDownloadCalendar = () => {
-    if (!selectedDate || !selectedTime) return;
-    downloadICS(
-      format(selectedDate, "yyyy-MM-dd"),
-      selectedTime,
-      selectedBarberName || "Barber",
-      selectedServiceObj?.name || "Haircut",
-    );
-  };
-
   const getGoogleCalendarUrl = () => {
     if (!selectedDate || !selectedTime) return "#";
     const [hour, minute] = selectedTime.split(":").map(Number);
@@ -447,6 +416,20 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     const endM = (minute + 30) % 60;
     const endStr = `${dateStr}T${pad(endH)}${pad(endM)}00`;
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${selectedServiceObj?.name || "Haircut"} - House of Fades`)}&dates=${startStr}/${endStr}&details=${encodeURIComponent(`Appointment with ${selectedBarberName || "Barber"}`)}&location=${encodeURIComponent("House of Fades, Carlow, Ireland")}`;
+  };
+
+  const handleOpenICS = () => {
+    if (!selectedDate || !selectedTime) return;
+    const icsContent = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:${selectedServiceObj?.name} - House of Fades\r\nDTSTART:${format(selectedDate, "yyyyMMdd")}T${selectedTime.replace(":", "")}00\r\nDTEND:${format(selectedDate, "yyyyMMdd")}T${selectedTime.replace(":", "")}00\r\nLOCATION:House of Fades, Carlow, Ireland\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "house-of-fades.ics";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -526,10 +509,10 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    window.open(getGoogleCalendarUrl(), '_blank');
+                    window.open(getGoogleCalendarUrl(), "_blank");
                   }}
                   className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#050505]"
-                  style={{ background: "#c9a84c", borderRadius: 0 }}
+                  style={{ background: "#c9a84c", borderRadius: 0, border: "none", cursor: "pointer" }}
                 >
                   <CalendarDownloadIcon size={14} className="mr-3" /> Adicionar ao Google Calendar
                 </button>
@@ -538,25 +521,42 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:${selectedServiceObj?.name} - House of Fades\nDTSTART:${format(selectedDate!, 'yyyyMMdd')}T${selectedTime.replace(':', '')}00\nDTEND:${format(selectedDate!, 'yyyyMMdd')}T${selectedTime.replace(':', '')}00\nLOCATION:House of Fades, Carlow, Ireland\nEND:VEVENT\nEND:VCALENDAR`;
-                    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-                    const url = URL.createObjectURL(blob);
-                    window.location.href = url;
+                    handleOpenICS();
                   }}
                   className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors"
-                  style={{ border: "0.5px solid rgba(201,168,76,0.3)", borderRadius: 0, background: "transparent" }}
+                  style={{
+                    border: "0.5px solid rgba(201,168,76,0.3)",
+                    borderRadius: 0,
+                    background: "transparent",
+                    cursor: "pointer",
+                  }}
                 >
                   <CalendarDownloadIcon size={14} className="mr-3" /> Guardar no Apple Calendar
                 </button>
                 <button
-                  onClick={reset}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    reset();
+                  }}
                   className="font-sans text-[10px] font-light uppercase tracking-[0.15em] w-full h-10 text-foreground/30 hover:text-foreground/50 transition-colors"
-                  style={{ border: "0.5px solid rgba(255,255,255,0.08)", borderRadius: 0, background: "transparent" }}
+                  style={{
+                    border: "0.5px solid rgba(255,255,255,0.08)",
+                    borderRadius: 0,
+                    background: "transparent",
+                    cursor: "pointer",
+                  }}
                 >
                   Nova Reserva
                 </button>
                 <button
-                  onClick={() => handleClose(false)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleClose(false);
+                  }}
                   className="font-sans text-[10px] text-foreground/20 hover:text-foreground/40 transition-colors mt-2"
                 >
                   Fechar
@@ -700,7 +700,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           key={s.id}
                           onClick={() => {
                             setSelectedService(s.id);
-                            setSlotTakenMessage("");
                             setStep(3);
                           }}
                           style={{
@@ -787,11 +786,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
               {step === 3 && (
                 <div className="space-y-4">
-                  {slotTakenMessage && (
-                    <div className="text-[#c9a84c] text-sm font-sans text-center py-2 px-3" style={{ border: "0.5px solid rgba(201,168,76,0.25)", background: "rgba(201,168,76,0.06)" }}>
-                      {slotTakenMessage}
-                    </div>
-                  )}
                   <p className="font-sans text-[10px] font-light uppercase tracking-[0.3em] text-foreground/30 flex items-center gap-2">
                     <CalendarIcon size={12} /> {t("booking.chooseDateTime")}
                   </p>
@@ -848,8 +842,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       }}
                       classNames={{
                         day_selected: "!bg-[#c9a84c] !text-[#050505] !font-bold !rounded-none",
-                        day_today: "!bg-transparent !text-[#c9a84c] !font-bold",
-                        cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                        day_today: "!text-[#c9a84c] !font-bold",
                       }}
                     />
                   </div>
@@ -954,27 +947,17 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
               {step === 4 &&
                 (() => {
-                  const needsWarning = contactPreferences.size === 0 && clientName.length > 0;
+                  const emailDisabled = contactPreference === null;
+                  const phoneDisabled = contactPreference === null;
+                  const needsWarning = contactPreference === null && clientName.length > 0;
                   if (needsWarning && !prefShakeTriggered) setPrefShakeTriggered(true);
                   const isConfirmDisabled =
                     submitting ||
                     !clientName.trim() ||
-                    contactPreferences.size === 0 ||
-                    !clientEmail.trim() ||
-                    !clientPhone.trim();
-
-                  const togglePref = (val: "sms" | "email" | "call") => {
-                    setContactPreferences(prev => {
-                      const next = new Set(prev);
-                      if (next.has(val)) next.delete(val); else next.add(val);
-                      return next;
-                    });
-                  };
-                  const selectAll = () => {
-                    setContactPreferences(new Set(["sms", "email", "call"]));
-                  };
-                  const allSelected = contactPreferences.has("sms") && contactPreferences.has("email") && contactPreferences.has("call");
-
+                    contactPreference === null ||
+                    ((contactPreference === "email" || contactPreference === "all") && !clientEmail.trim()) ||
+                    ((contactPreference === "sms" || contactPreference === "call" || contactPreference === "all") &&
+                      !clientPhone.trim());
                   return (
                     <div style={{ padding: "0 0 14px" }}>
                       <div
@@ -1013,17 +996,18 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           Forma de confirmação
                         </div>
                         <div style={{ display: "flex", gap: 4 }}>
-                          {([
+                          {[
                             { value: "sms" as const, label: "SMS" },
                             { value: "email" as const, label: "Email" },
                             { value: "call" as const, label: "Ligação" },
-                          ] as const).map((pill) => {
-                            const isActive = contactPreferences.has(pill.value);
+                            { value: "all" as const, label: "Todos" },
+                          ].map((pill) => {
+                            const isActive = contactPreference === pill.value;
                             return (
                               <button
                                 key={pill.value}
                                 type="button"
-                                onClick={() => togglePref(pill.value)}
+                                onClick={() => setContactPreference(pill.value)}
                                 style={{
                                   flex: 1,
                                   background: isActive ? "rgba(201,168,76,0.08)" : "transparent",
@@ -1050,33 +1034,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                               </button>
                             );
                           })}
-                          <button
-                            type="button"
-                            onClick={selectAll}
-                            style={{
-                              flex: 1,
-                              background: allSelected ? "rgba(201,168,76,0.08)" : "transparent",
-                              border: `0.5px solid ${allSelected ? "#c9a84c" : needsWarning ? "rgba(201,168,76,0.5)" : "rgba(255,255,255,0.08)"}`,
-                              borderRadius: 0,
-                              padding: "10px 4px",
-                              fontSize: 10,
-                              color: allSelected
-                                ? "#c9a84c"
-                                : needsWarning
-                                  ? "rgba(201,168,76,0.5)"
-                                  : "rgba(255,255,255,0.3)",
-                              fontFamily: "'Inter', sans-serif",
-                              fontWeight: allSelected ? 400 : 200,
-                              letterSpacing: "1px",
-                              textTransform: "uppercase" as const,
-                              cursor: "pointer",
-                              whiteSpace: "nowrap",
-                              transition: "all 0.22s",
-                              animation: needsWarning && !allSelected ? "prefPulse 1.5s ease infinite" : "none",
-                            }}
-                          >
-                            Todos
-                          </button>
                         </div>
                       </div>
                       <div
@@ -1156,10 +1113,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           Email
                         </span>
                         <input
-                          placeholder="Email *"
+                          placeholder={emailDisabled ? "Escolha uma opção acima primeiro" : "Email *"}
                           type="email"
                           value={clientEmail}
                           onChange={(e) => setClientEmail(e.target.value)}
+                          disabled={emailDisabled}
                           style={{
                             background: "transparent",
                             borderBottom: "0.5px solid rgba(201,168,76,0.15)",
@@ -1174,6 +1132,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             width: "100%",
                             fontFamily: "'Inter', sans-serif",
                             fontWeight: 300,
+                            cursor: emailDisabled ? "not-allowed" : "text",
+                            opacity: emailDisabled ? 0.4 : 1,
                             WebkitTextSizeAdjust: "none",
                             touchAction: "manipulation",
                           }}
@@ -1185,7 +1145,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           flexDirection: "column",
                           gap: 4,
                           marginBottom: 18,
-                          opacity: 0,
+                          opacity: phoneDisabled ? 0.4 : 0,
                           animation: "fadeUpForm 0.42s ease forwards",
                           animationDelay: "0.21s",
                         }}
@@ -1222,6 +1182,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             placeholder={selectedCountry.code === "IE" ? "085 123 4567" : t("booking.phone")}
                             value={clientPhone}
                             onChange={(e) => setClientPhone(e.target.value.replace(/[^0-9]/g, ""))}
+                            disabled={phoneDisabled}
                             style={{
                               flex: 1,
                               background: "transparent",
@@ -1234,6 +1195,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                               fontWeight: 300,
                               WebkitTextSizeAdjust: "none",
                               touchAction: "manipulation",
+                              cursor: phoneDisabled ? "not-allowed" : "text",
                             }}
                           />
                         </div>
