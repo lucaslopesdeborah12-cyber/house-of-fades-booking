@@ -273,7 +273,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setClientPhone("");
     setClientEmail("");
     setSuccess(false);
-    setContactPreference(null);
+    setSelectedPrefs(new Set());
     setPrefShakeTriggered(false);
   };
 
