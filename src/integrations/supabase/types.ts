@@ -307,6 +307,19 @@ export type Database = {
       }
     }
     Functions: {
+      book_appointment_tx: {
+        Args: {
+          p_appointment_date: string
+          p_barber_id: string
+          p_client_email?: string
+          p_client_name: string
+          p_client_phone?: string
+          p_contact_preference?: string
+          p_service_id: string
+          p_time_slot: string
+        }
+        Returns: string
+      }
       get_barber_id: { Args: { _user_id: string }; Returns: string }
       get_barber_role: {
         Args: { _user_id: string }
