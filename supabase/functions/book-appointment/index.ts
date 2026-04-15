@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MAX_ATTEMPTS_PER_IP = 10; // per hour
-const MAX_ATTEMPTS_PER_EMAIL = 5; // per hour
+const MAX_ATTEMPTS_PER_IP = 10;
+const MAX_ATTEMPTS_PER_EMAIL = 5;
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -61,7 +61,6 @@ Deno.serve(async (req: Request) => {
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-    // Check IP rate limit
     const { count: ipCount } = await supabase
       .from("booking_attempts")
       .select("*", { count: "exact", head: true })
@@ -75,7 +74,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Check email rate limit
     if (client_email) {
       const { count: emailCount } = await supabase
         .from("booking_attempts")
@@ -91,7 +89,6 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Record the attempt
     await supabase.from("booking_attempts").insert({
       ip_address: clientIp,
       client_email: client_email || null,
@@ -110,47 +107,41 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: "Service not found" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Check slot availability
-    const { data: existing } = await supabase
-      .from("appointments")
-      .select("id")
-      .eq("barber_id", barber_id)
-      .eq("appointment_date", appointment_date)
-      .eq("time_slot", time_slot)
-      .in("status", ["booked", "confirmed"]);
+    // Use a transactional lock to prevent race conditions
+    const { data: txResult, error: txError } = await supabase.rpc("book_appointment_tx", {
+      p_barber_id: barber_id,
+      p_service_id: service_id,
+      p_appointment_date: appointment_date,
+      p_time_slot: time_slot,
+      p_client_name: client_name.trim(),
+      p_client_phone: client_phone || null,
+      p_client_email: client_email || null,
+      p_contact_preference: contact_preference || "sms",
+    });
 
-    if (existing && existing.length > 0) {
-      return new Response(JSON.stringify({ error: "This slot is no longer available" }), {
-        status: 409,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Insert the appointment
-    const { data: appointment, error: insertError } = await supabase.from("appointments").insert({
-      barber_id,
-      service_id,
-      appointment_date,
-      time_slot,
-      client_name: client_name.trim(),
-      client_phone: client_phone || null,
-      client_email: client_email || null,
-      contact_preference: contact_preference || "sms",
-    }).select("id").single();
-
-    if (insertError) {
-      console.error("Insert error:", insertError);
+    if (txError) {
+      console.error("Transaction error:", txError);
+      // Check if it's our custom slot-taken error
+      if (txError.message?.includes("slot_taken")) {
+        return new Response(JSON.stringify({ 
+          error: "Este horário acabou de ser reservado. Por favor escolha outro horário.",
+          slot_taken: true,
+        }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       return new Response(JSON.stringify({ error: "Failed to book appointment" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Cleanup old attempts (older than 24h)
+    // Cleanup old attempts
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     await supabase.from("booking_attempts").delete().lt("created_at", oneDayAgo);
 
-    return new Response(JSON.stringify({ success: true, id: appointment.id }), {
+    return new Response(JSON.stringify({ success: true, id: txResult }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
