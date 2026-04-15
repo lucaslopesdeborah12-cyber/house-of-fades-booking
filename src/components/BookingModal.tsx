@@ -676,6 +676,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           key={s.id}
                           onClick={() => {
                             setSelectedService(s.id);
+                            setSlotTakenMessage("");
                             setStep(3);
                           }}
                           style={{
