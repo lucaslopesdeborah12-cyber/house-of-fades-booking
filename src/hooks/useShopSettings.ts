@@ -6,6 +6,7 @@ export interface ShopSettings {
   default_break_time: string;
   work_start: string;
   work_end: string;
+  owner_phone: string;
 }
 
 const DEFAULTS: ShopSettings = {
@@ -13,6 +14,7 @@ const DEFAULTS: ShopSettings = {
   default_break_time: "13:00",
   work_start: "09:00",
   work_end: "19:00",
+  owner_phone: "",
 };
 
 const KEYS = Object.keys(DEFAULTS) as (keyof ShopSettings)[];

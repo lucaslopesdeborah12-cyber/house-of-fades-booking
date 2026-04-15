@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Pencil, Save } from "lucide-react";
 import type { ShopSettings } from "@/hooks/useShopSettings";
@@ -131,6 +132,21 @@ const ShopSettingsPanel = ({ settings, onSave }: Props) => {
             <p className="text-sm font-body text-foreground px-3 py-2 bg-muted/30 rounded-md">{settings.work_end}</p>
           )}
         </div>
+      </div>
+
+      {/* Owner phone for Bland.ai notifications */}
+      <div className="space-y-1">
+        <label className="font-body text-xs text-muted-foreground">Owner phone (for call notifications)</label>
+        {editing ? (
+          <Input
+            value={draft.owner_phone || ""}
+            onChange={(e) => setDraft((p) => ({ ...p, owner_phone: e.target.value }))}
+            placeholder="+353 8X XXX XXXX"
+            className="bg-background border-border text-foreground font-body"
+          />
+        ) : (
+          <p className="text-sm font-body text-foreground px-3 py-2 bg-muted/30 rounded-md">{settings.owner_phone || "Not set"}</p>
+        )}
       </div>
 
       {editing && (
