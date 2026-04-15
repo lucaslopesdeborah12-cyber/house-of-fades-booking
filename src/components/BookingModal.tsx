@@ -381,18 +381,22 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
           }
         });
 
-      // Bland.ai voice call to owner
-      supabase.functions
-        .invoke("bland-call", {
-          body: {
-            clientName: clientName.trim(),
-            serviceName: serviceNameForEmail,
-            barberName: barberNameForEmail,
-            date: dateForEmail,
-            time: selectedTime,
-          },
-        })
-        .catch(console.error);
+      // Bland.ai voice calls to client (confirmation + scheduled reminder)
+      if (clientPhone.trim()) {
+        supabase.functions
+          .invoke("bland-call", {
+            body: {
+              clientName: clientName.trim(),
+              clientPhone: formatPhoneForSubmit(clientPhone, selectedCountry),
+              serviceName: serviceNameForEmail,
+              barberName: barberNameForEmail,
+              date: dateForEmail,
+              time: selectedTime,
+              appointmentDate: format(selectedDate!, "yyyy-MM-dd"),
+            },
+          })
+          .catch(console.error);
+      }
     }
   };
 
