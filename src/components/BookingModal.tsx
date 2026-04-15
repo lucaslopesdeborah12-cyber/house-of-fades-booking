@@ -523,7 +523,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               <div className="relative z-10 flex flex-col gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     window.open(getGoogleCalendarUrl(), '_blank');
                   }}
                   className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#050505]"
