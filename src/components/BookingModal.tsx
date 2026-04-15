@@ -92,7 +92,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [success, setSuccess] = useState(false);
   const [slotTakenMessage, setSlotTakenMessage] = useState("");
   const [waitingListOpen, setWaitingListOpen] = useState(false);
-  const [contactPreference, setContactPreference] = useState<"sms" | "email" | "call" | "all" | null>(null);
+  const [contactPreferences, setContactPreferences] = useState<Set<"sms" | "email" | "call">>(new Set());
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
   const { t } = useLanguage();
 
@@ -257,7 +257,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setClientPhone("");
     setClientEmail("");
     setSuccess(false);
-    setContactPreference(null);
+    setContactPreferences(new Set());
     setPrefShakeTriggered(false);
     setSlotTakenMessage("");
   };
@@ -272,18 +272,15 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       toast.error(t("booking.enterName"));
       return;
     }
-    if (contactPreference === null) {
+    if (contactPreferences.size === 0) {
       toast.error("Escolha como quer receber a confirmação");
       return;
     }
-    if ((contactPreference === "email" || contactPreference === "all") && !clientEmail.trim()) {
+    if (contactPreferences.has("email") && !clientEmail.trim()) {
       toast.error(t("booking.enterEmail"));
       return;
     }
-    if (
-      (contactPreference === "sms" || contactPreference === "call" || contactPreference === "all") &&
-      !clientPhone.trim()
-    ) {
+    if ((contactPreferences.has("sms") || contactPreferences.has("call")) && !clientPhone.trim()) {
       toast.error("Introduza o seu telefone");
       return;
     }
@@ -302,7 +299,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         client_name: clientName.trim(),
         client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : null,
         client_email: clientEmail.trim() || null,
-        contact_preference: contactPreference || "sms",
+        contact_preference: Array.from(contactPreferences).join(",") || "sms",
       },
     });
     setSubmitting(false);
