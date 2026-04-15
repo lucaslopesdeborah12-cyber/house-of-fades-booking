@@ -259,6 +259,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setSuccess(false);
     setContactPreference(null);
     setPrefShakeTriggered(false);
+    setSlotTakenMessage("");
   };
 
   const handleClose = (v: boolean) => {
