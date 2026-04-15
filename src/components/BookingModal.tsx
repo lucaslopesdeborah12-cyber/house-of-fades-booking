@@ -761,6 +761,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
               {step === 3 && (
                 <div className="space-y-4">
+                  {slotTakenMessage && (
+                    <div className="text-[#c9a84c] text-sm font-sans text-center py-2 px-3" style={{ border: "0.5px solid rgba(201,168,76,0.25)", background: "rgba(201,168,76,0.06)" }}>
+                      {slotTakenMessage}
+                    </div>
+                  )}
                   <p className="font-sans text-[10px] font-light uppercase tracking-[0.3em] text-foreground/30 flex items-center gap-2">
                     <CalendarIcon size={12} /> {t("booking.chooseDateTime")}
                   </p>
