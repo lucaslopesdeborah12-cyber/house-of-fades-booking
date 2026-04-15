@@ -1111,6 +1111,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           }}
                         />
                       </div>
+                      {showEmail && (
                       <div
                         style={{
                           display: "flex",
@@ -1161,6 +1162,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           }}
                         />
                       </div>
+                      )}
+                      {showPhone && (
                       <div
                         style={{
                           display: "flex",
@@ -1222,6 +1225,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           />
                         </div>
                       </div>
+                      )}
                       <div
                         style={{
                           opacity: 0,
