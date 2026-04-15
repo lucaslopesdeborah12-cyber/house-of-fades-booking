@@ -306,13 +306,16 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     });
     setSubmitting(false);
     if (error || (bookResult && bookResult.error)) {
-      const errMsg = bookResult?.error || t("booking.errorBooking");
-      toast.error(errMsg);
-      console.error(error || bookResult?.error);
-      // If slot was taken by another client, refresh available slots
+      // If slot was taken by another client, go back to time selection
       if (bookResult?.slot_taken) {
-        fetchBookedSlots();
         setSelectedTime("");
+        setSlotTakenMessage("Este horário acabou de ser reservado. Escolha outro horário.");
+        setStep(3);
+        fetchBookedSlots();
+      } else {
+        const errMsg = bookResult?.error || t("booking.errorBooking");
+        toast.error(errMsg);
+        console.error(error || bookResult?.error);
       }
     } else {
       setSuccess(true);
