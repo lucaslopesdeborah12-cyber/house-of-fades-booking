@@ -314,7 +314,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         setSelectedTime("");
       }
     } else {
-      setSuccess(true);
+      // Reset to step 3 so client sees updated availability
+      toast.success("Reserva confirmada! ✅");
+      setSelectedTime("");
+      setStep(3);
+      fetchBookedSlots();
       if (clientPhone.trim()) {
         supabase.functions
           .invoke("send-sms", {
