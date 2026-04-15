@@ -305,8 +305,14 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     });
     setSubmitting(false);
     if (error || (bookResult && bookResult.error)) {
-      toast.error(bookResult?.error || t("booking.errorBooking"));
+      const errMsg = bookResult?.error || t("booking.errorBooking");
+      toast.error(errMsg);
       console.error(error || bookResult?.error);
+      // If slot was taken by another client, refresh available slots
+      if (bookResult?.slot_taken) {
+        fetchBookedSlots();
+        setSelectedTime("");
+      }
     } else {
       setSuccess(true);
       if (clientPhone.trim()) {
