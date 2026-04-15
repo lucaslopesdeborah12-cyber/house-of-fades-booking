@@ -1019,12 +1019,12 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             { value: "call" as const, label: "Ligação" },
                             { value: "all" as const, label: "Todos" },
                           ].map((pill) => {
-                            const isActive = contactPreference === pill.value;
+                            const isActive = selectedPrefs.has(pill.value);
                             return (
                               <button
                                 key={pill.value}
                                 type="button"
-                                onClick={() => setContactPreference(pill.value)}
+                                onClick={() => togglePref(pill.value)}
                                 style={{
                                   flex: 1,
                                   background: isActive ? "rgba(201,168,76,0.08)" : "transparent",
