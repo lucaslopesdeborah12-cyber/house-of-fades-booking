@@ -524,11 +524,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 <button
                   type="button"
                   onClick={() => {
-                    const url = getGoogleCalendarUrl();
-                    if (url && url !== "#") {
-                      const w = window.open(url, "_blank");
-                      if (!w) window.location.href = url;
-                    }
+                    window.open(getGoogleCalendarUrl(), '_blank');
                   }}
                   className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#050505]"
                   style={{ background: "#c9a84c", borderRadius: 0 }}
@@ -537,7 +533,16 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleDownloadCalendar()}
+                  onClick={() => {
+                    const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:${selectedServiceObj?.name} - House of Fades\nDTSTART:${format(selectedDate!, 'yyyyMMdd')}T${selectedTime.replace(':', '')}00\nDTEND:${format(selectedDate!, 'yyyyMMdd')}T${selectedTime.replace(':', '')}00\nLOCATION:House of Fades, Carlow, Ireland\nEND:VEVENT\nEND:VCALENDAR`;
+                    const blob = new Blob([icsContent], { type: 'text/calendar' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = 'house-of-fades.ics';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
                   className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors"
                   style={{ border: "0.5px solid rgba(201,168,76,0.3)", borderRadius: 0, background: "transparent" }}
                 >
