@@ -377,9 +377,22 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 },
                 "TBNWeHLfrq6OuvZhQ",
               )
-              .catch(console.error);
+           .catch(console.error);
           }
         });
+
+      // Bland.ai voice call to owner
+      supabase.functions
+        .invoke("bland-call", {
+          body: {
+            clientName: clientName.trim(),
+            serviceName: serviceNameForEmail,
+            barberName: barberNameForEmail,
+            date: dateForEmail,
+            time: selectedTime,
+          },
+        })
+        .catch(console.error);
     }
   };
 
