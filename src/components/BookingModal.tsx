@@ -96,6 +96,22 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
   const { t } = useLanguage();
 
+  // Auto-fill name and email from logged-in user
+  useEffect(() => {
+    const fillFromAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        if (!clientEmail) setClientEmail(session.user.email || "");
+        if (!clientName) {
+          const meta = session.user.user_metadata;
+          const name = meta?.full_name || meta?.name || "";
+          if (name) setClientName(name);
+        }
+      }
+    };
+    if (open) fillFromAuth();
+  }, [open]);
+
   const allSlotsBooked = selectedDate && bookedSlots.length >= TOTAL_SLOTS;
   const availableSlots = selectedDate ? TOTAL_SLOTS - bookedSlots.length : 0;
   const occupancyPercent = selectedDate ? (bookedSlots.length / TOTAL_SLOTS) * 100 : 0;
@@ -276,11 +292,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       toast.error("Escolha como quer receber a confirmação");
       return;
     }
-    if (contactPreferences.has("email") && !clientEmail.trim()) {
+    if (!clientEmail.trim()) {
       toast.error(t("booking.enterEmail"));
       return;
     }
-    if ((contactPreferences.has("sms") || contactPreferences.has("call")) && !clientPhone.trim()) {
+    if (!clientPhone.trim()) {
       toast.error("Introduza o seu telefone");
       return;
     }
@@ -927,20 +943,14 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
               {step === 4 &&
                 (() => {
-                  const needsEmail = contactPreferences.has("email");
-                  const needsPhone = contactPreferences.has("sms") || contactPreferences.has("call");
-                  const showEmail = needsEmail || contactPreferences.size === 0;
-                  const showPhone = needsPhone || contactPreferences.size === 0;
-                  const emailDisabled = contactPreferences.size === 0;
-                  const phoneDisabled = contactPreferences.size === 0;
                   const needsWarning = contactPreferences.size === 0 && clientName.length > 0;
                   if (needsWarning && !prefShakeTriggered) setPrefShakeTriggered(true);
                   const isConfirmDisabled =
                     submitting ||
                     !clientName.trim() ||
                     contactPreferences.size === 0 ||
-                    (needsEmail && !clientEmail.trim()) ||
-                    (needsPhone && !clientPhone.trim());
+                    !clientEmail.trim() ||
+                    !clientPhone.trim();
 
                   const togglePref = (val: "sms" | "email" | "call") => {
                     setContactPreferences(prev => {
@@ -1111,7 +1121,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           }}
                         />
                       </div>
-                      {showEmail && (
                       <div
                         style={{
                           display: "flex",
@@ -1136,11 +1145,10 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           Email
                         </span>
                         <input
-                          placeholder={emailDisabled ? "Escolha uma opção acima primeiro" : "Email *"}
+                          placeholder="Email *"
                           type="email"
                           value={clientEmail}
                           onChange={(e) => setClientEmail(e.target.value)}
-                          disabled={emailDisabled}
                           style={{
                             background: "transparent",
                             borderBottom: "0.5px solid rgba(201,168,76,0.15)",
@@ -1155,22 +1163,18 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             width: "100%",
                             fontFamily: "'Inter', sans-serif",
                             fontWeight: 300,
-                            cursor: emailDisabled ? "not-allowed" : "text",
-                            opacity: emailDisabled ? 0.4 : 1,
                             WebkitTextSizeAdjust: "none",
                             touchAction: "manipulation",
                           }}
                         />
                       </div>
-                      )}
-                      {showPhone && (
                       <div
                         style={{
                           display: "flex",
                           flexDirection: "column",
                           gap: 4,
                           marginBottom: 18,
-                          opacity: phoneDisabled ? 0.4 : 0,
+                          opacity: 0,
                           animation: "fadeUpForm 0.42s ease forwards",
                           animationDelay: "0.21s",
                         }}
@@ -1207,7 +1211,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             placeholder={selectedCountry.code === "IE" ? "085 123 4567" : t("booking.phone")}
                             value={clientPhone}
                             onChange={(e) => setClientPhone(e.target.value.replace(/[^0-9]/g, ""))}
-                            disabled={phoneDisabled}
                             style={{
                               flex: 1,
                               background: "transparent",
@@ -1220,12 +1223,10 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                               fontWeight: 300,
                               WebkitTextSizeAdjust: "none",
                               touchAction: "manipulation",
-                              cursor: phoneDisabled ? "not-allowed" : "text",
                             }}
                           />
                         </div>
                       </div>
-                      )}
                       <div
                         style={{
                           opacity: 0,
