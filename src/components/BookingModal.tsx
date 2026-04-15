@@ -91,7 +91,24 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [waitingListOpen, setWaitingListOpen] = useState(false);
-  const [contactPreference, setContactPreference] = useState<"sms" | "email" | "call" | "all" | null>(null);
+  const [selectedPrefs, setSelectedPrefs] = useState<Set<string>>(new Set());
+  const togglePref = (val: string) => {
+    setSelectedPrefs(prev => {
+      const next = new Set(prev);
+      if (val === "all") {
+        if (next.size === 4) { next.clear(); } else { return new Set(["sms", "email", "call", "all"]); }
+      } else {
+        if (next.has(val)) { next.delete(val); next.delete("all"); } else { next.add(val); if (next.has("sms") && next.has("email") && next.has("call")) next.add("all"); }
+      }
+      return next;
+    });
+  };
+  const contactPreference: "sms" | "email" | "call" | "all" | null =
+    selectedPrefs.size === 0 ? null
+    : selectedPrefs.size === 1 && selectedPrefs.has("sms") ? "sms"
+    : selectedPrefs.size === 1 && selectedPrefs.has("email") ? "email"
+    : selectedPrefs.size === 1 && selectedPrefs.has("call") ? "call"
+    : "all";
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
   const { t } = useLanguage();
 
