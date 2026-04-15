@@ -824,7 +824,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       }}
                       classNames={{
                         day_selected: "!bg-[#c9a84c] !text-[#050505] !font-bold !rounded-none",
-                        day_today: "!text-[#c9a84c] !font-bold",
+                        day_today: "!bg-transparent !text-[#c9a84c] !font-bold",
                       }}
                     />
                   </div>
