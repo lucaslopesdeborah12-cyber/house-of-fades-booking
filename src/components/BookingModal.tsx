@@ -315,7 +315,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         client_name: clientName.trim(),
         client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : null,
         client_email: clientEmail.trim() || null,
-        contact_preference: Array.from(contactPreferences).join(",") || "sms",
+        contact_preference: contactPreferences.size === 1 ? Array.from(contactPreferences)[0] : "all",
       },
     });
     setSubmitting(false);
