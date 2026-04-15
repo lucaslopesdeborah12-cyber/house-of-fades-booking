@@ -92,7 +92,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [success, setSuccess] = useState(false);
   const [slotTakenMessage, setSlotTakenMessage] = useState("");
   const [waitingListOpen, setWaitingListOpen] = useState(false);
-  const [contactPreference, setContactPreference] = useState<"sms" | "email" | "call" | "all" | null>(null);
+  const [contactPreferences, setContactPreferences] = useState<Set<"sms" | "email" | "call">>(new Set());
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
   const { t } = useLanguage();
 
@@ -257,7 +257,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setClientPhone("");
     setClientEmail("");
     setSuccess(false);
-    setContactPreference(null);
+    setContactPreferences(new Set());
     setPrefShakeTriggered(false);
     setSlotTakenMessage("");
   };
@@ -272,18 +272,15 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       toast.error(t("booking.enterName"));
       return;
     }
-    if (contactPreference === null) {
+    if (contactPreferences.size === 0) {
       toast.error("Escolha como quer receber a confirmação");
       return;
     }
-    if ((contactPreference === "email" || contactPreference === "all") && !clientEmail.trim()) {
+    if (contactPreferences.has("email") && !clientEmail.trim()) {
       toast.error(t("booking.enterEmail"));
       return;
     }
-    if (
-      (contactPreference === "sms" || contactPreference === "call" || contactPreference === "all") &&
-      !clientPhone.trim()
-    ) {
+    if ((contactPreferences.has("sms") || contactPreferences.has("call")) && !clientPhone.trim()) {
       toast.error("Introduza o seu telefone");
       return;
     }
@@ -302,7 +299,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         client_name: clientName.trim(),
         client_phone: clientPhone.trim() ? formatPhoneForSubmit(clientPhone, selectedCountry) : null,
         client_email: clientEmail.trim() || null,
-        contact_preference: contactPreference || "sms",
+        contact_preference: Array.from(contactPreferences).join(",") || "sms",
       },
     });
     setSubmitting(false);
@@ -930,17 +927,33 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
               {step === 4 &&
                 (() => {
-                  const emailDisabled = contactPreference === null;
-                  const phoneDisabled = contactPreference === null;
-                  const needsWarning = contactPreference === null && clientName.length > 0;
+                  const needsEmail = contactPreferences.has("email");
+                  const needsPhone = contactPreferences.has("sms") || contactPreferences.has("call");
+                  const showEmail = needsEmail || contactPreferences.size === 0;
+                  const showPhone = needsPhone || contactPreferences.size === 0;
+                  const emailDisabled = contactPreferences.size === 0;
+                  const phoneDisabled = contactPreferences.size === 0;
+                  const needsWarning = contactPreferences.size === 0 && clientName.length > 0;
                   if (needsWarning && !prefShakeTriggered) setPrefShakeTriggered(true);
                   const isConfirmDisabled =
                     submitting ||
                     !clientName.trim() ||
-                    contactPreference === null ||
-                    ((contactPreference === "email" || contactPreference === "all") && !clientEmail.trim()) ||
-                    ((contactPreference === "sms" || contactPreference === "call" || contactPreference === "all") &&
-                      !clientPhone.trim());
+                    contactPreferences.size === 0 ||
+                    (needsEmail && !clientEmail.trim()) ||
+                    (needsPhone && !clientPhone.trim());
+
+                  const togglePref = (val: "sms" | "email" | "call") => {
+                    setContactPreferences(prev => {
+                      const next = new Set(prev);
+                      if (next.has(val)) next.delete(val); else next.add(val);
+                      return next;
+                    });
+                  };
+                  const selectAll = () => {
+                    setContactPreferences(new Set(["sms", "email", "call"]));
+                  };
+                  const allSelected = contactPreferences.has("sms") && contactPreferences.has("email") && contactPreferences.has("call");
+
                   return (
                     <div style={{ padding: "0 0 14px" }}>
                       <div
@@ -979,18 +992,17 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           Forma de confirmação
                         </div>
                         <div style={{ display: "flex", gap: 4 }}>
-                          {[
+                          {([
                             { value: "sms" as const, label: "SMS" },
                             { value: "email" as const, label: "Email" },
                             { value: "call" as const, label: "Ligação" },
-                            { value: "all" as const, label: "Todos" },
-                          ].map((pill) => {
-                            const isActive = contactPreference === pill.value;
+                          ] as const).map((pill) => {
+                            const isActive = contactPreferences.has(pill.value);
                             return (
                               <button
                                 key={pill.value}
                                 type="button"
-                                onClick={() => setContactPreference(pill.value)}
+                                onClick={() => togglePref(pill.value)}
                                 style={{
                                   flex: 1,
                                   background: isActive ? "rgba(201,168,76,0.08)" : "transparent",
@@ -1017,6 +1029,33 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                               </button>
                             );
                           })}
+                          <button
+                            type="button"
+                            onClick={selectAll}
+                            style={{
+                              flex: 1,
+                              background: allSelected ? "rgba(201,168,76,0.08)" : "transparent",
+                              border: `0.5px solid ${allSelected ? "#c9a84c" : needsWarning ? "rgba(201,168,76,0.5)" : "rgba(255,255,255,0.08)"}`,
+                              borderRadius: 0,
+                              padding: "10px 4px",
+                              fontSize: 10,
+                              color: allSelected
+                                ? "#c9a84c"
+                                : needsWarning
+                                  ? "rgba(201,168,76,0.5)"
+                                  : "rgba(255,255,255,0.3)",
+                              fontFamily: "'Inter', sans-serif",
+                              fontWeight: allSelected ? 400 : 200,
+                              letterSpacing: "1px",
+                              textTransform: "uppercase" as const,
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                              transition: "all 0.22s",
+                              animation: needsWarning && !allSelected ? "prefPulse 1.5s ease infinite" : "none",
+                            }}
+                          >
+                            Todos
+                          </button>
                         </div>
                       </div>
                       <div
@@ -1072,6 +1111,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           }}
                         />
                       </div>
+                      {showEmail && (
                       <div
                         style={{
                           display: "flex",
@@ -1122,6 +1162,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           }}
                         />
                       </div>
+                      )}
+                      {showPhone && (
                       <div
                         style={{
                           display: "flex",
@@ -1183,6 +1225,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           />
                         </div>
                       </div>
+                      )}
                       <div
                         style={{
                           opacity: 0,
