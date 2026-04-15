@@ -521,15 +521,19 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 </span>
               </div>
               <div className="relative z-10 flex flex-col gap-3 pt-4">
-                <a
-                  href={getGoogleCalendarUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const url = getGoogleCalendarUrl();
+                    if (url && url !== "#") window.open(url, "_blank", "noopener,noreferrer");
+                  }}
                   className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#050505]"
                   style={{ background: "#c9a84c", borderRadius: 0 }}
                 >
                   <CalendarDownloadIcon size={14} className="mr-3" /> Adicionar ao Google Calendar
-                </a>
+                </button>
                 <button
                   onClick={handleDownloadCalendar}
                   className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors"
