@@ -535,7 +535,12 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   <CalendarDownloadIcon size={14} className="mr-3" /> Adicionar ao Google Calendar
                 </button>
                 <button
-                  onClick={handleDownloadCalendar}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDownloadCalendar();
+                  }}
                   className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors"
                   style={{ border: "0.5px solid rgba(201,168,76,0.3)", borderRadius: 0, background: "transparent" }}
                 >
