@@ -90,6 +90,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [slotTakenMessage, setSlotTakenMessage] = useState("");
   const [waitingListOpen, setWaitingListOpen] = useState(false);
   const [contactPreference, setContactPreference] = useState<"sms" | "email" | "call" | "all" | null>(null);
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
@@ -258,6 +259,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setSuccess(false);
     setContactPreference(null);
     setPrefShakeTriggered(false);
+    setSlotTakenMessage("");
   };
 
   const handleClose = (v: boolean) => {
@@ -305,13 +307,16 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     });
     setSubmitting(false);
     if (error || (bookResult && bookResult.error)) {
-      const errMsg = bookResult?.error || t("booking.errorBooking");
-      toast.error(errMsg);
-      console.error(error || bookResult?.error);
-      // If slot was taken by another client, refresh available slots
+      // If slot was taken by another client, go back to time selection
       if (bookResult?.slot_taken) {
-        fetchBookedSlots();
         setSelectedTime("");
+        setSlotTakenMessage("Este horário acabou de ser reservado. Escolha outro horário.");
+        setStep(3);
+        fetchBookedSlots();
+      } else {
+        const errMsg = bookResult?.error || t("booking.errorBooking");
+        toast.error(errMsg);
+        console.error(error || bookResult?.error);
       }
     } else {
       setSuccess(true);
@@ -671,6 +676,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           key={s.id}
                           onClick={() => {
                             setSelectedService(s.id);
+                            setSlotTakenMessage("");
                             setStep(3);
                           }}
                           style={{
@@ -757,6 +763,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
               {step === 3 && (
                 <div className="space-y-4">
+                  {slotTakenMessage && (
+                    <div className="text-[#c9a84c] text-sm font-sans text-center py-2 px-3" style={{ border: "0.5px solid rgba(201,168,76,0.25)", background: "rgba(201,168,76,0.06)" }}>
+                      {slotTakenMessage}
+                    </div>
+                  )}
                   <p className="font-sans text-[10px] font-light uppercase tracking-[0.3em] text-foreground/30 flex items-center gap-2">
                     <CalendarIcon size={12} /> {t("booking.chooseDateTime")}
                   </p>
