@@ -51,6 +51,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
   const reset = () => {
     setEmail(""); setPassword(""); setName("");
     setPhone(""); setGuestName(""); setGuestPhone("");
+    setPhoneCountry(DEFAULT_COUNTRY);
     setOtp(["", "", "", "", "", ""]); setOtpShake(false); setResendCooldown(0);
     setError(""); setLoading(false); setView("home");
   };
