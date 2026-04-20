@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { motion } from "framer-motion";
 import emailjs from "@emailjs/browser";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, MessageSquare, Mail, Phone } from "lucide-react";
+import { Loader2, MessageSquare, Mail, Phone, X, Zap, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,7 +29,7 @@ export type ContactTarget = {
   barbers: { name: string } | null;
 };
 
-type Tab = "sms" | "email" | "call";
+type MsgTab = "sms" | "email";
 
 const GOLD = "#c9a84c";
 
@@ -41,33 +42,34 @@ const ContactClientModal = ({
 }) => {
   const open = !!target;
 
-  const availableTabs = useMemo<Tab[]>(() => {
-    if (!target) return [];
+  const { availableMsgTabs, showCall } = useMemo(() => {
+    if (!target) return { availableMsgTabs: [] as MsgTab[], showCall: false };
     const pref = (target.contact_preference || "both").toLowerCase();
-    if (pref === "sms") return ["sms"];
-    if (pref === "email") return ["email"];
-    if (pref === "call" || pref === "ligacao" || pref === "ligação") return ["call"];
-    // "both", "todos", or anything else → all available
-    return ["sms", "email", "call"];
+    if (pref === "sms") return { availableMsgTabs: ["sms"] as MsgTab[], showCall: false };
+    if (pref === "email") return { availableMsgTabs: ["email"] as MsgTab[], showCall: false };
+    if (pref === "call" || pref === "ligacao" || pref === "ligação")
+      return { availableMsgTabs: [] as MsgTab[], showCall: true };
+    return { availableMsgTabs: ["sms", "email"] as MsgTab[], showCall: true };
   }, [target]);
 
-  const [tab, setTab] = useState<Tab>("sms");
+  const [msgTab, setMsgTab] = useState<MsgTab>("sms");
   const [smsMessage, setSmsMessage] = useState("");
   const [emailSubject, setEmailSubject] = useState("House of Fades — Sobre a sua marcação");
   const [emailMessage, setEmailMessage] = useState("");
   const [callTask, setCallTask] = useState("");
   const [busy, setBusy] = useState(false);
+  const [callState, setCallState] = useState<"idle" | "loading" | "success" | "error">("idle");
 
   // Reset state + initial tab when target changes
-  useMemo(() => {
+  useEffect(() => {
     if (target) {
-      setTab(availableTabs[0] || "sms");
+      setMsgTab(availableMsgTabs[0] || "sms");
       setSmsMessage("");
       setEmailMessage("");
       setEmailSubject("House of Fades — Sobre a sua marcação");
       setCallTask("");
+      setCallState("idle");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target?.id]);
 
   if (!target) return null;
@@ -166,7 +168,7 @@ const ContactClientModal = ({
       toast.error("Descreva o motivo da chamada");
       return;
     }
-    setBusy(true);
+    setCallState("loading");
     try {
       const { data, error } = await supabase.functions.invoke("contact-call", {
         body: {
@@ -177,161 +179,245 @@ const ContactClientModal = ({
       });
       if (error || !data?.success) throw new Error(error?.message || "Call failed");
       await logContact("call", callTask.trim(), "sent");
+      setCallState("success");
       toast.success(`Chamada iniciada ✓`);
-      onClose();
+      setTimeout(() => setCallState("idle"), 4000);
     } catch (e: any) {
       await logContact("call", callTask.trim(), "failed", undefined, String(e?.message || e));
-      toast.error("Falha ao iniciar chamada");
-    } finally {
-      setBusy(false);
+      setCallState("error");
+      setTimeout(() => setCallState("idle"), 4000);
     }
   };
 
-  const tabMeta: Record<Tab, { label: string; icon: any }> = {
+  const tabMeta: Record<MsgTab, { label: string; icon: any }> = {
     sms: { label: "SMS", icon: MessageSquare },
     email: { label: "Email", icon: Mail },
-    call: { label: "IA", icon: Phone },
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && !busy && onClose()}>
+    <Dialog open={open} onOpenChange={(o) => !o && !busy && callState !== "loading" && onClose()}>
       <DialogContent
-        className="border-0 p-0 max-w-md text-white"
-        style={{ background: "#111", borderRadius: 14 }}
+        className="border p-0 max-w-md text-white max-h-[90vh] overflow-y-auto [&>button]:hidden"
+        style={{ background: "#111", borderRadius: 16, borderColor: "#2a2a2a" }}
       >
-        <DialogHeader className="p-5 pb-3 border-b" style={{ borderColor: "#2a2a2a" }}>
-          <DialogTitle className="font-serif text-xl" style={{ color: GOLD }}>
-            Contactar — {target.client_name}
-          </DialogTitle>
-          <p className="font-body text-sm text-white/70 mt-1">{serviceName}</p>
-          <p className="font-body text-xs text-white/50">
-            {dateStr} às {timeStr} · {barberName}
-          </p>
-        </DialogHeader>
-
-        <div className="px-5 pt-4">
-          <div className="flex gap-2 border-b" style={{ borderColor: "#2a2a2a" }}>
-            {availableTabs.map((tk) => {
-              const Icon = tabMeta[tk].icon;
-              const active = tab === tk;
-              return (
-                <button
-                  key={tk}
-                  onClick={() => setTab(tk)}
-                  className="flex items-center gap-1.5 px-3 py-2 font-body text-xs uppercase tracking-wider transition-colors"
-                  style={{
-                    color: active ? GOLD : "rgba(255,255,255,0.5)",
-                    borderBottom: active ? `2px solid ${GOLD}` : "2px solid transparent",
-                    marginBottom: -1,
-                  }}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {tabMeta[tk].label}
-                </button>
-              );
-            })}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="p-7"
+        >
+          {/* Header */}
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <DialogTitle className="font-body text-base font-medium text-white">
+                Contactar — {target.client_name}
+              </DialogTitle>
+              <p className="font-body text-[13px] text-[#666] mt-1">
+                {serviceName} · {dateStr} às {timeStr} · {barberName}
+              </p>
+            </div>
+            <button
+              onClick={() => !busy && callState !== "loading" && onClose()}
+              className="text-[#555] hover:text-white transition-colors"
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-        </div>
 
-        <div className="p-5 pt-4 space-y-3">
-          {tab === "sms" && (
-            <>
-              <Textarea
-                value={smsMessage}
-                onChange={(e) => setSmsMessage(e.target.value.slice(0, 160))}
-                placeholder="Escreva a sua mensagem..."
-                rows={5}
-                className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0"
-                style={{
-                  background: "#1c1c1c",
-                  borderColor: "#2a2a2a",
-                  borderRadius: 8,
-                }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#c9a84c88")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2a2a")}
-              />
-              <div className="flex justify-between items-center">
-                <span className="font-body text-xs text-white/40">{smsMessage.length}/160</span>
-                <button
-                  onClick={handleSendSMS}
-                  disabled={busy || !smsMessage.trim()}
-                  className="font-body text-xs font-medium uppercase tracking-wider px-5 py-2.5 transition-opacity disabled:opacity-40"
-                  style={{ background: GOLD, color: "#050505", borderRadius: 6 }}
+          <div className="space-y-6">
+            {/* SECTION 1 — MENSAGEM DIRETA */}
+            {availableMsgTabs.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1, ease: "easeOut" }}
+              >
+                <p
+                  className="font-body uppercase mb-2.5"
+                  style={{ color: GOLD, fontSize: 10, letterSpacing: "0.12em" }}
                 >
-                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : "Enviar SMS →"}
-                </button>
-              </div>
-            </>
-          )}
+                  Mensagem Direta
+                </p>
+                <div
+                  className="p-4"
+                  style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 12 }}
+                >
+                  {/* Pill tabs */}
+                  <div className="flex gap-1 mb-4 border-b" style={{ borderColor: "#2a2a2a" }}>
+                    {availableMsgTabs.map((tk) => {
+                      const Icon = tabMeta[tk].icon;
+                      const active = msgTab === tk;
+                      return (
+                        <button
+                          key={tk}
+                          onClick={() => setMsgTab(tk)}
+                          className="flex items-center gap-1.5 px-3 py-2 font-body text-xs uppercase tracking-wider transition-colors"
+                          style={{
+                            color: active ? GOLD : "rgba(255,255,255,0.5)",
+                            borderBottom: active ? `2px solid ${GOLD}` : "2px solid transparent",
+                            marginBottom: -1,
+                          }}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          {tabMeta[tk].label}
+                        </button>
+                      );
+                    })}
+                  </div>
 
-          {tab === "email" && (
-            <>
-              <Input
-                value={emailSubject}
-                onChange={(e) => setEmailSubject(e.target.value)}
-                placeholder="Assunto"
-                className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0"
-                style={{ background: "#1c1c1c", borderColor: "#2a2a2a", borderRadius: 8 }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#c9a84c88")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2a2a")}
-              />
-              <Textarea
-                value={emailMessage}
-                onChange={(e) => setEmailMessage(e.target.value)}
-                placeholder="Escreva a sua mensagem..."
-                rows={5}
-                className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0"
-                style={{ background: "#1c1c1c", borderColor: "#2a2a2a", borderRadius: 8 }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#c9a84c88")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2a2a")}
-              />
-              <div className="flex justify-end">
-                <button
-                  onClick={handleSendEmail}
-                  disabled={busy || !emailMessage.trim()}
-                  className="font-body text-xs font-medium uppercase tracking-wider px-5 py-2.5 transition-opacity disabled:opacity-40"
-                  style={{ background: GOLD, color: "#050505", borderRadius: 6 }}
-                >
-                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : "Enviar Email →"}
-                </button>
-              </div>
-            </>
-          )}
+                  {msgTab === "sms" && (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={smsMessage}
+                        onChange={(e) => setSmsMessage(e.target.value.slice(0, 160))}
+                        placeholder="Escreva a sua mensagem..."
+                        rows={5}
+                        className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0 resize-y"
+                        style={{ background: "#111", borderColor: "#2a2a2a", borderRadius: 8 }}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = "#c9a84c88")}
+                        onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2a2a")}
+                      />
+                      <div className="flex justify-end">
+                        <span className="font-body text-xs text-white/40">{smsMessage.length}/160</span>
+                      </div>
+                      <button
+                        onClick={handleSendSMS}
+                        disabled={busy || !smsMessage.trim()}
+                        className="w-full font-body text-xs font-medium uppercase tracking-wider py-3 transition-opacity disabled:opacity-40"
+                        style={{ background: GOLD, color: "#050505", borderRadius: 8 }}
+                      >
+                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : "Enviar SMS →"}
+                      </button>
+                    </div>
+                  )}
 
-          {tab === "call" && (
-            <>
-              <label className="font-body text-xs uppercase tracking-wider text-white/60">
-                Descreva o motivo da chamada
-              </label>
-              <Textarea
-                value={callTask}
-                onChange={(e) => setCallTask(e.target.value)}
-                placeholder="Ex: O barbeiro Mario ficou doente e precisamos remarcar a sua consulta de amanhã às 14:00"
-                rows={5}
-                className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0"
-                style={{ background: "#1c1c1c", borderColor: "#2a2a2a", borderRadius: 8 }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#c9a84c88")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2a2a")}
-              />
-              <div className="flex justify-end items-center gap-3">
-                {busy && (
-                  <span className="font-body text-xs text-white/60 flex items-center gap-2">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    A ligar para {target.client_name}...
-                  </span>
-                )}
-                <button
-                  onClick={handleCall}
-                  disabled={busy || !callTask.trim()}
-                  className="font-body text-xs font-medium uppercase tracking-wider px-5 py-2.5 transition-opacity disabled:opacity-40"
-                  style={{ background: GOLD, color: "#050505", borderRadius: 6 }}
+                  {msgTab === "email" && (
+                    <div className="space-y-3">
+                      <Input
+                        value={emailSubject}
+                        onChange={(e) => setEmailSubject(e.target.value)}
+                        placeholder="Assunto"
+                        className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0"
+                        style={{ background: "#111", borderColor: "#2a2a2a", borderRadius: 8 }}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = "#c9a84c88")}
+                        onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2a2a")}
+                      />
+                      <Textarea
+                        value={emailMessage}
+                        onChange={(e) => setEmailMessage(e.target.value)}
+                        placeholder="Escreva a sua mensagem..."
+                        rows={5}
+                        className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0 resize-y"
+                        style={{ background: "#111", borderColor: "#2a2a2a", borderRadius: 8 }}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = "#c9a84c88")}
+                        onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2a2a")}
+                      />
+                      <button
+                        onClick={handleSendEmail}
+                        disabled={busy || !emailMessage.trim()}
+                        className="w-full font-body text-xs font-medium uppercase tracking-wider py-3 transition-opacity disabled:opacity-40"
+                        style={{ background: GOLD, color: "#050505", borderRadius: 8 }}
+                      >
+                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : "Enviar Email →"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* SECTION 2 — CHAMADA COM IA */}
+            {showCall && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2, ease: "easeOut" }}
+              >
+                <p
+                  className="font-body uppercase mb-2.5"
+                  style={{ color: GOLD, fontSize: 10, letterSpacing: "0.12em" }}
                 >
-                  Iniciar Chamada com IA →
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+                  Chamada com Inteligência Artificial
+                </p>
+                <div
+                  className="p-4 space-y-3"
+                  style={{ background: "#1a1a1a", border: "1px solid #c9a84c33", borderRadius: 12 }}
+                >
+                  <p
+                    className="font-body text-xs italic flex items-start gap-1.5"
+                    style={{ color: "#888" }}
+                  >
+                    <Zap className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: GOLD }} />
+                    A IA irá contactar o cliente autonomamente em nome da House of Fades
+                  </p>
+
+                  <label
+                    className="font-body uppercase block"
+                    style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, letterSpacing: "0.12em" }}
+                  >
+                    Descreva o motivo da chamada
+                  </label>
+                  <Textarea
+                    value={callTask}
+                    onChange={(e) => setCallTask(e.target.value)}
+                    placeholder="Ex: O barbeiro Mario ficou doente e precisamos remarcar a consulta de amanhã às 14:00..."
+                    className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0 resize-y"
+                    style={{
+                      background: "#111",
+                      borderColor: "#2a2a2a",
+                      borderRadius: 8,
+                      minHeight: 80,
+                    }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "#c9a84c88")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "#2a2a2a")}
+                  />
+
+                  {callState === "loading" && (
+                    <div
+                      className="flex items-center justify-center gap-2 py-3 font-body text-xs"
+                      style={{ color: "rgba(255,255,255,0.7)" }}
+                    >
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      A ligar para {target.client_name}...
+                    </div>
+                  )}
+
+                  {callState === "success" && (
+                    <div
+                      className="w-full font-body text-xs font-medium uppercase tracking-wider py-3 flex items-center justify-center gap-2"
+                      style={{ background: "#1a3a1a", color: "#4ade80", borderRadius: 8 }}
+                    >
+                      <Check className="h-4 w-4" />
+                      Chamada iniciada
+                    </div>
+                  )}
+
+                  {callState === "error" && (
+                    <div
+                      className="w-full font-body text-xs py-3 text-center"
+                      style={{ background: "#3a1a1a", color: "#f87171", borderRadius: 8 }}
+                    >
+                      Erro ao iniciar chamada. Tente novamente.
+                    </div>
+                  )}
+
+                  {callState === "idle" && (
+                    <button
+                      onClick={handleCall}
+                      disabled={!callTask.trim()}
+                      className="w-full font-body text-xs font-medium uppercase tracking-wider py-3 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
+                      style={{ background: GOLD, color: "#111", borderRadius: 8 }}
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      Iniciar Chamada com IA →
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
       </DialogContent>
     </Dialog>
   );
