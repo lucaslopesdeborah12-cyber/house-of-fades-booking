@@ -24,7 +24,7 @@ const Index = () => {
     setAuthOpen(true);
   };
 
-  const handleAuthContinue = () => {
+  const handleAuthContinue = (_guest?: { name: string; phone: string }) => {
     setAuthOpen(false);
     setBookingOpen(true);
   };
