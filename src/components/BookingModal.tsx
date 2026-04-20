@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { format } from "date-fns";
-import { pt } from "date-fns/locale";
+import { pt, enUS, es, fr, it, de } from "date-fns/locale";
 import {
   CalendarIcon,
   Clock,
@@ -110,7 +110,21 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     : selectedPrefs.size === 1 && selectedPrefs.has("call") ? "call"
     : "all";
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+
+  const confirmationRef = useRef<HTMLDivElement>(null);
+
+  const getFullDate = (date: Date) => {
+    const locales: Record<string, any> = { pt, en: enUS, es, fr, it, de };
+    const currentLocale = locales[lang] || pt;
+    
+    // For Portuguese, add "de" between day and month
+    if (lang === 'pt') {
+      return format(date, "EEEE, d 'de' MMMM yyyy", { locale: pt });
+    }
+    
+    return format(date, "EEEE, d MMMM yyyy", { locale: currentLocale });
+  };
 
   const allSlotsBooked = selectedDate && bookedSlots.length >= TOTAL_SLOTS;
   const availableSlots = selectedDate ? TOTAL_SLOTS - bookedSlots.length : 0;
@@ -917,7 +931,12 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                               <button
                                 key={tm}
                                 disabled={booked}
-                                onClick={() => setSelectedTime(tm)}
+                                onClick={() => {
+                                  setSelectedTime(tm);
+                                  setTimeout(() => {
+                                    confirmationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                                  }, 100);
+                                }}
                                 className="font-sans text-[12px] font-light transition-all py-3"
                                 style={{
                                   background: "transparent",
@@ -942,22 +961,53 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       )}
                     </>
                   )}
-                  <div className="flex gap-2 items-center">
-                    <button
-                      onClick={() => setStep(2)}
-                      className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/20 hover:text-foreground/40 transition-colors"
-                    >
-                      {t("booking.back")}
-                    </button>
-                    {selectedDate && selectedTime && !allSlotsBooked && (
-                      <button
-                        onClick={() => setStep(4)}
-                        className="ml-auto font-sans text-[11px] font-medium uppercase tracking-[0.2em] h-10 px-8 text-[#050505]"
-                        style={{ background: "#c9a84c", borderRadius: 0 }}
+                  <div className="space-y-6 pt-2" ref={confirmationRef}>
+                    {selectedDate && selectedTime && (
+                      <div 
+                        className="p-4 bg-[#1a1a1a] border-l-[3px] border-[#c9a84c]"
+                        style={{
+                          opacity: 0,
+                          transform: 'translateY(8px)',
+                          animation: "fadeUp 0.3s ease forwards",
+                        }}
                       >
-                        {t("booking.continue")}
-                      </button>
+                        <p className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/40 mb-3">
+                          A SUA ESCOLHA
+                        </p>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-foreground/90 font-medium capitalize">
+                            <span className="text-lg">📅</span> {getFullDate(selectedDate)}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-foreground/90 font-medium">
+                            <span className="text-lg">🕐</span> {selectedTime}
+                          </div>
+                        </div>
+                      </div>
                     )}
+                    
+                    <div className="flex gap-2 items-center">
+                      <button
+                        onClick={() => setStep(2)}
+                        className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/20 hover:text-foreground/40 transition-colors"
+                      >
+                        {t("booking.back")}
+                      </button>
+                      {selectedDate && !allSlotsBooked && (
+                        <button
+                          onClick={() => setStep(4)}
+                          disabled={!selectedTime}
+                          className="ml-auto font-sans text-[11px] font-medium uppercase tracking-[0.2em] h-10 px-8 text-[#050505] transition-all duration-300"
+                          style={{ 
+                            background: "#c9a84c", 
+                            borderRadius: 0,
+                            opacity: selectedTime ? 1 : 0.5,
+                            cursor: selectedTime ? "pointer" : "not-allowed"
+                          }}
+                        >
+                          {t("booking.continue")} →
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
