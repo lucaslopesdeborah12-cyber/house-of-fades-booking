@@ -39,6 +39,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState<Country>(DEFAULT_COUNTRY);
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [loading, setLoading] = useState(false);
