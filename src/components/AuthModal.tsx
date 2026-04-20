@@ -511,7 +511,35 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                     </div>
                     <div>
                       <label style={labelStyle}>TELEFONE</label>
-                      <input type="tel" className="auth-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+353 xx xxx xxxx" style={inputStyle} />
+                      <div
+                        className="auth-input"
+                        style={{
+                          ...inputStyle,
+                          padding: 0,
+                          display: "flex",
+                          alignItems: "stretch",
+                          minHeight: 46,
+                          overflow: "visible",
+                        }}
+                      >
+                        <CountryCodeSelector selected={phoneCountry} onSelect={setPhoneCountry} />
+                        <input
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="085 123 4567"
+                          style={{
+                            flex: 1,
+                            background: "transparent",
+                            border: "none",
+                            outline: "none",
+                            color: "#e8e8e8",
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: 14,
+                            padding: "0 14px",
+                          }}
+                        />
+                      </div>
                     </div>
                     <div>
                       <label style={labelStyle}>PASSWORD</label>
