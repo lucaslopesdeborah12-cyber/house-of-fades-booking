@@ -230,6 +230,18 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
           }
           .guest-banner { animation: guestBannerPulse 3s ease-in-out infinite; }
           .auth-input:focus { border-color: rgba(201,168,76,0.53) !important; }
+          @keyframes otpShake {
+            0%,100% { transform: translateX(0); }
+            20%,60% { transform: translateX(-6px); }
+            40%,80% { transform: translateX(6px); }
+          }
+          .otp-shake { animation: otpShake 0.45s ease-in-out; }
+          .otp-box:focus { border-color: #C9A84C !important; outline: none; }
+          @keyframes successPop {
+            0% { transform: scale(0); opacity: 0; }
+            60% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
         `}</style>
 
         <motion.div
