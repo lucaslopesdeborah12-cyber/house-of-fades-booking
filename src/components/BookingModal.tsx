@@ -26,6 +26,12 @@ import CountryCodeSelector, { COUNTRIES, formatPhoneForSubmit, type Country } fr
 import WaitingListForm from "@/components/WaitingListForm";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
 import { downloadICS } from "@/lib/calendarDownload";
+import {
+  useShopSchedule,
+  getDayScheduleFor,
+  isSlotInBreaks,
+  isSlotWithinHours,
+} from "@/hooks/useShopSchedule";
 
 emailjs.init("TBNWeHLfrq6OuvZhQ");
 
@@ -111,6 +117,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     : "all";
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
   const { t, lang } = useLanguage();
+  const { schedule } = useShopSchedule();
 
   const confirmationRef = useRef<HTMLDivElement>(null);
 
@@ -126,9 +133,20 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     return format(date, "EEEE, d MMMM yyyy", { locale: currentLocale });
   };
 
-  const allSlotsBooked = selectedDate && bookedSlots.length >= TOTAL_SLOTS;
-  const availableSlots = selectedDate ? TOTAL_SLOTS - bookedSlots.length : 0;
-  const occupancyPercent = selectedDate ? (bookedSlots.length / TOTAL_SLOTS) * 100 : 0;
+  // Slots filtered by per-day shop schedule (open hours + breaks)
+  const dailySlots = (() => {
+    if (!selectedDate) return TIME_SLOTS;
+    const day = getDayScheduleFor(schedule, selectedDate);
+    if (!day || !day.is_open) return [];
+    return TIME_SLOTS.filter(
+      (s) => isSlotWithinHours(s, day.open_time, day.close_time) && !isSlotInBreaks(s, day.breaks),
+    );
+  })();
+  const dailyTotal = dailySlots.length || TOTAL_SLOTS;
+
+  const allSlotsBooked = selectedDate && (dailySlots.length === 0 || bookedSlots.filter(b => dailySlots.includes(b)).length >= dailySlots.length);
+  const availableSlots = selectedDate ? Math.max(0, dailySlots.length - bookedSlots.filter(b => dailySlots.includes(b)).length) : 0;
+  const occupancyPercent = selectedDate ? ((dailyTotal - availableSlots) / dailyTotal) * 100 : 0;
 
   const getUrgencyMessage = () => {
     if (!selectedDate || allSlotsBooked) return null;
@@ -833,7 +851,12 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       onSelect={(date) => setSelectedDate(date)}
                       onMonthChange={setCalendarMonth}
                       locale={pt}
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0)) || date.getDay() === 0}
+                      disabled={(date) => {
+                        if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                        const day = getDayScheduleFor(schedule, date);
+                        if (!day) return date.getDay() === 0; // fallback: closed Sundays
+                        return !day.is_open;
+                      }}
                       className={cn("p-3 pointer-events-auto w-full")}
                       formatters={{
                         formatCaption: (date) => {
@@ -924,7 +947,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                         </div>
                       ) : (
                         <div className="grid grid-cols-4 gap-x-2 gap-y-0">
-                          {TIME_SLOTS.map((tm) => {
+                          {dailySlots.map((tm) => {
                             const booked = bookedSlots.includes(tm);
                             const isSelected = selectedTime === tm;
                             return (

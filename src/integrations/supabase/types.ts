@@ -264,6 +264,36 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_schedule: {
+        Row: {
+          breaks: Json
+          close_time: string
+          day_of_week: number
+          id: string
+          is_open: boolean
+          open_time: string
+          updated_at: string
+        }
+        Insert: {
+          breaks?: Json
+          close_time?: string
+          day_of_week: number
+          id?: string
+          is_open?: boolean
+          open_time?: string
+          updated_at?: string
+        }
+        Update: {
+          breaks?: Json
+          close_time?: string
+          day_of_week?: number
+          id?: string
+          is_open?: boolean
+          open_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_content: {
         Row: {
           key: string
