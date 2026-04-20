@@ -77,11 +77,12 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
         throw new Error("Preencha todos os campos");
       }
       if (password.length < 6) throw new Error("Password mínima de 6 caracteres");
+      const fullPhone = formatPhoneForSubmit(phone, phoneCountry);
       const { error: err } = await supabase.auth.signInWithOtp({
         email,
         options: {
           shouldCreateUser: true,
-          data: { full_name: name, phone, pending_password: password },
+          data: { full_name: name, phone: fullPhone, pending_password: password },
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
