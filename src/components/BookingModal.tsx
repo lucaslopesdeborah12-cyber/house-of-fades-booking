@@ -851,7 +851,12 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       onSelect={(date) => setSelectedDate(date)}
                       onMonthChange={setCalendarMonth}
                       locale={pt}
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0)) || date.getDay() === 0}
+                      disabled={(date) => {
+                        if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                        const day = getDayScheduleFor(schedule, date);
+                        if (!day) return date.getDay() === 0; // fallback: closed Sundays
+                        return !day.is_open;
+                      }}
                       className={cn("p-3 pointer-events-auto w-full")}
                       formatters={{
                         formatCaption: (date) => {
@@ -942,7 +947,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                         </div>
                       ) : (
                         <div className="grid grid-cols-4 gap-x-2 gap-y-0">
-                          {TIME_SLOTS.map((tm) => {
+                          {dailySlots.map((tm) => {
                             const booked = bookedSlots.includes(tm);
                             const isSelected = selectedTime === tm;
                             return (
