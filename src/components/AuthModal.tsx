@@ -31,18 +31,23 @@ const ScissorsIcon = () => (
 );
 
 const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
-  const [view, setView] = useState<"home" | "guest" | "register">("home");
+  const [view, setView] = useState<"home" | "guest" | "register" | "otp" | "success">("home");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
+  const [otpShake, setOtpShake] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const reset = () => {
     setEmail(""); setPassword(""); setName("");
-    setGuestName(""); setGuestPhone("");
+    setPhone(""); setGuestName(""); setGuestPhone("");
+    setOtp(["", "", "", "", "", ""]); setOtpShake(false); setResendCooldown(0);
     setError(""); setLoading(false); setView("home");
   };
 
