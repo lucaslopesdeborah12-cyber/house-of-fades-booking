@@ -160,7 +160,7 @@ const OwnerStatsTab = () => {
       </div>
 
       {/* Shop Settings */}
-      <ShopSettingsPanel settings={settings} onSave={saveSetting} />
+      <ShopSettingsPanel />
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
