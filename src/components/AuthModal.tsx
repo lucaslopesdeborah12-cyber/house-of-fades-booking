@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import CountryCodeSelector, { type Country, formatPhoneForSubmit } from "@/components/CountryCodeSelector";
+
+const DEFAULT_COUNTRY: Country = { code: "IE", name: "Ireland", dial: "+353", flag: "🇮🇪" };
 
 interface AuthModalProps {
   open: boolean;
