@@ -78,6 +78,21 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (action === "custom") {
+      const { phone, message } = payload;
+      if (!phone || !message) {
+        return new Response(JSON.stringify({ error: "Missing phone or message" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const result = await sendSMS(phone, message);
+      return new Response(JSON.stringify({ success: result.ok, data: result.data }), {
+        status: result.ok ? 200 : 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "send-reminders") {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

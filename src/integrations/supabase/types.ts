@@ -159,6 +159,48 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_logs: {
+        Row: {
+          appointment_id: string | null
+          client_contact: string | null
+          client_name: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          message_content: string | null
+          method: string
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          client_contact?: string | null
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          message_content?: string | null
+          method: string
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          client_contact?: string | null
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          message_content?: string | null
+          method?: string
+          status?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
       owner_settings: {
         Row: {
           key: string
