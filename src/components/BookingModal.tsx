@@ -26,6 +26,12 @@ import CountryCodeSelector, { COUNTRIES, formatPhoneForSubmit, type Country } fr
 import WaitingListForm from "@/components/WaitingListForm";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
 import { downloadICS } from "@/lib/calendarDownload";
+import {
+  useShopSchedule,
+  getDayScheduleFor,
+  isSlotInBreaks,
+  isSlotWithinHours,
+} from "@/hooks/useShopSchedule";
 
 emailjs.init("TBNWeHLfrq6OuvZhQ");
 
