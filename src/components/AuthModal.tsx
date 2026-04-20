@@ -68,16 +68,95 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
   const handleRegister = async () => {
     setError(""); setLoading(true);
     try {
-      const { error: err } = await supabase.auth.signUp({
-        email, password,
-        options: { data: { full_name: name } },
+      if (!name.trim() || !email.trim() || !phone.trim() || !password.trim()) {
+        throw new Error("Preencha todos os campos");
+      }
+      if (password.length < 6) throw new Error("Password mínima de 6 caracteres");
+      const { error: err } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true,
+          data: { full_name: name, phone, pending_password: password },
+          emailRedirectTo: `${window.location.origin}/`,
+        },
       });
       if (err) throw err;
-      toast.success("Conta criada! Verifique o seu email.");
-      reset();
-      onContinue();
+      setOtp(["", "", "", "", "", ""]);
+      setView("otp");
+      startResendCooldown();
     } catch (err: any) {
       setError(err.message || "Erro ao criar conta");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startResendCooldown = () => {
+    setResendCooldown(60);
+    const interval = setInterval(() => {
+      setResendCooldown((s) => {
+        if (s <= 1) { clearInterval(interval); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    setError("");
+    const { error: err } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: true,
+        data: { full_name: name, phone, pending_password: password },
+      },
+    });
+    if (err) setError(err.message);
+    else { toast.success("Código reenviado"); startResendCooldown(); }
+  };
+
+  const handleOtpChange = (idx: number, val: string) => {
+    const ch = val.replace(/\D/g, "").slice(-1);
+    const next = [...otp];
+    next[idx] = ch;
+    setOtp(next);
+    if (ch && idx < 5) {
+      const el = document.getElementById(`otp-${idx + 1}`);
+      el?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[idx] && idx > 0) {
+      const el = document.getElementById(`otp-${idx - 1}`);
+      el?.focus();
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    const code = otp.join("");
+    if (code.length !== 6) { setError("Insira os 6 dígitos"); return; }
+    setError(""); setLoading(true);
+    try {
+      const { error: err } = await supabase.auth.verifyOtp({
+        email, token: code, type: "email",
+      });
+      if (err) throw err;
+      // Set the password they chose (account is now confirmed + signed in)
+      if (password) {
+        await supabase.auth.updateUser({
+          password,
+          data: { full_name: name, phone },
+        });
+      }
+      setView("success");
+      setTimeout(() => { reset(); onContinue(); }, 2000);
+    } catch (err: any) {
+      setError("Código incorreto. Tente novamente.");
+      setOtpShake(true);
+      setTimeout(() => setOtpShake(false), 500);
+      setOtp(["", "", "", "", "", ""]);
+      document.getElementById("otp-0")?.focus();
     } finally {
       setLoading(false);
     }
