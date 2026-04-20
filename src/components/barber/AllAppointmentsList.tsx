@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
 import { format, parseISO, startOfWeek, endOfWeek, isToday } from "date-fns";
+import ContactClientModal, { ContactTarget } from "@/components/barber/ContactClientModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,9 @@ type AppointmentRow = {
   client_name: string;
   status: string;
   barber_id: string;
+  client_email: string | null;
+  client_phone: string | null;
+  contact_preference: string | null;
   services: { name: string } | null;
   barbers: { name: string } | null;
 };
@@ -33,11 +37,12 @@ const AllAppointmentsList = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("upcoming");
   const [cancelTarget, setCancelTarget] = useState<AppointmentRow | null>(null);
+  const [contactTarget, setContactTarget] = useState<ContactTarget | null>(null);
 
   const fetchAll = async () => {
     const { data, error } = await supabase
       .from("appointments")
-      .select("id, appointment_date, time_slot, client_name, status, barber_id, services(name), barbers(name)")
+      .select("id, appointment_date, time_slot, client_name, status, barber_id, client_email, client_phone, contact_preference, services(name), barbers(name)")
       .in("status", ["booked", "confirmed"])
       .neq("client_name", "BREAK")
       .order("appointment_date")
@@ -144,14 +149,25 @@ const AllAppointmentsList = () => {
                   <td className="py-2 pr-3 text-foreground">{a.barbers?.name || "—"}</td>
                   <td className="py-2 pr-3 text-foreground capitalize">{a.status}</td>
                   <td className="py-2 text-right">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-red-500 hover:text-red-600 hover:bg-red-50 font-body text-xs h-7"
-                      onClick={() => setCancelTarget(a)}
-                    >
-                      Cancelar
-                    </Button>
+                    <div className="flex gap-1 justify-end">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="font-body text-xs h-7 hover:bg-transparent"
+                        style={{ color: "#c9a84c" }}
+                        onClick={() => setContactTarget(a as ContactTarget)}
+                      >
+                        Contactar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 font-body text-xs h-7"
+                        onClick={() => setCancelTarget(a)}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -180,6 +196,8 @@ const AllAppointmentsList = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ContactClientModal target={contactTarget} onClose={() => setContactTarget(null)} />
     </div>
   );
 };
