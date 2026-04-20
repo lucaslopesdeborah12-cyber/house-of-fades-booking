@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import CountryCodeSelector, { type Country, formatPhoneForSubmit } from "@/components/CountryCodeSelector";
+
+const DEFAULT_COUNTRY: Country = { code: "IE", name: "Ireland", dial: "+353", flag: "🇮🇪" };
 
 interface AuthModalProps {
   open: boolean;
@@ -36,6 +39,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState<Country>(DEFAULT_COUNTRY);
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,6 +51,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
   const reset = () => {
     setEmail(""); setPassword(""); setName("");
     setPhone(""); setGuestName(""); setGuestPhone("");
+    setPhoneCountry(DEFAULT_COUNTRY);
     setOtp(["", "", "", "", "", ""]); setOtpShake(false); setResendCooldown(0);
     setError(""); setLoading(false); setView("home");
   };
@@ -72,11 +77,12 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
         throw new Error("Preencha todos os campos");
       }
       if (password.length < 6) throw new Error("Password mínima de 6 caracteres");
+      const fullPhone = formatPhoneForSubmit(phone, phoneCountry);
       const { error: err } = await supabase.auth.signInWithOtp({
         email,
         options: {
           shouldCreateUser: true,
-          data: { full_name: name, phone, pending_password: password },
+          data: { full_name: name, phone: fullPhone, pending_password: password },
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
@@ -108,7 +114,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
       email,
       options: {
         shouldCreateUser: true,
-        data: { full_name: name, phone, pending_password: password },
+        data: { full_name: name, phone: formatPhoneForSubmit(phone, phoneCountry), pending_password: password },
       },
     });
     if (err) setError(err.message);
@@ -146,7 +152,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
       if (password) {
         await supabase.auth.updateUser({
           password,
-          data: { full_name: name, phone },
+          data: { full_name: name, phone: formatPhoneForSubmit(phone, phoneCountry) },
         });
       }
       setView("success");
@@ -505,7 +511,35 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                     </div>
                     <div>
                       <label style={labelStyle}>TELEFONE</label>
-                      <input type="tel" className="auth-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+353 xx xxx xxxx" style={inputStyle} />
+                      <div
+                        className="auth-input"
+                        style={{
+                          ...inputStyle,
+                          padding: 0,
+                          display: "flex",
+                          alignItems: "stretch",
+                          minHeight: 46,
+                          overflow: "visible",
+                        }}
+                      >
+                        <CountryCodeSelector selected={phoneCountry} onSelect={setPhoneCountry} />
+                        <input
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="085 123 4567"
+                          style={{
+                            flex: 1,
+                            background: "transparent",
+                            border: "none",
+                            outline: "none",
+                            color: "#e8e8e8",
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: 14,
+                            padding: "0 14px",
+                          }}
+                        />
+                      </div>
                     </div>
                     <div>
                       <label style={labelStyle}>PASSWORD</label>
