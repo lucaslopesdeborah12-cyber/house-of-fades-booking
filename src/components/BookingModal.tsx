@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import {
@@ -111,6 +111,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     : "all";
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
   const { t } = useLanguage();
+
+  const confirmationRef = useRef<HTMLDivElement>(null);
 
   const allSlotsBooked = selectedDate && bookedSlots.length >= TOTAL_SLOTS;
   const availableSlots = selectedDate ? TOTAL_SLOTS - bookedSlots.length : 0;
@@ -917,7 +919,12 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                               <button
                                 key={tm}
                                 disabled={booked}
-                                onClick={() => setSelectedTime(tm)}
+                                onClick={() => {
+                                  setSelectedTime(tm);
+                                  setTimeout(() => {
+                                    confirmationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                                  }, 100);
+                                }}
                                 className="font-sans text-[12px] font-light transition-all py-3"
                                 style={{
                                   background: "transparent",
