@@ -538,6 +538,125 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                 </div>
               </motion.div>
             )}
+
+            {view === "otp" && (
+              <motion.div
+                key="otp"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div style={{ padding: "18px 24px 22px" }}>
+                  <button
+                    onClick={() => { setError(""); setView("register"); }}
+                    style={{
+                      background: "transparent", border: "none", color: "rgba(255,255,255,0.5)",
+                      cursor: "pointer", fontSize: 12, fontFamily: "Inter, sans-serif",
+                      padding: 0, marginBottom: 14, display: "flex", alignItems: "center", gap: 6,
+                    }}
+                  >
+                    ← Voltar
+                  </button>
+
+                  <div style={{ textAlign: "center", marginBottom: 18 }}>
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="1.5" style={{ margin: "0 auto", display: "block" }}>
+                      <rect x="3" y="5" width="18" height="14" rx="2" />
+                      <polyline points="3,7 12,13 21,7" />
+                    </svg>
+                    <div style={{ fontSize: 17, color: "#fff", fontFamily: "'Playfair Display', Georgia, serif", marginTop: 12 }}>
+                      Verifique o seu email
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "Inter, sans-serif", marginTop: 6 }}>
+                      Enviámos um código de 6 dígitos para <span style={{ color: "#C9A84C" }}>{email}</span>
+                    </div>
+                  </div>
+
+                  <div className={otpShake ? "otp-shake" : ""} style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 14 }}>
+                    {otp.map((d, i) => (
+                      <input
+                        key={i}
+                        id={`otp-${i}`}
+                        className="otp-box"
+                        value={d}
+                        onChange={(e) => handleOtpChange(i, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                        inputMode="numeric"
+                        maxLength={1}
+                        style={{
+                          width: 40, height: 48, textAlign: "center",
+                          background: "#1c1c1c", border: "1px solid #2a2a2a",
+                          borderRadius: 10, color: "#fff", fontSize: 20, fontWeight: 600,
+                          fontFamily: "Inter, sans-serif",
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {error && (
+                    <div style={{
+                      margin: "0 0 12px", padding: "9px 12px",
+                      background: "rgba(220,50,50,0.1)", border: "1px solid rgba(220,50,50,0.25)",
+                      borderRadius: 10, fontSize: 11, color: "#ff7b7b", fontFamily: "Inter, sans-serif", textAlign: "center",
+                    }}>{error}</div>
+                  )}
+
+                  <button
+                    onClick={handleVerifyOtp} disabled={loading}
+                    style={{
+                      width: "100%", background: "#C9A84C", border: "none", borderRadius: 14,
+                      padding: 14, fontSize: 14, fontWeight: 700, color: "#111",
+                      fontFamily: "Inter, sans-serif", cursor: loading ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {loading ? "A verificar..." : "Confirmar código →"}
+                  </button>
+
+                  <div style={{ textAlign: "center", marginTop: 14, fontSize: 11, fontFamily: "Inter, sans-serif", color: "rgba(255,255,255,0.4)" }}>
+                    Não recebeu?{" "}
+                    <span
+                      onClick={handleResendOtp}
+                      style={{
+                        color: resendCooldown > 0 ? "rgba(201,168,76,0.4)" : "#C9A84C",
+                        cursor: resendCooldown > 0 ? "not-allowed" : "pointer",
+                        textDecoration: "underline", textUnderlineOffset: 2,
+                      }}
+                    >
+                      {resendCooldown > 0 ? `Reenviar em ${resendCooldown}s` : "Reenviar código"}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {view === "success" && (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div style={{ padding: "30px 24px 40px", textAlign: "center" }}>
+                  <div style={{
+                    width: 72, height: 72, borderRadius: "50%",
+                    background: "rgba(201,168,76,0.12)", border: "2px solid #C9A84C",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    margin: "0 auto", animation: "successPop 0.6s cubic-bezier(0.34,1.56,0.64,1)",
+                  }}>
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                  <div style={{ fontSize: 18, color: "#fff", fontFamily: "'Playfair Display', Georgia, serif", marginTop: 18 }}>
+                    Conta criada com sucesso!
+                  </div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontFamily: "Inter, sans-serif", marginTop: 6 }}>
+                    Bem-vindo à House of Fades
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </motion.div>
       </DialogContent>
