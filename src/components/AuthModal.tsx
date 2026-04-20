@@ -504,6 +504,10 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       <input type="email" className="auth-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@gmail.com" style={inputStyle} />
                     </div>
                     <div>
+                      <label style={labelStyle}>TELEFONE</label>
+                      <input type="tel" className="auth-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+353 xx xxx xxxx" style={inputStyle} />
+                    </div>
+                    <div>
                       <label style={labelStyle}>PASSWORD</label>
                       <input type="password" className="auth-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={inputStyle} />
                     </div>
