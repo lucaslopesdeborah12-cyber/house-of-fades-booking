@@ -114,7 +114,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
       email,
       options: {
         shouldCreateUser: true,
-        data: { full_name: name, phone, pending_password: password },
+        data: { full_name: name, phone: formatPhoneForSubmit(phone, phoneCountry), pending_password: password },
       },
     });
     if (err) setError(err.message);
@@ -152,7 +152,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
       if (password) {
         await supabase.auth.updateUser({
           password,
-          data: { full_name: name, phone },
+          data: { full_name: name, phone: formatPhoneForSubmit(phone, phoneCountry) },
         });
       }
       setView("success");
