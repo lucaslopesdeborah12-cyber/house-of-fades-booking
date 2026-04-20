@@ -117,6 +117,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     : "all";
   const [prefShakeTriggered, setPrefShakeTriggered] = useState(false);
   const { t, lang } = useLanguage();
+  const { schedule } = useShopSchedule();
 
   const confirmationRef = useRef<HTMLDivElement>(null);
 
@@ -132,9 +133,20 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     return format(date, "EEEE, d MMMM yyyy", { locale: currentLocale });
   };
 
-  const allSlotsBooked = selectedDate && bookedSlots.length >= TOTAL_SLOTS;
-  const availableSlots = selectedDate ? TOTAL_SLOTS - bookedSlots.length : 0;
-  const occupancyPercent = selectedDate ? (bookedSlots.length / TOTAL_SLOTS) * 100 : 0;
+  // Slots filtered by per-day shop schedule (open hours + breaks)
+  const dailySlots = (() => {
+    if (!selectedDate) return TIME_SLOTS;
+    const day = getDayScheduleFor(schedule, selectedDate);
+    if (!day || !day.is_open) return [];
+    return TIME_SLOTS.filter(
+      (s) => isSlotWithinHours(s, day.open_time, day.close_time) && !isSlotInBreaks(s, day.breaks),
+    );
+  })();
+  const dailyTotal = dailySlots.length || TOTAL_SLOTS;
+
+  const allSlotsBooked = selectedDate && (dailySlots.length === 0 || bookedSlots.filter(b => dailySlots.includes(b)).length >= dailySlots.length);
+  const availableSlots = selectedDate ? Math.max(0, dailySlots.length - bookedSlots.filter(b => dailySlots.includes(b)).length) : 0;
+  const occupancyPercent = selectedDate ? ((dailyTotal - availableSlots) / dailyTotal) * 100 : 0;
 
   const getUrgencyMessage = () => {
     if (!selectedDate || allSlotsBooked) return null;
