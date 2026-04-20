@@ -36,6 +36,8 @@ export type Database = {
         Row: {
           appointment_date: string
           barber_id: string
+          cancellation_notified: boolean
+          cancelled_at: string | null
           client_email: string | null
           client_name: string
           client_phone: string | null
@@ -51,6 +53,8 @@ export type Database = {
         Insert: {
           appointment_date: string
           barber_id: string
+          cancellation_notified?: boolean
+          cancelled_at?: string | null
           client_email?: string | null
           client_name: string
           client_phone?: string | null
@@ -66,6 +70,8 @@ export type Database = {
         Update: {
           appointment_date?: string
           barber_id?: string
+          cancellation_notified?: boolean
+          cancelled_at?: string | null
           client_email?: string | null
           client_name?: string
           client_phone?: string | null
@@ -408,6 +414,8 @@ export type Database = {
         Returns: {
           appointment_date: string
           barber_id: string
+          cancellation_notified: boolean
+          cancelled_at: string | null
           client_email: string | null
           client_name: string
           client_phone: string | null
