@@ -5,16 +5,8 @@ import { toast } from "sonner";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
 import { format, parseISO, startOfWeek, endOfWeek, isToday } from "date-fns";
 import ContactClientModal, { ContactTarget } from "@/components/barber/ContactClientModal";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import CancelAppointmentModal, { CancelTarget } from "@/components/barber/CancelAppointmentModal";
+import { AnimatePresence, motion } from "framer-motion";
 
 type AppointmentRow = {
   id: string;
@@ -36,7 +28,7 @@ const AllAppointmentsList = () => {
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("upcoming");
-  const [cancelTarget, setCancelTarget] = useState<AppointmentRow | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<CancelTarget | null>(null);
   const [contactTarget, setContactTarget] = useState<ContactTarget | null>(null);
 
   const fetchAll = async () => {
@@ -73,27 +65,18 @@ const AllAppointmentsList = () => {
     return true;
   });
 
-  const handleCancel = async () => {
+  const handleCancelled = () => {
     if (!cancelTarget) return;
-    const { error } = await supabase
-      .from("appointments")
-      .delete()
-      .eq("id", cancelTarget.id);
-
-    if (error) {
-      toast.error("Failed to cancel");
-    } else {
-      toast.success("Agendamento cancelado");
-      const timeSlot = cancelTarget.time_slot.slice(0, 5);
-      notifyWaitingList(
-        cancelTarget.barber_id,
-        cancelTarget.appointment_date,
-        timeSlot,
-        cancelTarget.barbers?.name || ""
-      );
-      fetchAll();
-    }
-    setCancelTarget(null);
+    const t = cancelTarget;
+    const timeSlot = t.time_slot.slice(0, 5);
+    notifyWaitingList(
+      (appointments.find((a) => a.id === t.id)?.barber_id) || "",
+      t.appointment_date,
+      timeSlot,
+      t.barbers?.name || ""
+    );
+    // Remove with fade-out (filter immediately; AnimatePresence handles exit)
+    setAppointments((prev) => prev.filter((a) => a.id !== t.id));
   };
 
   const filters: { label: string; value: Filter }[] = [
@@ -140,8 +123,16 @@ const AllAppointmentsList = () => {
               </tr>
             </thead>
             <tbody>
+              <AnimatePresence initial={false}>
               {filtered.map((a) => (
-                <tr key={a.id} className="border-b border-border/50">
+                <motion.tr
+                  key={a.id}
+                  layout
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                  className="border-b border-border/50"
+                >
                   <td className="py-2 pr-3 text-foreground">{format(parseISO(a.appointment_date), "dd/MM")}</td>
                   <td className="py-2 pr-3 text-foreground">{a.time_slot.slice(0, 5)}</td>
                   <td className="py-2 pr-3 text-foreground">{a.client_name}</td>
@@ -163,39 +154,25 @@ const AllAppointmentsList = () => {
                         size="sm"
                         variant="ghost"
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 font-body text-xs h-7"
-                        onClick={() => setCancelTarget(a)}
+                        onClick={() => setCancelTarget(a as CancelTarget)}
                       >
                         Cancelar
                       </Button>
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
+              </AnimatePresence>
             </tbody>
           </table>
         </div>
       )}
 
-      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-serif">Cancelar agendamento?</AlertDialogTitle>
-            <AlertDialogDescription className="font-body">
-              Tens a certeza que queres cancelar o agendamento de{" "}
-              <span className="font-semibold text-foreground">{cancelTarget?.client_name}</span>?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="font-body">Não</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white font-body"
-              onClick={handleCancel}
-            >
-              Sim, cancelar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CancelAppointmentModal
+        target={cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onCancelled={handleCancelled}
+      />
 
       <ContactClientModal target={contactTarget} onClose={() => setContactTarget(null)} />
     </div>
