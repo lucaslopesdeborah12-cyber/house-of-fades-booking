@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { format } from "date-fns";
-import { pt, enUS, es, fr, it, de, ga } from "date-fns/locale";
+import { pt, enUS, es, fr, it, de } from "date-fns/locale";
 import {
   CalendarIcon,
   Clock,
@@ -115,7 +115,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const confirmationRef = useRef<HTMLDivElement>(null);
 
   const getFullDate = (date: Date) => {
-    const locales: Record<string, any> = { pt, en: enUS, es, fr, it, de, ga };
+    const locales: Record<string, any> = { pt, en: enUS, es, fr, it, de };
     const currentLocale = locales[lang] || pt;
     
     // For Portuguese, add "de" between day and month
