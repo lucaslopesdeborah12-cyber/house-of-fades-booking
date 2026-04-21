@@ -99,6 +99,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [waitingListOpen, setWaitingListOpen] = useState(false);
   const [selectedPrefs, setSelectedPrefs] = useState<Set<string>>(new Set());
   const [now, setNow] = useState<Date>(new Date());
+  const [prefillHint, setPrefillHint] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
