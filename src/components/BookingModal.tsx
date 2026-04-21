@@ -388,14 +388,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       toast.error("Escolha como quer receber a confirmação");
       return;
     }
-    if ((contactPreference === "email" || contactPreference === "all") && !clientEmail.trim()) {
+    if (!clientEmail.trim()) {
       toast.error(t("booking.enterEmail"));
       return;
     }
-    if (
-      (contactPreference === "sms" || contactPreference === "call" || contactPreference === "all") &&
-      !clientPhone.trim()
-    ) {
+    if (!clientPhone.trim()) {
       toast.error("Introduza o seu telefone");
       return;
     }
