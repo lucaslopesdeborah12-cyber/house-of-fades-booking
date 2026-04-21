@@ -98,6 +98,28 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [success, setSuccess] = useState(false);
   const [waitingListOpen, setWaitingListOpen] = useState(false);
   const [selectedPrefs, setSelectedPrefs] = useState<Set<string>>(new Set());
+  const [now, setNow] = useState<Date>(new Date());
+
+  useEffect(() => {
+    if (!open) return;
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, [open]);
+
+  const isSlotPast = (tm: string): boolean => {
+    if (!selectedDate) return false;
+    const today = new Date();
+    if (
+      selectedDate.getFullYear() !== today.getFullYear() ||
+      selectedDate.getMonth() !== today.getMonth() ||
+      selectedDate.getDate() !== today.getDate()
+    )
+      return false;
+    const [h, m] = tm.split(":").map(Number);
+    const slotDate = new Date(selectedDate);
+    slotDate.setHours(h, m, 0, 0);
+    return slotDate.getTime() - now.getTime() < 10 * 60 * 1000;
+  };
   const togglePref = (val: string) => {
     setSelectedPrefs(prev => {
       const next = new Set(prev);
