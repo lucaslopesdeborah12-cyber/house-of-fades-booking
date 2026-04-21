@@ -970,7 +970,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       ) : (
                         <div className="grid grid-cols-4 gap-x-2 gap-y-0">
                           {dailySlots.map((tm) => {
-                            const booked = bookedSlots.includes(tm);
+                            const past = isSlotPast(tm);
+                            const booked = bookedSlots.includes(tm) || past;
                             const isSelected = selectedTime === tm;
                             return (
                               <button
@@ -993,6 +994,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                                       ? "#c9a84c"
                                       : "rgba(255,255,255,0.5)",
                                   cursor: booked ? "not-allowed" : "pointer",
+                                  pointerEvents: booked ? "none" : "auto",
                                   textDecoration: booked ? "line-through" : "none",
                                   letterSpacing: "0.5px",
                                   borderRadius: 0,
