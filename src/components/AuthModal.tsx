@@ -42,6 +42,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
   const [phoneCountry, setPhoneCountry] = useState<Country>(DEFAULT_COUNTRY);
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
+  const [guestPrefilled, setGuestPrefilled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
@@ -54,6 +55,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
     setPhoneCountry(DEFAULT_COUNTRY);
     setOtp(["", "", "", "", "", ""]); setOtpShake(false); setResendCooldown(0);
     setError(""); setLoading(false); setView("home");
+    setGuestPrefilled(false);
   };
 
   const handleLogin = async () => {
