@@ -466,6 +466,17 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       />
                     </div>
                   </div>
+                  {guestPrefilled && (
+                    <div style={{
+                      marginTop: 8,
+                      fontSize: 11,
+                      color: "#666",
+                      fontStyle: "italic",
+                      fontFamily: "Inter, sans-serif",
+                    }}>
+                      Dados guardados anteriormente · Editar à vontade
+                    </div>
+                  )}
 
                   {error && (
                     <div style={{
