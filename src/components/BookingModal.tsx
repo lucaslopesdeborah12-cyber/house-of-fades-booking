@@ -369,6 +369,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
     setSuccess(false);
     setSelectedPrefs(new Set());
     setPrefShakeTriggered(false);
+    setPrefillHint(null);
   };
 
   const handleClose = (v: boolean) => {
