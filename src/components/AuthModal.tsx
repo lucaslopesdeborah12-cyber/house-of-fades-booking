@@ -322,7 +322,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                   </div>
 
                   <button
-                    onClick={() => { setError(""); setView("guest"); }}
+                    onClick={openGuestView}
                     style={{
                       marginTop: 12, width: "100%",
                       background: "#C9A84C", border: "none", borderRadius: 14,
