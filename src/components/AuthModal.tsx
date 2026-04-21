@@ -183,6 +183,20 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
     onContinue(guest);
   };
 
+  const openGuestView = () => {
+    setError("");
+    try {
+      const raw = localStorage.getItem("hof_guest_profile");
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved?.name) setGuestName(saved.name);
+        if (saved?.phone) setGuestPhone(saved.phone);
+        if (saved?.name || saved?.phone) setGuestPrefilled(true);
+      }
+    } catch {}
+    setView("guest");
+  };
+
   const handleForgotPassword = async () => {
     if (!email.trim()) { setError("Insira o seu email primeiro"); return; }
     const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
