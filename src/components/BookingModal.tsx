@@ -1110,17 +1110,16 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
               {step === 4 &&
                 (() => {
-                  const emailDisabled = contactPreference === null;
-                  const phoneDisabled = contactPreference === null;
+                  const emailDisabled = false;
+                  const phoneDisabled = false;
                   const needsWarning = contactPreference === null && clientName.length > 0;
                   if (needsWarning && !prefShakeTriggered) setPrefShakeTriggered(true);
                   const isConfirmDisabled =
                     submitting ||
                     !clientName.trim() ||
                     contactPreference === null ||
-                    ((contactPreference === "email" || contactPreference === "all") && !clientEmail.trim()) ||
-                    ((contactPreference === "sms" || contactPreference === "call" || contactPreference === "all") &&
-                      !clientPhone.trim());
+                    !clientEmail.trim() ||
+                    !clientPhone.trim();
                   return (
                     <div style={{ padding: "0 0 14px" }}>
                       <div
