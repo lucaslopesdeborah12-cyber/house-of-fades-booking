@@ -207,44 +207,46 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       });
   }, [open, preselectedBarber]);
 
-  // Pre-fill client info: account profile (if logged in) or last guest profile
+  // Pre-fill client info from previously-saved local profile only.
+  // Never auto-fill from the auth session (avoids surfacing unrelated account emails).
   useEffect(() => {
     if (!open) return;
-    let cancelled = false;
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (cancelled) return;
-      if (user) {
-        const meta = (user.user_metadata || {}) as Record<string, any>;
-        const fullName = meta.full_name || meta.name || "";
-        const phoneRaw = meta.phone || "";
-        const emailVal = user.email || "";
-        if (fullName) setClientName((prev) => prev || fullName);
-        if (phoneRaw) setClientPhone((prev) => prev || String(phoneRaw).replace(/[^0-9]/g, ""));
-        if (emailVal) setClientEmail((prev) => prev || emailVal);
-        if (fullName || phoneRaw || emailVal) setPrefillHint("Dados da sua conta · Editar à vontade");
-      } else {
-        try {
-          const raw = localStorage.getItem("hof_guest_profile");
-          if (raw) {
-            const saved = JSON.parse(raw);
-            if (saved?.name) setClientName((prev) => prev || saved.name);
-            if (saved?.phone) setClientPhone((prev) => prev || String(saved.phone).replace(/[^0-9]/g, ""));
-            if (saved?.name || saved?.phone) setPrefillHint("Dados guardados anteriormente · Editar à vontade");
-          }
-        } catch {}
-      }
-      // Restore last contact preference
-      try {
-        const lastPref = localStorage.getItem("hof_last_contact_pref");
-        if (lastPref) {
-          if (lastPref === "all") setSelectedPrefs(new Set(["sms", "email", "call", "all"]));
-          else if (["sms", "email", "call"].includes(lastPref)) setSelectedPrefs(new Set([lastPref]));
+    try {
+      const raw = localStorage.getItem("hof_guest_profile");
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved?.name) setClientName((prev) => prev || saved.name);
+        if (saved?.phone) setClientPhone((prev) => prev || String(saved.phone).replace(/[^0-9]/g, ""));
+        if (saved?.email) setClientEmail((prev) => prev || saved.email);
+        if (saved?.name || saved?.phone || saved?.email) {
+          setPrefillHint("Dados guardados anteriormente · Editar à vontade");
         }
-      } catch {}
-    })();
-    return () => { cancelled = true; };
+      }
+    } catch {}
+    try {
+      const lastPref = localStorage.getItem("hof_last_contact_pref");
+      if (lastPref) {
+        if (lastPref === "all") setSelectedPrefs(new Set(["sms", "email", "call", "all"]));
+        else if (["sms", "email", "call"].includes(lastPref)) setSelectedPrefs(new Set([lastPref]));
+      }
+    } catch {}
   }, [open]);
+
+  // Persist client info on every change so data survives step navigation and reloads.
+  useEffect(() => {
+    if (!open) return;
+    if (!clientName.trim() && !clientPhone.trim() && !clientEmail.trim()) return;
+    try {
+      localStorage.setItem(
+        "hof_guest_profile",
+        JSON.stringify({
+          name: clientName.trim(),
+          phone: clientPhone.trim(),
+          email: clientEmail.trim(),
+        }),
+      );
+    } catch {}
+  }, [open, clientName, clientPhone, clientEmail]);
 
   const fetchBookedSlots = useCallback(async () => {
     if (!selectedBarber || !selectedDate) return;
@@ -386,14 +388,11 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       toast.error("Escolha como quer receber a confirmação");
       return;
     }
-    if ((contactPreference === "email" || contactPreference === "all") && !clientEmail.trim()) {
+    if (!clientEmail.trim()) {
       toast.error(t("booking.enterEmail"));
       return;
     }
-    if (
-      (contactPreference === "sms" || contactPreference === "call" || contactPreference === "all") &&
-      !clientPhone.trim()
-    ) {
+    if (!clientPhone.trim()) {
       toast.error("Introduza o seu telefone");
       return;
     }
@@ -430,10 +429,6 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         if (contactPreference) {
           localStorage.setItem("hof_last_contact_pref", contactPreference);
         }
-        localStorage.setItem(
-          "hof_guest_profile",
-          JSON.stringify({ name: clientName.trim(), phone: clientPhone.trim() }),
-        );
       } catch {}
       if (clientPhone.trim()) {
         supabase.functions
@@ -1111,17 +1106,16 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
               {step === 4 &&
                 (() => {
-                  const emailDisabled = contactPreference === null;
-                  const phoneDisabled = contactPreference === null;
+                  const emailDisabled = false;
+                  const phoneDisabled = false;
                   const needsWarning = contactPreference === null && clientName.length > 0;
                   if (needsWarning && !prefShakeTriggered) setPrefShakeTriggered(true);
                   const isConfirmDisabled =
                     submitting ||
                     !clientName.trim() ||
                     contactPreference === null ||
-                    ((contactPreference === "email" || contactPreference === "all") && !clientEmail.trim()) ||
-                    ((contactPreference === "sms" || contactPreference === "call" || contactPreference === "all") &&
-                      !clientPhone.trim());
+                    !clientEmail.trim() ||
+                    !clientPhone.trim();
                   return (
                     <div style={{ padding: "0 0 14px" }}>
                       <div
