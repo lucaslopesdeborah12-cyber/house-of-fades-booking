@@ -426,6 +426,15 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       }
     } else {
       setSuccess(true);
+      try {
+        if (contactPreference) {
+          localStorage.setItem("hof_last_contact_pref", contactPreference);
+        }
+        localStorage.setItem(
+          "hof_guest_profile",
+          JSON.stringify({ name: clientName.trim(), phone: clientPhone.trim() }),
+        );
+      } catch {}
       if (clientPhone.trim()) {
         supabase.functions
           .invoke("send-sms", {
