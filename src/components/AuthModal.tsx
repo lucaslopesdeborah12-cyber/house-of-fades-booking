@@ -176,6 +176,9 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
       return;
     }
     const guest = { name: guestName.trim(), phone: guestPhone.trim() };
+    try {
+      localStorage.setItem("hof_guest_profile", JSON.stringify(guest));
+    } catch {}
     reset();
     onContinue(guest);
   };
