@@ -1364,6 +1364,20 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           />
                         </div>
                       </div>
+                      {prefillHint && (
+                        <div
+                          style={{
+                            marginTop: -8,
+                            marginBottom: 14,
+                            fontSize: 11,
+                            color: "#666",
+                            fontStyle: "italic",
+                            fontFamily: "'Inter', sans-serif",
+                          }}
+                        >
+                          {prefillHint}
+                        </div>
+                      )}
                       <div
                         style={{
                           opacity: 0,
