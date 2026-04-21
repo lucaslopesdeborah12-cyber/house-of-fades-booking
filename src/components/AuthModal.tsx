@@ -42,6 +42,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
   const [phoneCountry, setPhoneCountry] = useState<Country>(DEFAULT_COUNTRY);
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
+  const [guestPrefilled, setGuestPrefilled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
@@ -54,6 +55,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
     setPhoneCountry(DEFAULT_COUNTRY);
     setOtp(["", "", "", "", "", ""]); setOtpShake(false); setResendCooldown(0);
     setError(""); setLoading(false); setView("home");
+    setGuestPrefilled(false);
   };
 
   const handleLogin = async () => {
@@ -174,8 +176,25 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
       return;
     }
     const guest = { name: guestName.trim(), phone: guestPhone.trim() };
+    try {
+      localStorage.setItem("hof_guest_profile", JSON.stringify(guest));
+    } catch {}
     reset();
     onContinue(guest);
+  };
+
+  const openGuestView = () => {
+    setError("");
+    try {
+      const raw = localStorage.getItem("hof_guest_profile");
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved?.name) setGuestName(saved.name);
+        if (saved?.phone) setGuestPhone(saved.phone);
+        if (saved?.name || saved?.phone) setGuestPrefilled(true);
+      }
+    } catch {}
+    setView("guest");
   };
 
   const handleForgotPassword = async () => {
@@ -303,7 +322,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                   </div>
 
                   <button
-                    onClick={() => { setError(""); setView("guest"); }}
+                    onClick={openGuestView}
                     style={{
                       marginTop: 12, width: "100%",
                       background: "#C9A84C", border: "none", borderRadius: 14,
@@ -447,6 +466,17 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       />
                     </div>
                   </div>
+                  {guestPrefilled && (
+                    <div style={{
+                      marginTop: 8,
+                      fontSize: 11,
+                      color: "#666",
+                      fontStyle: "italic",
+                      fontFamily: "Inter, sans-serif",
+                    }}>
+                      Dados guardados anteriormente · Editar à vontade
+                    </div>
+                  )}
 
                   {error && (
                     <div style={{
