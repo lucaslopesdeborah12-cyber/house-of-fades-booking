@@ -98,6 +98,28 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const [success, setSuccess] = useState(false);
   const [waitingListOpen, setWaitingListOpen] = useState(false);
   const [selectedPrefs, setSelectedPrefs] = useState<Set<string>>(new Set());
+  const [now, setNow] = useState<Date>(new Date());
+
+  useEffect(() => {
+    if (!open) return;
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, [open]);
+
+  const isSlotPast = (tm: string): boolean => {
+    if (!selectedDate) return false;
+    const today = new Date();
+    if (
+      selectedDate.getFullYear() !== today.getFullYear() ||
+      selectedDate.getMonth() !== today.getMonth() ||
+      selectedDate.getDate() !== today.getDate()
+    )
+      return false;
+    const [h, m] = tm.split(":").map(Number);
+    const slotDate = new Date(selectedDate);
+    slotDate.setHours(h, m, 0, 0);
+    return slotDate.getTime() - now.getTime() < 10 * 60 * 1000;
+  };
   const togglePref = (val: string) => {
     setSelectedPrefs(prev => {
       const next = new Set(prev);
@@ -948,7 +970,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       ) : (
                         <div className="grid grid-cols-4 gap-x-2 gap-y-0">
                           {dailySlots.map((tm) => {
-                            const booked = bookedSlots.includes(tm);
+                            const past = isSlotPast(tm);
+                            const booked = bookedSlots.includes(tm) || past;
                             const isSelected = selectedTime === tm;
                             return (
                               <button
@@ -971,6 +994,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                                       ? "#c9a84c"
                                       : "rgba(255,255,255,0.5)",
                                   cursor: booked ? "not-allowed" : "pointer",
+                                  pointerEvents: booked ? "none" : "auto",
                                   textDecoration: booked ? "line-through" : "none",
                                   letterSpacing: "0.5px",
                                   borderRadius: 0,
