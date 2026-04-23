@@ -274,8 +274,8 @@ const CountryCodeSelector = ({ selected, onSelect }: Props) => {
             background: "#1a1a1a",
             border: "1px solid #2e2e2e",
             borderRadius: 12,
-            zIndex: 99999,
-            overflow: "hidden",
+            zIndex: 100000,
+            overflow: "visible",
             boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
           }}
         >
@@ -304,7 +304,8 @@ const CountryCodeSelector = ({ selected, onSelect }: Props) => {
               <button
                 key={c.code}
                 type="button"
-                onClick={() => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
                   onSelect(c);
                   setOpen(false);
                   setSearch("");
