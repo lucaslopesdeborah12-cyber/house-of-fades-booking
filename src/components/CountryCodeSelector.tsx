@@ -237,7 +237,7 @@ const CountryCodeSelector = ({ selected, onSelect }: Props) => {
   }, [search]);
 
   return (
-    <div style={{ position: "relative", display: "inline-block" }}>
+    <div style={{ position: "relative", display: "inline-block", zIndex: 9999 }}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
