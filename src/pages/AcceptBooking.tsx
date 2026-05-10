@@ -100,8 +100,8 @@ const AcceptBooking = () => {
             emailjs.init("TBNWeHLfrq6OuvZhQ");
             emailjsInited = true;
           }
-          // EmailJS Service ID: service_ri5wxqg
-          await emailjs.send("service_ri5wxqg", "template_7i3p8r9", {
+          // EmailJS Service ID: service_y59db7l
+          await emailjs.send("service_y59db7l", "template_7i3p8r9", {
             to_name: name,
             to_email: email,
             date: date,

@@ -56,11 +56,11 @@ export const notifyWaitingList = async (
     }
 
     // Send email via EmailJS
-    // EmailJS Service ID: service_ri5wxqg
+    // EmailJS Service ID: service_y59db7l
     console.log("[WaitingListNotifier] Sending EmailJS notification to:", waiter.client_email);
     try {
       const emailResult = await emailjs.send(
-        "service_ri5wxqg",
+        "service_y59db7l",
         "template_9wigrr6",
         {
           to_name: waiter.client_name,

@@ -447,10 +447,10 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       }
       const emailToSend = clientEmail.trim();
       if (emailToSend) {
-        // EmailJS Service ID: service_ri5wxqg
+        // EmailJS Service ID: service_y59db7l
         emailjs
           .send(
-            "service_ri5wxqg",
+            "service_y59db7l",
             "template_7i3p8r9",
             {
               to_name: clientName.trim(),
@@ -476,10 +476,10 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         .maybeSingle()
         .then(({ data }: any) => {
           if (data?.value) {
-            // EmailJS Service ID: service_ri5wxqg
+            // EmailJS Service ID: service_y59db7l
             emailjs
               .send(
-                "service_ri5wxqg",
+                "service_y59db7l",
                 "template_7i3p8r9",
                 {
                   to_name: "Owner",
