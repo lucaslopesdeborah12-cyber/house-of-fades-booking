@@ -40,7 +40,7 @@ VITE_SUPABASE_PROJECT_ID=<your-project-ref>
 | Key | Location | Description |
 |---|---|---|
 | EmailJS Public Key | `src/components/BookingModal.tsx` | `TBNWeHLfrq6OuvZhQ` |
-| EmailJS Service ID | `src/components/BookingModal.tsx` | `service_ri5wxqg` |
+| EmailJS Service ID | `src/components/BookingModal.tsx` | `service_y59db7l` |
 | EmailJS Template (client) | `src/components/BookingModal.tsx` | `template_7i3p8r9` |
 | EmailJS Template (owner) | `src/components/BookingModal.tsx` | `template_9wigrr6` |
 
@@ -1757,7 +1757,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       const emailToSend = clientEmail.trim();
       if (emailToSend) {
         emailjs.send(
-          "service_ri5wxqg",
+          "service_y59db7l",
           "template_7i3p8r9",
           {
             to_name: clientName.trim(),
@@ -1780,7 +1780,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         .then(({ data }: any) => {
           if (data?.value) {
             emailjs.send(
-              "service_ri5wxqg",
+              "service_y59db7l",
               "template_9wigrr6",
               {
                 to_name: "Owner",
@@ -10900,7 +10900,7 @@ export const notifyWaitingList = async (
     console.log("[WaitingListNotifier] Sending EmailJS notification to:", waiter.client_email);
     try {
       const emailResult = await emailjs.send(
-        "service_ri5wxqg",
+        "service_y59db7l",
         "template_9wigrr6",
         {
           to_name: waiter.client_name,
@@ -11060,7 +11060,7 @@ const AcceptBooking = () => {
             emailjs.init("TBNWeHLfrq6OuvZhQ");
             emailjsInited = true;
           }
-          await emailjs.send("service_ri5wxqg", "template_7i3p8r9", {
+          await emailjs.send("service_y59db7l", "template_7i3p8r9", {
             to_name: name,
             to_email: email,
             date: date,
