@@ -153,7 +153,8 @@ const CancelAppointmentModal = ({
     setBusy(true);
     try {
       ensureEmailJSInit();
-      await emailjs.send("service_iq26o2f", "template_7i3p8r9", {
+      // EmailJS Service ID: service_ri5wxqg
+      await emailjs.send("service_ri5wxqg", "template_7i3p8r9", {
         to_name: target.client_name,
         to_email: target.client_email,
         subject: emailSubject,
