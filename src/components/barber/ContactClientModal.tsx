@@ -138,7 +138,7 @@ const ContactClientModal = ({
     setBusy(true);
     try {
       ensureEmailJSInit();
-      await emailjs.send("service_jq26o2f", "template_7i3p8r9", {
+      await emailjs.send("service_iq26o2f", "template_7i3p8r9", {
         to_name: target.client_name,
         to_email: target.client_email,
         subject: emailSubject,

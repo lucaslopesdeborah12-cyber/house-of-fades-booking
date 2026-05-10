@@ -59,7 +59,7 @@ export const notifyWaitingList = async (
     console.log("[WaitingListNotifier] Sending EmailJS notification to:", waiter.client_email);
     try {
       const emailResult = await emailjs.send(
-        "service_jq26o2f",
+        "service_iq26o2f",
         "template_9wigrr6",
         {
           to_name: waiter.client_name,

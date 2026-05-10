@@ -449,7 +449,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       if (emailToSend) {
         emailjs
           .send(
-            "service_jq26o2f",
+            "service_iq26o2f",
             "template_7i3p8r9",
             {
               to_name: clientName.trim(),
@@ -477,7 +477,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
           if (data?.value) {
             emailjs
               .send(
-                "service_jq26o2f",
+                "service_iq26o2f",
                 "template_7i3p8r9",
                 {
                   to_name: "Owner",
