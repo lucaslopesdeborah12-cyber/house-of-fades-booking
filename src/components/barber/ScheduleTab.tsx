@@ -31,19 +31,20 @@ import { toast } from "sonner";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
 import { useShopSettings, getDayCount, generateTimeSlots } from "@/hooks/useShopSettings";
 import MySchedulePanel from "@/components/barber/MySchedulePanel";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type Appointment = Tables<"appointments"> & {
   services: { name: string; price: number } | null;
   barbers: { name: string } | null;
 };
 
-const DAY_NAMES_ALL = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 const GOLD = "#c9a84c";
 const RED = "#ff4444";
 
 type ModalType = "booked" | "free" | "break" | "blocked" | "move" | "block-range" | null;
 
 const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; activeTab?: string; refreshToken?: number }) => {
+  const { t } = useLanguage();
   const [viewMode, setViewMode] = useState<"appointments" | "schedule">("appointments");
   const { settings, loading: settingsLoading, refetch: refetchSettings } = useShopSettings();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -63,7 +64,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
   const dayCount = getDayCount(settings.last_working_day);
   const timeSlots = generateTimeSlots(settings.work_start, settings.work_end);
-  const dayNames = DAY_NAMES_ALL.slice(0, dayCount);
+  const dayNames = [0,1,2,3,4,5,6].map(i => t(`schedule.dayShort${i}`)).slice(0, dayCount);
   const defaultBreakTime = settings.default_break_time;
   const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
   const selectedDate = weekDays[selectedDay] || weekDays[0];
