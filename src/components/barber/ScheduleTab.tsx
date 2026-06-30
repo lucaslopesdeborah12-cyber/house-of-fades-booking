@@ -101,7 +101,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
       .in("status", ["booked", "confirmed"])
       .order("appointment_date")
       .order("time_slot");
-    if (error) toast.error("Failed to load schedule");
+    if (error) toast.error(t("schedule.toastFailedLoad"));
     else setAppointments((data || []) as Appointment[]);
     setLoading(false);
   }, [barberId, weekStart, dayCount]);
@@ -136,7 +136,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
     if (serviceError || !services?.length) {
       console.error("Failed to load service for break:", serviceError);
-      toast.error("Failed to create break");
+      toast.error(t("schedule.toastFailedBreak"));
       return false;
     }
 
@@ -156,7 +156,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
     const { error } = await supabase.from("appointments").insert(breakInsert);
     if (error) {
       console.error("Default break insert error:", error);
-      toast.error("Failed to create break");
+      toast.error(t("schedule.toastFailedBreak"));
       return false;
     }
     return true;
@@ -191,15 +191,23 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
   const updateStatus = async (id: string, status: "completed" | "no-show" | "cancelled", appt?: Appointment) => {
     if (status === "cancelled" && appt && !canCancel(appt)) {
-      toast.error("Cannot cancel within 2 hours of appointment.");
+      toast.error(t("schedule.toastCannotCancel2h"));
       return;
     }
     const query = status === "cancelled"
       ? supabase.from("appointments").delete().eq("id", id)
       : supabase.from("appointments").update({ status }).eq("id", id);
     const { error } = await query;
-    if (error) { toast.error("Failed to update"); return; }
-    toast.success(status === "cancelled" ? "Agendamento cancelado" : `Marcado como ${status}`);
+    if (error) { toast.error(t("schedule.toastFailedUpdate")); return; }
+    toast.success(
+      status === "cancelled"
+        ? t("schedule.toastCancelled")
+        : status === "completed"
+          ? t("schedule.toastCompleted")
+          : status === "no-show"
+            ? t("schedule.toastNoShow")
+            : t("schedule.toastMarkedAs").replace("{status}", status)
+    );
     await fetchAppointments();
     if (status === "cancelled" && appt) {
       notifyWaitingList(appt.barber_id, appt.appointment_date, appt.time_slot.slice(0, 5), appt.barbers?.name || "");
