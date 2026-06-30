@@ -385,7 +385,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       return;
     }
     if (contactPreference === null) {
-      toast.error("Escolha como quer receber a confirmação");
+      toast.error(t("booking.errorPickContact"));
       return;
     }
     if (!clientEmail.trim()) {
@@ -393,7 +393,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       return;
     }
     if (!clientPhone.trim()) {
-      toast.error("Introduza o seu telefone");
+      toast.error(t("booking.errorEnterPhone"));
       return;
     }
     const barberNameForEmail = barbers.find((b) => b.id === selectedBarber)?.name || "";
@@ -463,7 +463,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               service_name: serviceNameForEmail,
               barber_name: barberNameForEmail,
               service_price: servicePriceForEmail,
-              footer_note: "Enganou-se? Pode modificar ou cancelar a sua reserva respondendo a este email.",
+              footer_note: t("booking.emailFooterNote"),
             },
             "TBNWeHLfrq6OuvZhQ",
           )
@@ -560,7 +560,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         >
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl italic" style={{ color: "#c9a84c" }}>
-              {success ? "Reserva Confirmada" : t("booking.title")}
+              {success ? t("booking.confirmed") : t("booking.title")}
             </DialogTitle>
           </DialogHeader>
 
@@ -570,8 +570,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 <Check size={280} strokeWidth={0.5} className="text-[#c9a84c]" />
               </div>
               <div className="relative z-10">
-                <h2 className="font-serif text-3xl italic text-[#c9a84c] mb-2">Até já, {clientName}.</h2>
-                <p className="font-cormorant text-lg italic text-foreground/40">A sua reserva está confirmada.</p>
+                <h2 className="font-serif text-3xl italic text-[#c9a84c] mb-2">{t("booking.successGreeting")}, {clientName}.</h2>
+                <p className="font-cormorant text-lg italic text-foreground/40">{t("booking.successSubtitle")}</p>
               </div>
               <div
                 className="relative z-10 space-y-3"
@@ -582,7 +582,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   style={{ borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}
                 >
                   <span className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/30">
-                    Barbeiro
+                    {t("booking.summaryBarber")}
                   </span>
                   <span className="font-sans text-sm text-foreground/80">{selectedBarberName}</span>
                 </div>
@@ -591,7 +591,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   style={{ borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}
                 >
                   <span className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/30">
-                    Serviço
+                    {t("booking.summaryService")}
                   </span>
                   <span className="font-sans text-sm text-foreground/80">{selectedServiceObj?.name}</span>
                 </div>
@@ -600,7 +600,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   style={{ borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}
                 >
                   <span className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/30">
-                    Data
+                    {t("booking.summaryDate")}
                   </span>
                   <span className="font-sans text-sm text-foreground/80">
                     {selectedDate && format(selectedDate, "dd/MM/yyyy")}
@@ -611,7 +611,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   style={{ borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}
                 >
                   <span className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/30">
-                    Hora
+                    {t("booking.summaryTime")}
                   </span>
                   <span className="font-sans text-sm text-foreground/80">{selectedTime}</span>
                 </div>
@@ -632,7 +632,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#050505]"
                   style={{ background: "#c9a84c", borderRadius: 0, border: "none", cursor: "pointer" }}
                 >
-                  <CalendarDownloadIcon size={14} className="mr-3" /> Adicionar ao Google Calendar
+                  <CalendarDownloadIcon size={14} className="mr-3" /> {t("booking.addGoogleCalendar")}
                 </button>
                 <button
                   type="button"
@@ -649,7 +649,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     cursor: "pointer",
                   }}
                 >
-                  <CalendarDownloadIcon size={14} className="mr-3" /> Guardar no Apple Calendar
+                  <CalendarDownloadIcon size={14} className="mr-3" /> {t("booking.saveAppleCalendar")}
                 </button>
                 <button
                   type="button"
@@ -666,7 +666,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     cursor: "pointer",
                   }}
                 >
-                  Nova Reserva
+                  {t("booking.newBooking")}
                 </button>
                 <button
                   type="button"
@@ -677,7 +677,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   }}
                   className="font-sans text-[10px] text-foreground/20 hover:text-foreground/40 transition-colors mt-2"
                 >
-                  Fechar
+                  {t("booking.close")}
                 </button>
               </div>
             </div>
