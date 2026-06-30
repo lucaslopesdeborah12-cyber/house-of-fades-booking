@@ -17,18 +17,19 @@ import { useShopSchedule, type DaySchedule } from "@/hooks/useShopSchedule";
 import { useShopSettings, type ShopSettings } from "@/hooks/useShopSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { format, addDays, startOfDay } from "date-fns";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const GOLD = "#c9a84c";
 
 // Mon-first display order, mapped to JS getDay() (0=Sun)
-const DAY_ORDER: { dow: number; short: string; full: string }[] = [
-  { dow: 1, short: "Seg", full: "Segunda-feira" },
-  { dow: 2, short: "Ter", full: "Terça-feira" },
-  { dow: 3, short: "Qua", full: "Quarta-feira" },
-  { dow: 4, short: "Qui", full: "Quinta-feira" },
-  { dow: 5, short: "Sex", full: "Sexta-feira" },
-  { dow: 6, short: "Sáb", full: "Sábado" },
-  { dow: 0, short: "Dom", full: "Domingo" },
+const DAY_ORDER: { dow: number; key: string }[] = [
+  { dow: 1, key: "mon" },
+  { dow: 2, key: "tue" },
+  { dow: 3, key: "wed" },
+  { dow: 4, key: "thu" },
+  { dow: 5, key: "fri" },
+  { dow: 6, key: "sat" },
+  { dow: 0, key: "sun" },
 ];
 
 const cardStyle: React.CSSProperties = {
@@ -87,6 +88,7 @@ const ToggleSwitch = ({ on, onChange }: { on: boolean; onChange: (v: boolean) =>
 );
 
 const ShopSettingsPanel = () => {
+  const { t } = useLanguage();
   const { schedule, saveSchedule, loading } = useShopSchedule();
   const { settings, saveSetting } = useShopSettings();
 
@@ -147,7 +149,7 @@ const ShopSettingsPanel = () => {
 
   const applyGlobalBreak = () => {
     if (globalBreak.end <= globalBreak.start) {
-      toast.error("Intervalo global inválido");
+      toast.error(t("shop.invalidGlobal"));
       return;
     }
     setDraft((prev) =>
@@ -162,20 +164,22 @@ const ShopSettingsPanel = () => {
           : d,
       ),
     );
-    toast.success("Intervalo aplicado a todos os dias ✓");
+    toast.success(t("shop.appliedAll"));
   };
 
   const validate = (): string | null => {
     for (const d of draft) {
       if (!d.is_open) continue;
       if (d.close_time <= d.open_time) {
-        const lbl = DAY_ORDER.find((x) => x.dow === d.day_of_week)?.full || "";
-        return `Horário inválido em ${lbl}`;
+        const meta = DAY_ORDER.find((x) => x.dow === d.day_of_week);
+        const lbl = meta ? t(`shop.day.${meta.key}.full`) : "";
+        return t("shop.errInvalidHours").replace("{day}", lbl);
       }
       for (const b of d.breaks) {
         if (b.end <= b.start) {
-          const lbl = DAY_ORDER.find((x) => x.dow === d.day_of_week)?.full || "";
-          return `Intervalo inválido em ${lbl}`;
+          const meta = DAY_ORDER.find((x) => x.dow === d.day_of_week);
+          const lbl = meta ? t(`shop.day.${meta.key}.full`) : "";
+          return t("shop.errInvalidBreak").replace("{day}", lbl);
         }
       }
     }
@@ -202,7 +206,7 @@ const ShopSettingsPanel = () => {
     if (!data) return [];
     const affected = data
       .filter((a) => newlyClosed.includes(new Date(a.appointment_date + "T00:00:00").getDay()))
-      .map((a) => `${a.appointment_date} às ${a.time_slot.slice(0, 5)} — ${a.client_name}`);
+      .map((a) => `${a.appointment_date} ${t("shop.at")} ${a.time_slot.slice(0, 5)} — ${a.client_name}`);
     return affected;
   };
 
@@ -218,10 +222,10 @@ const ShopSettingsPanel = () => {
       if (ownerPhone !== (settings.owner_phone || "")) {
         await saveSetting("owner_phone" as keyof ShopSettings, ownerPhone);
       }
-      toast.success("Horário guardado com sucesso ✓");
+      toast.success(t("shop.saved"));
     } catch (e: any) {
       console.error(e);
-      toast.error("Falha ao guardar horário");
+      toast.error(t("shop.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -245,23 +249,23 @@ const ShopSettingsPanel = () => {
     <div className="p-4" style={cardStyle}>
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        <h3 className="font-serif text-lg font-semibold text-white">Shop Settings</h3>
+        <h3 className="font-serif text-lg font-semibold text-white">{t("shop.title")}</h3>
         <button
           onClick={handleSave}
           disabled={saving || loading}
           className="font-body text-xs font-medium uppercase tracking-wider px-5 py-2.5 transition-opacity disabled:opacity-40"
           style={{ background: GOLD, color: "#111", borderRadius: 8 }}
         >
-          {saving ? "A guardar..." : "Guardar alterações →"}
+          {saving ? t("shop.saving") : t("shop.saveChanges")}
         </button>
       </div>
 
       {/* WEEKLY SCHEDULE */}
-      <p style={sectionLabelStyle}>Horário Semanal</p>
+      <p style={sectionLabelStyle}>{t("shop.weeklySchedule")}</p>
 
       {/* Day pills */}
       <div className="flex flex-wrap gap-2 mb-4">
-        {DAY_ORDER.map(({ dow, short }) => {
+        {DAY_ORDER.map(({ dow, key }) => {
           const day = draft.find((d) => d.day_of_week === dow);
           const on = !!day?.is_open;
           return (
@@ -277,7 +281,7 @@ const ShopSettingsPanel = () => {
                 textDecoration: on ? "none" : "line-through",
               }}
             >
-              {short}
+              {t(`shop.day.${key}.short`)}
             </button>
           );
         })}
@@ -297,13 +301,13 @@ const ShopSettingsPanel = () => {
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="font-body text-sm text-white">{meta.full}</span>
+                  <span className="font-body text-sm text-white">{t(`shop.day.${meta.key}.full`)}</span>
                   {!day.is_open && (
                     <span
                       className="font-body text-[10px] uppercase tracking-wider px-2 py-0.5"
                       style={{ background: "#2a2a2a", color: "#888", borderRadius: 4 }}
                     >
-                      Fechado
+                      {t("shop.closed")}
                     </span>
                   )}
                 </div>
@@ -322,7 +326,7 @@ const ShopSettingsPanel = () => {
                     <div className="grid grid-cols-2 gap-3 mb-4 pt-1">
                       <div>
                         <label className="font-body text-[10px] uppercase tracking-wider text-white/50 block mb-1.5">
-                          Abertura
+                          {t("shop.opening")}
                         </label>
                         <TimeInput
                           value={day.open_time}
@@ -331,7 +335,7 @@ const ShopSettingsPanel = () => {
                       </div>
                       <div>
                         <label className="font-body text-[10px] uppercase tracking-wider text-white/50 block mb-1.5">
-                          Fecho
+                          {t("shop.closing")}
                         </label>
                         <TimeInput
                           value={day.close_time}
@@ -340,10 +344,10 @@ const ShopSettingsPanel = () => {
                       </div>
                     </div>
 
-                    <p style={{ ...sectionLabelStyle, marginBottom: 6 }}>Intervalos</p>
+                    <p style={{ ...sectionLabelStyle, marginBottom: 6 }}>{t("shop.breaks")}</p>
                     <div className="space-y-2">
                       {day.breaks.length === 0 && (
-                        <p className="font-body text-xs text-white/40 italic">Sem intervalos</p>
+                        <p className="font-body text-xs text-white/40 italic">{t("shop.noBreaks")}</p>
                       )}
                       {day.breaks.map((b, i) => (
                         <div key={i} className="flex items-center gap-2">
@@ -360,7 +364,7 @@ const ShopSettingsPanel = () => {
                             onClick={() => removeBreak(day.day_of_week, i)}
                             className="ml-auto font-body text-xs text-white/40 hover:text-[#e24b4a] transition-colors flex items-center gap-1"
                           >
-                            <X className="h-3.5 w-3.5" /> Remover
+                            <X className="h-3.5 w-3.5" /> {t("shop.remove")}
                           </button>
                         </div>
                       ))}
@@ -374,7 +378,7 @@ const ShopSettingsPanel = () => {
                           background: "transparent",
                         }}
                       >
-                        <Plus className="h-3.5 w-3.5" /> Adicionar intervalo
+                        <Plus className="h-3.5 w-3.5" /> {t("shop.addBreak")}
                       </button>
                     </div>
                   </motion.div>
@@ -386,7 +390,7 @@ const ShopSettingsPanel = () => {
       </div>
 
       {/* GLOBAL BREAK */}
-      <p style={sectionLabelStyle}>Intervalo Global (aplicar a todos os dias)</p>
+      <p style={sectionLabelStyle}>{t("shop.globalBreak")}</p>
       <div className="p-4 mb-6" style={cardStyle}>
         <div className="flex flex-wrap items-center gap-2">
           <TimeInput value={globalBreak.start} onChange={(v) => setGlobalBreak((p) => ({ ...p, start: v }))} />
@@ -402,13 +406,13 @@ const ShopSettingsPanel = () => {
               background: "transparent",
             }}
           >
-            Aplicar a todos os dias abertos →
+            {t("shop.applyAllOpen")}
           </button>
         </div>
       </div>
 
       {/* OWNER PHONE */}
-      <p style={sectionLabelStyle}>Telefone do Owner (notificações por chamada)</p>
+      <p style={sectionLabelStyle}>{t("shop.ownerPhone")}</p>
       <div className="p-4" style={cardStyle}>
         <div className="flex items-center gap-2">
           <Phone className="h-4 w-4" style={{ color: GOLD }} />
@@ -428,19 +432,18 @@ const ShopSettingsPanel = () => {
       >
         <AlertDialogContent style={{ background: "#111", borderColor: "#2a2a2a", color: "#fff" }}>
           <AlertDialogHeader>
-            <AlertDialogTitle style={{ color: GOLD }}>Marcações futuras afetadas</AlertDialogTitle>
+            <AlertDialogTitle style={{ color: GOLD }}>{t("shop.confirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription className="text-white/70">
-              Existem {confirmState?.affected.length} marcações futuras nos dias que está a fechar.
-              Estas marcações continuam ativas, mas o cliente não poderá fazer novas marcações nesses dias.
+              {t("shop.confirmDescPrefix")} {confirmState?.affected.length} {t("shop.confirmDescSuffix")}
               <div className="mt-3 max-h-40 overflow-y-auto text-xs space-y-1 text-white/50">
                 {confirmState?.affected.slice(0, 20).map((s, i) => <div key={i}>• {s}</div>)}
-                {(confirmState?.affected.length || 0) > 20 && <div>… e mais</div>}
+                {(confirmState?.affected.length || 0) > 20 && <div>{t("shop.andMore")}</div>}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel style={{ background: "#1a1a1a", borderColor: "#2a2a2a", color: "#fff" }}>
-              Cancelar
+              {t("shop.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
@@ -449,7 +452,7 @@ const ShopSettingsPanel = () => {
               }}
               style={{ background: GOLD, color: "#111" }}
             >
-              Confirmar e guardar
+              {t("shop.confirmSave")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
