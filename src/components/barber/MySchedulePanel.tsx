@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronLeft, ChevronRight, Plus, Trash2, Coffee, Ban, CalendarOff } from "lucide-react";
 import { toast } from "sonner";
 import { useShopSettings, getDayCount, generateTimeSlots } from "@/hooks/useShopSettings";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface Props {
   barberId: string;
@@ -15,6 +16,7 @@ const GOLD = "#c9a84c";
 const RED = "#ff4444";
 
 const MySchedulePanel = ({ barberId }: Props) => {
+  const { t } = useLanguage();
   const { settings, loading: settingsLoading } = useShopSettings();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedDay, setSelectedDay] = useState(0);
@@ -23,7 +25,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
 
   const dayCount = getDayCount(settings.last_working_day);
   const timeSlots = generateTimeSlots(settings.work_start, settings.work_end);
-  const dayNames = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].slice(0, dayCount);
+  const dayNames = [0,1,2,3,4,5,6].map(i => t(`schedule.dayShort${i}`)).slice(0, dayCount);
   const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
   const selectedDate = weekDays[selectedDay] || weekDays[0];
   const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
@@ -60,7 +62,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
 
   const addBreak = async (time: string) => {
     if (occupiedSlots.includes(time)) {
-      toast.error("Este horário já está ocupado");
+      toast.error(t("schedule.toastSlotTaken"));
       return;
     }
 
@@ -71,7 +73,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
 
     if (serviceError || !services?.length) {
       console.error("Failed to load service for break:", serviceError);
-      toast.error("Erro ao adicionar pausa");
+      toast.error(t("schedule.toastFailedAddBreak"));
       return;
     }
 
@@ -91,10 +93,10 @@ const MySchedulePanel = ({ barberId }: Props) => {
     const { error } = await supabase.from("appointments").insert(breakInsert);
     if (error) {
       console.error("Break insert error:", error);
-      toast.error("Erro ao adicionar pausa");
+      toast.error(t("schedule.toastFailedAddBreak"));
       return;
     }
-    toast.success("Pausa adicionada");
+    toast.success(t("schedule.toastBreakAdded"));
     fetchAppointments();
   };
 
@@ -102,17 +104,17 @@ const MySchedulePanel = ({ barberId }: Props) => {
     const startIdx = timeSlots.indexOf(startTime);
     const endIdx = timeSlots.indexOf(endTime);
     if (startIdx < 0 || endIdx < 0 || startIdx >= endIdx) {
-      toast.error("Intervalo inválido");
+      toast.error(t("schedule.toastInvalidRange"));
       return;
     }
     const slotsToBlock = timeSlots.slice(startIdx, endIdx);
-    const available = slotsToBlock.filter(t => !occupiedSlots.includes(t));
-    if (available.length === 0) { toast.error("Todos os slots já estão ocupados"); return; }
+    const available = slotsToBlock.filter(slot => !occupiedSlots.includes(slot));
+    if (available.length === 0) { toast.error(t("schedule.toastAllTaken")); return; }
 
-    const inserts = available.map(t => ({
+    const inserts = available.map(slot => ({
       barber_id: barberId,
       appointment_date: selectedDateStr,
-      time_slot: `${t}:00`,
+      time_slot: `${slot}:00`,
       client_name: "BLOCKED" as const,
       status: "booked" as const,
       client_phone: null,
@@ -121,8 +123,8 @@ const MySchedulePanel = ({ barberId }: Props) => {
     }));
 
     const { error } = await supabase.from("appointments").insert(inserts);
-    if (error) { toast.error("Erro ao bloquear"); return; }
-    toast.success(`${available.length} slots bloqueados`);
+    if (error) { toast.error(t("schedule.toastFailedBlock")); return; }
+    toast.success(t("schedule.toastSlotsBlocked").replace("{n}", String(available.length)));
     fetchAppointments();
   };
 
@@ -133,12 +135,12 @@ const MySchedulePanel = ({ barberId }: Props) => {
       for (const id of dayOffIds) {
         await supabase.from("appointments").delete().eq("id", id);
       }
-      toast.success("Dia de folga removido");
+      toast.success(t("schedule.toastDayOffRemoved"));
     } else {
       // Check for client bookings
       const clientBookings = dayAppointments.filter(a => !["BREAK", "BLOCKED", "DAYOFF"].includes(a.client_name));
       if (clientBookings.length > 0) {
-        toast.error("Existem agendamentos de clientes neste dia. Cancele-os primeiro.");
+        toast.error(t("schedule.toastHasBookings"));
         return;
       }
       // Remove existing breaks/blocks
@@ -157,15 +159,15 @@ const MySchedulePanel = ({ barberId }: Props) => {
         client_email: null,
         service_id: null,
       });
-      if (error) { toast.error("Erro ao marcar folga"); return; }
-      toast.success("Dia marcado como folga");
+      if (error) { toast.error(t("schedule.toastFailedDayOff")); return; }
+      toast.success(t("schedule.toastDayOffMarked"));
     }
     fetchAppointments();
   };
 
   const removeSlot = async (id: string) => {
     await supabase.from("appointments").delete().eq("id", id);
-    toast.success("Removido");
+    toast.success(t("schedule.toastRemoved"));
     fetchAppointments();
   };
 
@@ -174,7 +176,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
   const [blockEnd, setBlockEnd] = useState("");
 
   if (settingsLoading || loading) {
-    return <p className="text-muted-foreground font-body p-4">A carregar…</p>;
+    return <p className="text-muted-foreground font-body p-4">{t("schedule.loading")}</p>;
   }
 
   return (
@@ -221,7 +223,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
 
       {isPastDay ? (
         <div className="text-center py-8 text-muted-foreground/60 font-body text-sm">
-          Não é possível editar dias passados.
+          {t("schedule.cannotEditPast")}
         </div>
       ) : (
         <div className="space-y-4">
@@ -230,7 +232,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CalendarOff size={16} style={{ color: isDayOff ? RED : undefined }} />
-                <span className="font-body text-sm font-medium">Dia de Folga</span>
+                <span className="font-body text-sm font-medium">{t("schedule.dayOff")}</span>
               </div>
               <Button
                 size="sm"
@@ -239,7 +241,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
                 className="font-body text-xs"
                 style={isDayOff ? { background: RED } : {}}
               >
-                {isDayOff ? "Remover Folga" : "Marcar Folga"}
+                {isDayOff ? t("schedule.removeDayOff") : t("schedule.markDayOff")}
               </Button>
             </div>
           </div>
@@ -251,7 +253,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Coffee size={16} style={{ color: GOLD }} />
-                    <span className="font-body text-sm font-medium" style={{ color: GOLD }}>Pausas</span>
+                    <span className="font-body text-sm font-medium" style={{ color: GOLD }}>{t("schedule.breaks")}</span>
                   </div>
                 </div>
 
@@ -272,7 +274,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
                   <div className="flex items-center gap-2">
                     <Select onValueChange={(v) => addBreak(v)}>
                       <SelectTrigger className="flex-1 bg-background border-border text-foreground font-body text-sm h-9">
-                        <SelectValue placeholder="Adicionar pausa..." />
+                        <SelectValue placeholder={t("schedule.addBreakPlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
                         {freeSlots.map(t => (
@@ -289,7 +291,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Ban size={16} style={{ color: RED }} />
-                    <span className="font-body text-sm font-medium" style={{ color: RED }}>Bloquear Intervalo</span>
+                    <span className="font-body text-sm font-medium" style={{ color: RED }}>{t("schedule.blockInterval")}</span>
                   </div>
                 </div>
 
@@ -297,7 +299,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
                   <div className="space-y-1">
                     {blocks.map(b => (
                       <div key={b.id} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: "rgba(255,68,68,0.1)", border: "1px solid rgba(255,68,68,0.2)" }}>
-                        <span className="font-body text-sm" style={{ color: RED }}>{b.time_slot.slice(0, 5)} — Bloqueado</span>
+                        <span className="font-body text-sm" style={{ color: RED }}>{b.time_slot.slice(0, 5)} — {t("schedule.blockedSuffix")}</span>
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => removeSlot(b.id)}>
                           <Trash2 size={14} style={{ color: RED }} />
                         </Button>
@@ -309,22 +311,22 @@ const MySchedulePanel = ({ barberId }: Props) => {
                 <div className="flex items-center gap-2">
                   <Select value={blockStart} onValueChange={setBlockStart}>
                     <SelectTrigger className="flex-1 bg-background border-border text-foreground font-body text-sm h-9">
-                      <SelectValue placeholder="De" />
+                      <SelectValue placeholder={t("schedule.from")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {timeSlots.map(t => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      {timeSlots.map(slot => (
+                        <SelectItem key={slot} value={slot}>{slot}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <span className="text-muted-foreground text-sm">→</span>
                   <Select value={blockEnd} onValueChange={setBlockEnd}>
                     <SelectTrigger className="flex-1 bg-background border-border text-foreground font-body text-sm h-9">
-                      <SelectValue placeholder="Até" />
+                      <SelectValue placeholder={t("schedule.to")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {timeSlots.filter(t => t > blockStart).map(t => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      {timeSlots.filter(slot => slot > blockStart).map(slot => (
+                        <SelectItem key={slot} value={slot}>{slot}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -346,19 +348,19 @@ const MySchedulePanel = ({ barberId }: Props) => {
 
               {/* Day summary */}
               <div className="bg-card border border-border rounded-xl p-3">
-                <p className="font-body text-xs text-muted-foreground mb-2">Resumo do dia</p>
+                <p className="font-body text-xs text-muted-foreground mb-2">{t("schedule.daySummary")}</p>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="rounded-lg py-2" style={{ background: "rgba(201,168,76,0.1)" }}>
                     <p className="text-lg font-bold font-body" style={{ color: GOLD }}>{breaks.length}</p>
-                    <p className="text-[10px] font-body text-muted-foreground">Pausas</p>
+                    <p className="text-[10px] font-body text-muted-foreground">{t("schedule.breaks")}</p>
                   </div>
                   <div className="rounded-lg py-2" style={{ background: "rgba(255,68,68,0.1)" }}>
                     <p className="text-lg font-bold font-body" style={{ color: RED }}>{blocks.length}</p>
-                    <p className="text-[10px] font-body text-muted-foreground">Bloqueados</p>
+                    <p className="text-[10px] font-body text-muted-foreground">{t("schedule.countBlocked")}</p>
                   </div>
                   <div className="rounded-lg py-2 bg-muted/20">
                     <p className="text-lg font-bold font-body text-green-500">{freeSlots.length}</p>
-                    <p className="text-[10px] font-body text-muted-foreground">Livres</p>
+                    <p className="text-[10px] font-body text-muted-foreground">{t("schedule.countFree")}</p>
                   </div>
                 </div>
               </div>

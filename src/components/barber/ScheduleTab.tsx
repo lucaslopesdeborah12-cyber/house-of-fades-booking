@@ -31,19 +31,20 @@ import { toast } from "sonner";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
 import { useShopSettings, getDayCount, generateTimeSlots } from "@/hooks/useShopSettings";
 import MySchedulePanel from "@/components/barber/MySchedulePanel";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type Appointment = Tables<"appointments"> & {
   services: { name: string; price: number } | null;
   barbers: { name: string } | null;
 };
 
-const DAY_NAMES_ALL = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 const GOLD = "#c9a84c";
 const RED = "#ff4444";
 
 type ModalType = "booked" | "free" | "break" | "blocked" | "move" | "block-range" | null;
 
 const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; activeTab?: string; refreshToken?: number }) => {
+  const { t } = useLanguage();
   const [viewMode, setViewMode] = useState<"appointments" | "schedule">("appointments");
   const { settings, loading: settingsLoading, refetch: refetchSettings } = useShopSettings();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -63,7 +64,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
   const dayCount = getDayCount(settings.last_working_day);
   const timeSlots = generateTimeSlots(settings.work_start, settings.work_end);
-  const dayNames = DAY_NAMES_ALL.slice(0, dayCount);
+  const dayNames = [0,1,2,3,4,5,6].map(i => t(`schedule.dayShort${i}`)).slice(0, dayCount);
   const defaultBreakTime = settings.default_break_time;
   const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
   const selectedDate = weekDays[selectedDay] || weekDays[0];
@@ -100,7 +101,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
       .in("status", ["booked", "confirmed"])
       .order("appointment_date")
       .order("time_slot");
-    if (error) toast.error("Failed to load schedule");
+    if (error) toast.error(t("schedule.toastFailedLoad"));
     else setAppointments((data || []) as Appointment[]);
     setLoading(false);
   }, [barberId, weekStart, dayCount]);
@@ -135,7 +136,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
     if (serviceError || !services?.length) {
       console.error("Failed to load service for break:", serviceError);
-      toast.error("Failed to create break");
+      toast.error(t("schedule.toastFailedBreak"));
       return false;
     }
 
@@ -155,7 +156,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
     const { error } = await supabase.from("appointments").insert(breakInsert);
     if (error) {
       console.error("Default break insert error:", error);
-      toast.error("Failed to create break");
+      toast.error(t("schedule.toastFailedBreak"));
       return false;
     }
     return true;
@@ -190,15 +191,23 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
   const updateStatus = async (id: string, status: "completed" | "no-show" | "cancelled", appt?: Appointment) => {
     if (status === "cancelled" && appt && !canCancel(appt)) {
-      toast.error("Cannot cancel within 2 hours of appointment.");
+      toast.error(t("schedule.toastCannotCancel2h"));
       return;
     }
     const query = status === "cancelled"
       ? supabase.from("appointments").delete().eq("id", id)
       : supabase.from("appointments").update({ status }).eq("id", id);
     const { error } = await query;
-    if (error) { toast.error("Failed to update"); return; }
-    toast.success(status === "cancelled" ? "Agendamento cancelado" : `Marcado como ${status}`);
+    if (error) { toast.error(t("schedule.toastFailedUpdate")); return; }
+    toast.success(
+      status === "cancelled"
+        ? t("schedule.toastCancelled")
+        : status === "completed"
+          ? t("schedule.toastCompleted")
+          : status === "no-show"
+            ? t("schedule.toastNoShow")
+            : t("schedule.toastMarkedAs").replace("{status}", status)
+    );
     await fetchAppointments();
     if (status === "cancelled" && appt) {
       notifyWaitingList(appt.barber_id, appt.appointment_date, appt.time_slot.slice(0, 5), appt.barbers?.name || "");
@@ -207,7 +216,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
   const addBreakAt = async (time: string) => {
     if (occupiedSlots.includes(time)) {
-      toast.error("Este horário já está ocupado");
+      toast.error(t("schedule.toastSlotTaken"));
       return;
     }
 
@@ -218,7 +227,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
     if (serviceError || !services?.length) {
       console.error("Failed to load service for break:", serviceError);
-      toast.error("Erro ao adicionar pausa");
+      toast.error(t("schedule.toastFailedAddBreak"));
       return;
     }
 
@@ -238,57 +247,57 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
     const { error } = await supabase.from("appointments").insert(breakInsert);
     if (error) {
       console.error("Break insert error:", error);
-      toast.error("Erro ao adicionar pausa");
+      toast.error(t("schedule.toastFailedAddBreak"));
       return;
     }
-    toast.success("Pausa adicionada");
+    toast.success(t("schedule.toastBreakAdded"));
     fetchAppointments();
   };
 
   const addBlockAt = async (time: string) => {
     // Check if slot is already occupied
     if (occupiedSlots.includes(time)) {
-      toast.error("Este horário já está ocupado");
+      toast.error(t("schedule.toastSlotTaken"));
       return;
     }
     const { error } = await supabase.from("appointments").insert({
       barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${time}:00`,
       client_name: "BLOCKED", status: "booked", client_phone: null, client_email: null, service_id: null,
     });
-    if (error) { toast.error("Erro ao bloquear"); return; }
-    toast.success("Horário bloqueado");
+    if (error) { toast.error(t("schedule.toastFailedBlock")); return; }
+    toast.success(t("schedule.toastSlotBlocked"));
     fetchAppointments();
   };
 
   const addBlockRange = async (start: string, end: string) => {
     const si = timeSlots.indexOf(start);
     const ei = timeSlots.indexOf(end);
-    if (si < 0 || ei < 0 || si >= ei) { toast.error("Intervalo inválido"); return; }
-    const slotsToBlock = timeSlots.slice(si, ei).filter(t => !occupiedSlots.includes(t));
-    if (slotsToBlock.length === 0) { toast.error("Todos os slots já estão ocupados"); return; }
-    const inserts = slotsToBlock.map(t => ({
-      barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${t}:00`,
+    if (si < 0 || ei < 0 || si >= ei) { toast.error(t("schedule.toastInvalidRange")); return; }
+    const slotsToBlock = timeSlots.slice(si, ei).filter(slot => !occupiedSlots.includes(slot));
+    if (slotsToBlock.length === 0) { toast.error(t("schedule.toastAllTaken")); return; }
+    const inserts = slotsToBlock.map(slot => ({
+      barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${slot}:00`,
       client_name: "BLOCKED" as const, status: "booked" as const, client_phone: null, client_email: null, service_id: null,
     }));
     const { error } = await supabase.from("appointments").insert(inserts);
-    if (error) { toast.error("Erro ao bloquear"); return; }
-    toast.success(`${slotsToBlock.length} slots bloqueados`);
+    if (error) { toast.error(t("schedule.toastFailedBlock")); return; }
+    toast.success(t("schedule.toastSlotsBlocked").replace("{n}", String(slotsToBlock.length)));
     fetchAppointments();
   };
 
   const removeSlot = async (id: string) => {
     await supabase.from("appointments").delete().eq("id", id);
-    toast.success("Removido");
+    toast.success(t("schedule.toastRemoved"));
     fetchAppointments();
   };
 
   const moveAppointment = async (apptId: string, newTime: string) => {
     // Check if new slot is free
     const conflict = appointments.find(a => a.appointment_date === selectedDateStr && a.time_slot.slice(0, 5) === newTime);
-    if (conflict) { toast.error("Horário já ocupado"); return; }
+    if (conflict) { toast.error(t("schedule.toastSlotTaken")); return; }
     const { error } = await supabase.from("appointments").update({ time_slot: `${newTime}:00` }).eq("id", apptId);
-    if (error) { toast.error("Erro ao mover"); return; }
-    toast.success("Agendamento movido");
+    if (error) { toast.error(t("schedule.toastFailedUpdate")); return; }
+    toast.success(t("schedule.toastMoved"));
     fetchAppointments();
   };
 
@@ -296,18 +305,18 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
     if (isDayOff) {
       const dayOffIds = dayAppointments.filter(a => a.client_name === "DAYOFF").map(a => a.id);
       for (const id of dayOffIds) await supabase.from("appointments").delete().eq("id", id);
-      toast.success("Dia de folga removido");
+      toast.success(t("schedule.toastDayOffRemoved"));
     } else {
       const clientBookings = dayAppointments.filter(a => !["BREAK", "BLOCKED", "DAYOFF"].includes(a.client_name));
-      if (clientBookings.length > 0) { toast.error("Existem agendamentos de clientes neste dia. Cancele-os primeiro."); return; }
+      if (clientBookings.length > 0) { toast.error(t("schedule.toastHasBookings")); return; }
       const toRemove = dayAppointments.filter(a => ["BREAK", "BLOCKED"].includes(a.client_name));
       for (const a of toRemove) await supabase.from("appointments").delete().eq("id", a.id);
       const { error } = await supabase.from("appointments").insert({
         barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${settings.work_start}:00`,
         client_name: "DAYOFF", status: "booked", client_phone: null, client_email: null, service_id: null,
       });
-      if (error) { toast.error("Erro ao marcar folga"); return; }
-      toast.success("Dia marcado como folga");
+      if (error) { toast.error(t("schedule.toastFailedDayOff")); return; }
+      toast.success(t("schedule.toastDayOffMarked"));
     }
     fetchAppointments();
   };
@@ -344,7 +353,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
   const isPastDay = isBefore(startOfDay(selectedDate), startOfDay(new Date()));
 
   if (loading || settingsLoading) {
-    return <p className="text-muted-foreground font-body p-4">Loading…</p>;
+    return <p className="text-muted-foreground font-body p-4">{t("schedule.loading")}</p>;
   }
 
   return (
@@ -357,7 +366,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
             viewMode === "appointments" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <CalendarDays size={15} /> Agenda
+          <CalendarDays size={15} /> {t("schedule.agenda")}
         </button>
         <button
           onClick={() => setViewMode("schedule")}
@@ -365,7 +374,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
             viewMode === "schedule" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Clock size={15} /> Meu Horário
+          <Clock size={15} /> {t("schedule.mine")}
         </button>
       </div>
 
@@ -409,10 +418,10 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
           {isDayOff && (
             <div className="rounded-xl p-4 text-center space-y-2" style={{ background: "rgba(255,68,68,0.1)", border: "1px solid rgba(255,68,68,0.3)" }}>
               <CalendarOff size={24} className="mx-auto" style={{ color: RED }} />
-              <p className="font-body text-sm font-medium" style={{ color: RED }}>Dia de Folga</p>
+              <p className="font-body text-sm font-medium" style={{ color: RED }}>{t("schedule.dayOff")}</p>
               {!isPastDay && (
                 <Button size="sm" className="font-body text-xs" style={{ background: RED, color: "#fff" }} onClick={toggleDayOff}>
-                  Remover Folga
+                  {t("schedule.removeDayOff")}
                 </Button>
               )}
             </div>
@@ -449,7 +458,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                         }`}
                       >
                         <Coffee size={14} />
-                        <span className="text-xs font-body font-medium">BREAK</span>
+                        <span className="text-xs font-body font-medium">{t("schedule.labelBreak")}</span>
                       </button>
                     </div>
                   );
@@ -468,7 +477,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                         style={{ background: "rgba(255,68,68,0.15)", border: "1px solid rgba(255,68,68,0.3)", color: RED }}
                       >
                         <Ban size={14} />
-                        <span className="text-xs font-body font-medium">BLOQUEADO</span>
+                        <span className="text-xs font-body font-medium">{t("schedule.labelBlocked")}</span>
                       </button>
                     </div>
                   );
@@ -501,7 +510,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                       onClick={() => handleSlotClick(time)}
                       className="flex-1 h-10 rounded-xl border border-dashed border-border/60 bg-card/50 flex items-center justify-center text-muted-foreground/60 hover:border-primary/40 hover:text-primary/60 transition-colors"
                     >
-                      <span className="text-xs font-body">livre</span>
+                      <span className="text-xs font-body">{t("schedule.free")}</span>
                     </button>
                   </div>
                 );
@@ -519,7 +528,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                 style={{ borderColor: GOLD, color: GOLD }}
                 onClick={() => { setBlockStart(""); setBlockEnd(""); setModalType("free"); setModalTime(""); }}
               >
-                <Plus size={14} /> Break
+                <Plus size={14} /> {t("schedule.break")}
               </Button>
               <Button
                 size="sm"
@@ -528,7 +537,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                 style={{ borderColor: RED, color: RED }}
                 onClick={() => { setBlockStart(""); setBlockEnd(""); setModalType("block-range"); }}
               >
-                <Ban size={14} /> Bloquear
+                <Ban size={14} /> {t("schedule.block")}
               </Button>
               <Button
                 size="sm"
@@ -536,7 +545,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                 style={{ background: RED, color: "#fff" }}
                 onClick={toggleDayOff}
               >
-                <CalendarOff size={14} /> OFF
+                <CalendarOff size={14} /> {t("schedule.off")}
               </Button>
             </div>
           )}
@@ -582,14 +591,14 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                       style={{ background: GOLD, color: "#111" }}
                       onClick={() => { setModalType("move"); setMoveTarget(""); }}
                     >
-                      <ArrowRight size={16} /> Mover agendamento
+                      <ArrowRight size={16} /> {t("schedule.moveAppointment")}
                     </Button>
                     <Button
                       className="w-full font-body text-sm gap-2"
                       variant="outline"
                       onClick={() => { updateStatus(modalAppt.id, "completed"); closeModal(); }}
                     >
-                      <Check size={16} /> Marcar como concluído
+                      <Check size={16} /> {t("schedule.markCompleted")}
                     </Button>
                     {canCancel(modalAppt) && (
                       <Button
@@ -600,7 +609,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                           closeModal();
                         }}
                       >
-                        <Trash2 size={16} /> Cancelar agendamento
+                        <Trash2 size={16} /> {t("schedule.cancelAppointment")}
                       </Button>
                     )}
                   </div>
@@ -615,11 +624,11 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
               {modalAppt && (
                 <div className="space-y-4 pb-4">
                   <SheetHeader>
-                    <SheetTitle className="font-body text-foreground text-left">Mover para novo horário</SheetTitle>
+                    <SheetTitle className="font-body text-foreground text-left">{t("schedule.moveTitle")}</SheetTitle>
                   </SheetHeader>
                   <Select value={moveTarget} onValueChange={setMoveTarget}>
                     <SelectTrigger className="bg-background border-border text-foreground font-body">
-                      <SelectValue placeholder="Escolher horário..." />
+                      <SelectValue placeholder={t("schedule.choosePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {freeSlots.map(t => (
@@ -636,7 +645,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                       closeModal();
                     }}
                   >
-                    Confirmar
+                    {t("schedule.confirm")}
                   </Button>
                 </div>
               )}
@@ -649,7 +658,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
               <div className="space-y-4 pb-4">
                 <SheetHeader>
                   <SheetTitle className="font-body text-foreground text-left">
-                    {modalTime ? `Slot ${modalTime}` : "Adicionar Pausa"}
+                    {modalTime ? `${t("schedule.slotPrefix")} ${modalTime}` : t("schedule.addBreak")}
                   </SheetTitle>
                 </SheetHeader>
 
@@ -660,14 +669,14 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                       style={{ background: GOLD, color: "#111" }}
                       onClick={async () => { await addBreakAt(modalTime); closeModal(); }}
                     >
-                      <Coffee size={16} /> Adicionar break aqui
+                      <Coffee size={16} /> {t("schedule.addBreakHere")}
                     </Button>
                     <Button
                       className="w-full font-body text-sm gap-2"
                       style={{ background: RED, color: "#fff" }}
                       onClick={async () => { await addBlockAt(modalTime); closeModal(); }}
                     >
-                      <Ban size={16} /> Bloquear este horário
+                      <Ban size={16} /> {t("schedule.blockThisSlot")}
                     </Button>
                   </div>
                 ) : (
@@ -675,7 +684,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                   <div className="space-y-3">
                     <Select onValueChange={async (v) => { await addBreakAt(v); closeModal(); }}>
                       <SelectTrigger className="bg-background border-border text-foreground font-body">
-                        <SelectValue placeholder="Escolher horário para pausa..." />
+                        <SelectValue placeholder={t("schedule.choosePauseTime")} />
                       </SelectTrigger>
                       <SelectContent>
                         {freeSlots.map(t => (
@@ -696,7 +705,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                 <div className="space-y-4 pb-4">
                   <SheetHeader>
                     <SheetTitle className="font-body text-left" style={{ color: GOLD }}>
-                      <div className="flex items-center gap-2"><Coffee size={18} /> Pausa — {modalAppt.time_slot.slice(0, 5)}</div>
+                      <div className="flex items-center gap-2"><Coffee size={18} /> {t("schedule.breakAt")} — {modalAppt.time_slot.slice(0, 5)}</div>
                     </SheetTitle>
                   </SheetHeader>
                   <Button
@@ -704,7 +713,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                     style={{ background: RED, color: "#fff" }}
                     onClick={async () => { await removeSlot(modalAppt.id); closeModal(); }}
                   >
-                    <Trash2 size={16} /> Remover pausa
+                    <Trash2 size={16} /> {t("schedule.removeBreak")}
                   </Button>
                 </div>
               )}
@@ -718,7 +727,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                 <div className="space-y-4 pb-4">
                   <SheetHeader>
                     <SheetTitle className="font-body text-left" style={{ color: RED }}>
-                      <div className="flex items-center gap-2"><Ban size={18} /> Bloqueado — {modalAppt.time_slot.slice(0, 5)}</div>
+                      <div className="flex items-center gap-2"><Ban size={18} /> {t("schedule.blockedAt")} — {modalAppt.time_slot.slice(0, 5)}</div>
                     </SheetTitle>
                   </SheetHeader>
                   <Button
@@ -726,7 +735,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                     style={{ background: GOLD, color: "#111" }}
                     onClick={async () => { await removeSlot(modalAppt.id); closeModal(); }}
                   >
-                    <Check size={16} /> Desbloquear horário
+                    <Check size={16} /> {t("schedule.unblockSlot")}
                   </Button>
                 </div>
               )}
@@ -739,25 +748,25 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
               <div className="space-y-4 pb-4">
                 <SheetHeader>
                   <SheetTitle className="font-body text-left" style={{ color: RED }}>
-                    <div className="flex items-center gap-2"><Ban size={18} /> Bloquear intervalo</div>
+                    <div className="flex items-center gap-2"><Ban size={18} /> {t("schedule.blockRange")}</div>
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex items-center gap-2">
                   <Select value={blockStart} onValueChange={setBlockStart}>
                     <SelectTrigger className="flex-1 bg-background border-border text-foreground font-body text-sm">
-                      <SelectValue placeholder="De" />
+                      <SelectValue placeholder={t("schedule.from")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      {timeSlots.map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <span className="text-muted-foreground text-sm">→</span>
                   <Select value={blockEnd} onValueChange={setBlockEnd}>
                     <SelectTrigger className="flex-1 bg-background border-border text-foreground font-body text-sm">
-                      <SelectValue placeholder="Até" />
+                      <SelectValue placeholder={t("schedule.to")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {timeSlots.filter(t => t > blockStart).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      {timeSlots.filter(slot => slot > blockStart).map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -770,7 +779,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                     closeModal();
                   }}
                 >
-                  Bloquear
+                  {t("schedule.block")}
                 </Button>
               </div>
             </SheetContent>
@@ -780,19 +789,19 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
           <AlertDialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle className="font-serif">Cancelar agendamento?</AlertDialogTitle>
+                <AlertDialogTitle className="font-serif">{t("schedule.cancelTitle")}</AlertDialogTitle>
                 <AlertDialogDescription className="font-body">
-                  Tens a certeza que queres cancelar o agendamento de{" "}
+                  {t("schedule.cancelDescPrefix")}{" "}
                   <span className="font-semibold text-foreground">{cancelTarget?.client_name}</span>?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="font-body">Não</AlertDialogCancel>
+                <AlertDialogCancel className="font-body">{t("staff.no")}</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-body"
                   onClick={() => { if (cancelTarget) { updateStatus(cancelTarget.id, "cancelled", cancelTarget); setCancelTarget(null); } }}
                 >
-                  Sim, cancelar
+                  {t("staff.yesCancel")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
