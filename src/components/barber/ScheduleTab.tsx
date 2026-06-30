@@ -458,7 +458,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                         }`}
                       >
                         <Coffee size={14} />
-                        <span className="text-xs font-body font-medium">BREAK</span>
+                        <span className="text-xs font-body font-medium">{t("schedule.labelBreak")}</span>
                       </button>
                     </div>
                   );
@@ -477,7 +477,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                         style={{ background: "rgba(255,68,68,0.15)", border: "1px solid rgba(255,68,68,0.3)", color: RED }}
                       >
                         <Ban size={14} />
-                        <span className="text-xs font-body font-medium">BLOQUEADO</span>
+                        <span className="text-xs font-body font-medium">{t("schedule.labelBlocked")}</span>
                       </button>
                     </div>
                   );
@@ -510,7 +510,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                       onClick={() => handleSlotClick(time)}
                       className="flex-1 h-10 rounded-xl border border-dashed border-border/60 bg-card/50 flex items-center justify-center text-muted-foreground/60 hover:border-primary/40 hover:text-primary/60 transition-colors"
                     >
-                      <span className="text-xs font-body">livre</span>
+                      <span className="text-xs font-body">{t("schedule.free")}</span>
                     </button>
                   </div>
                 );
@@ -528,7 +528,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                 style={{ borderColor: GOLD, color: GOLD }}
                 onClick={() => { setBlockStart(""); setBlockEnd(""); setModalType("free"); setModalTime(""); }}
               >
-                <Plus size={14} /> Break
+                <Plus size={14} /> {t("schedule.break")}
               </Button>
               <Button
                 size="sm"
@@ -537,7 +537,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                 style={{ borderColor: RED, color: RED }}
                 onClick={() => { setBlockStart(""); setBlockEnd(""); setModalType("block-range"); }}
               >
-                <Ban size={14} /> Bloquear
+                <Ban size={14} /> {t("schedule.block")}
               </Button>
               <Button
                 size="sm"
@@ -545,7 +545,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                 style={{ background: RED, color: "#fff" }}
                 onClick={toggleDayOff}
               >
-                <CalendarOff size={14} /> OFF
+                <CalendarOff size={14} /> {t("schedule.off")}
               </Button>
             </div>
           )}
