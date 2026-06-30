@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export type Country = {
   code: string;
@@ -227,6 +228,7 @@ interface Props {
 const CountryCodeSelector = ({ selected, onSelect }: Props) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const { t } = useLanguage();
 
   const filtered = useMemo(() => {
     if (!search.trim()) return COUNTRIES;
@@ -282,7 +284,7 @@ const CountryCodeSelector = ({ selected, onSelect }: Props) => {
           <div style={{ padding: 10, borderBottom: "1px solid #2e2e2e" }}>
             <input
               autoFocus
-              placeholder="Pesquisar país..."
+              placeholder={t("common.searchCountry")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
