@@ -108,13 +108,13 @@ const MySchedulePanel = ({ barberId }: Props) => {
       return;
     }
     const slotsToBlock = timeSlots.slice(startIdx, endIdx);
-    const available = slotsToBlock.filter(t => !occupiedSlots.includes(t));
-    if (available.length === 0) { toast.error(t2("schedule.toastAllTaken")); return; }
+    const available = slotsToBlock.filter(slot => !occupiedSlots.includes(slot));
+    if (available.length === 0) { toast.error(t("schedule.toastAllTaken")); return; }
 
-    const inserts = available.map(t => ({
+    const inserts = available.map(slot => ({
       barber_id: barberId,
       appointment_date: selectedDateStr,
-      time_slot: `${t}:00`,
+      time_slot: `${slot}:00`,
       client_name: "BLOCKED" as const,
       status: "booked" as const,
       client_phone: null,
@@ -123,8 +123,8 @@ const MySchedulePanel = ({ barberId }: Props) => {
     }));
 
     const { error } = await supabase.from("appointments").insert(inserts);
-    if (error) { toast.error(t2("schedule.toastFailedBlock")); return; }
-    toast.success(t2("schedule.toastSlotsBlocked").replace("{n}", String(available.length)));
+    if (error) { toast.error(t("schedule.toastFailedBlock")); return; }
+    toast.success(t("schedule.toastSlotsBlocked").replace("{n}", String(available.length)));
     fetchAppointments();
   };
 
