@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const BarberLogin = () => {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,11 +31,11 @@ const BarberLogin = () => {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="font-serif text-3xl font-bold mb-2">House</h1>
-          <p className="text-muted-foreground font-body text-sm">Barber Portal</p>
+          <p className="text-muted-foreground font-body text-sm">{t("staff.barberPortal")}</p>
         </div>
         <form onSubmit={handleLogin} className="bg-card border border-border rounded-lg p-6 space-y-4">
           <div>
-            <Label htmlFor="email" className="text-foreground font-body text-sm">Email</Label>
+            <Label htmlFor="email" className="text-foreground font-body text-sm">{t("staff.email")}</Label>
             <Input
               id="email"
               type="email"
@@ -45,7 +47,7 @@ const BarberLogin = () => {
             />
           </div>
           <div>
-            <Label htmlFor="password" className="text-foreground font-body text-sm">Password</Label>
+            <Label htmlFor="password" className="text-foreground font-body text-sm">{t("staff.password")}</Label>
             <Input
               id="password"
               type="password"
@@ -61,7 +63,7 @@ const BarberLogin = () => {
             disabled={loading}
             className="w-full bg-primary text-primary-foreground hover:bg-primary/80"
           >
-            {loading ? "Signing in…" : "Sign In"}
+            {loading ? t("staff.signingIn") : t("staff.signIn")}
           </Button>
         </form>
       </div>
