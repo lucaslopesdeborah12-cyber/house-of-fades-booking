@@ -216,7 +216,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
   const addBreakAt = async (time: string) => {
     if (occupiedSlots.includes(time)) {
-      toast.error("Este horário já está ocupado");
+      toast.error(t("schedule.toastSlotTaken"));
       return;
     }
 
@@ -227,7 +227,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
 
     if (serviceError || !services?.length) {
       console.error("Failed to load service for break:", serviceError);
-      toast.error("Erro ao adicionar pausa");
+      toast.error(t("schedule.toastFailedAddBreak"));
       return;
     }
 
@@ -247,57 +247,57 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
     const { error } = await supabase.from("appointments").insert(breakInsert);
     if (error) {
       console.error("Break insert error:", error);
-      toast.error("Erro ao adicionar pausa");
+      toast.error(t("schedule.toastFailedAddBreak"));
       return;
     }
-    toast.success("Pausa adicionada");
+    toast.success(t("schedule.toastBreakAdded"));
     fetchAppointments();
   };
 
   const addBlockAt = async (time: string) => {
     // Check if slot is already occupied
     if (occupiedSlots.includes(time)) {
-      toast.error("Este horário já está ocupado");
+      toast.error(t("schedule.toastSlotTaken"));
       return;
     }
     const { error } = await supabase.from("appointments").insert({
       barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${time}:00`,
       client_name: "BLOCKED", status: "booked", client_phone: null, client_email: null, service_id: null,
     });
-    if (error) { toast.error("Erro ao bloquear"); return; }
-    toast.success("Horário bloqueado");
+    if (error) { toast.error(t("schedule.toastFailedBlock")); return; }
+    toast.success(t("schedule.toastSlotBlocked"));
     fetchAppointments();
   };
 
   const addBlockRange = async (start: string, end: string) => {
     const si = timeSlots.indexOf(start);
     const ei = timeSlots.indexOf(end);
-    if (si < 0 || ei < 0 || si >= ei) { toast.error("Intervalo inválido"); return; }
-    const slotsToBlock = timeSlots.slice(si, ei).filter(t => !occupiedSlots.includes(t));
-    if (slotsToBlock.length === 0) { toast.error("Todos os slots já estão ocupados"); return; }
-    const inserts = slotsToBlock.map(t => ({
-      barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${t}:00`,
+    if (si < 0 || ei < 0 || si >= ei) { toast.error(t("schedule.toastInvalidRange")); return; }
+    const slotsToBlock = timeSlots.slice(si, ei).filter(slot => !occupiedSlots.includes(slot));
+    if (slotsToBlock.length === 0) { toast.error(t("schedule.toastAllTaken")); return; }
+    const inserts = slotsToBlock.map(slot => ({
+      barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${slot}:00`,
       client_name: "BLOCKED" as const, status: "booked" as const, client_phone: null, client_email: null, service_id: null,
     }));
     const { error } = await supabase.from("appointments").insert(inserts);
-    if (error) { toast.error("Erro ao bloquear"); return; }
-    toast.success(`${slotsToBlock.length} slots bloqueados`);
+    if (error) { toast.error(t("schedule.toastFailedBlock")); return; }
+    toast.success(t("schedule.toastSlotsBlocked").replace("{n}", String(slotsToBlock.length)));
     fetchAppointments();
   };
 
   const removeSlot = async (id: string) => {
     await supabase.from("appointments").delete().eq("id", id);
-    toast.success("Removido");
+    toast.success(t("schedule.toastRemoved"));
     fetchAppointments();
   };
 
   const moveAppointment = async (apptId: string, newTime: string) => {
     // Check if new slot is free
     const conflict = appointments.find(a => a.appointment_date === selectedDateStr && a.time_slot.slice(0, 5) === newTime);
-    if (conflict) { toast.error("Horário já ocupado"); return; }
+    if (conflict) { toast.error(t("schedule.toastSlotTaken")); return; }
     const { error } = await supabase.from("appointments").update({ time_slot: `${newTime}:00` }).eq("id", apptId);
-    if (error) { toast.error("Erro ao mover"); return; }
-    toast.success("Agendamento movido");
+    if (error) { toast.error(t("schedule.toastFailedUpdate")); return; }
+    toast.success(t("schedule.toastMoved"));
     fetchAppointments();
   };
 
@@ -305,18 +305,18 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
     if (isDayOff) {
       const dayOffIds = dayAppointments.filter(a => a.client_name === "DAYOFF").map(a => a.id);
       for (const id of dayOffIds) await supabase.from("appointments").delete().eq("id", id);
-      toast.success("Dia de folga removido");
+      toast.success(t("schedule.toastDayOffRemoved"));
     } else {
       const clientBookings = dayAppointments.filter(a => !["BREAK", "BLOCKED", "DAYOFF"].includes(a.client_name));
-      if (clientBookings.length > 0) { toast.error("Existem agendamentos de clientes neste dia. Cancele-os primeiro."); return; }
+      if (clientBookings.length > 0) { toast.error(t("schedule.toastHasBookings")); return; }
       const toRemove = dayAppointments.filter(a => ["BREAK", "BLOCKED"].includes(a.client_name));
       for (const a of toRemove) await supabase.from("appointments").delete().eq("id", a.id);
       const { error } = await supabase.from("appointments").insert({
         barber_id: barberId, appointment_date: selectedDateStr, time_slot: `${settings.work_start}:00`,
         client_name: "DAYOFF", status: "booked", client_phone: null, client_email: null, service_id: null,
       });
-      if (error) { toast.error("Erro ao marcar folga"); return; }
-      toast.success("Dia marcado como folga");
+      if (error) { toast.error(t("schedule.toastFailedDayOff")); return; }
+      toast.success(t("schedule.toastDayOffMarked"));
     }
     fetchAppointments();
   };
@@ -353,7 +353,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
   const isPastDay = isBefore(startOfDay(selectedDate), startOfDay(new Date()));
 
   if (loading || settingsLoading) {
-    return <p className="text-muted-foreground font-body p-4">Loading…</p>;
+    return <p className="text-muted-foreground font-body p-4">{t("schedule.loading")}</p>;
   }
 
   return (
