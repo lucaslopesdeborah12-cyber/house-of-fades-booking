@@ -216,7 +216,7 @@ const ContactClientModal = ({
                 {t("contactModal.titlePrefix").replace("{name}", target.client_name)}
               </DialogTitle>
               <p className="font-body text-[13px] text-[#666] mt-1">
-                {serviceName} · {dateStr} às {timeStr} · {barberName}
+                {serviceName} · {dateStr} · {timeStr} · {barberName}
               </p>
             </div>
             <button
