@@ -4,11 +4,6 @@ import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
 
-const placeholderReviews = [
-  { author: "Liam K.", text: "Best fade in Carlow, hands down. Always leave looking sharp.", rating: 5 },
-  { author: "Darren O.", text: "Brilliant barbers, great atmosphere. Wouldn't go anywhere else.", rating: 5 },
-];
-
 const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 const ReviewsSection = () => {
@@ -18,10 +13,14 @@ const ReviewsSection = () => {
 
   useEffect(() => {
     supabase.from("reviews").select("author, text, rating").order("created_at").then(({ data }) => {
+      const placeholderReviews = [
+        { author: "Liam K.", text: t("reviews.placeholder1"), rating: 5 },
+        { author: "Darren O.", text: t("reviews.placeholder2"), rating: 5 },
+      ];
       const combined = [...(data || []), ...placeholderReviews];
       setReviews(combined);
     });
-  }, []);
+  }, [t]);
 
   const prev = () => setIdx((i) => (i === 0 ? reviews.length - 1 : i - 1));
   const next = () => setIdx((i) => (i === reviews.length - 1 ? 0 : i + 1));
