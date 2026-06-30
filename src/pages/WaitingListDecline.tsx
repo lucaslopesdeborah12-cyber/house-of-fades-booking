@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const WaitingListDecline = () => {
   const [params] = useSearchParams();
   const [done, setDone] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const processDecline = async () => {
@@ -28,8 +30,8 @@ const WaitingListDecline = () => {
             <div className="w-20 h-20 mx-auto rounded-full bg-[#4A7C2F]/20 flex items-center justify-center">
               <Check size={40} className="text-[#4A7C2F]" />
             </div>
-            <h1 className="font-serif text-2xl text-foreground">No problem!</h1>
-            <p className="text-muted-foreground font-body">Your spot has been removed from the waiting list.</p>
+            <h1 className="font-serif text-2xl text-foreground">{t("linkPage.noProblemTitle")}</h1>
+            <p className="text-muted-foreground font-body">{t("linkPage.removedMsg")}</p>
           </>
         )}
       </div>
