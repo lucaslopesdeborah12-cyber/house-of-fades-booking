@@ -366,7 +366,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
             viewMode === "appointments" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <CalendarDays size={15} /> Agenda
+          <CalendarDays size={15} /> {t("schedule.agenda")}
         </button>
         <button
           onClick={() => setViewMode("schedule")}
@@ -374,7 +374,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
             viewMode === "schedule" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Clock size={15} /> Meu Horário
+          <Clock size={15} /> {t("schedule.mine")}
         </button>
       </div>
 
@@ -418,10 +418,10 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
           {isDayOff && (
             <div className="rounded-xl p-4 text-center space-y-2" style={{ background: "rgba(255,68,68,0.1)", border: "1px solid rgba(255,68,68,0.3)" }}>
               <CalendarOff size={24} className="mx-auto" style={{ color: RED }} />
-              <p className="font-body text-sm font-medium" style={{ color: RED }}>Dia de Folga</p>
+              <p className="font-body text-sm font-medium" style={{ color: RED }}>{t("schedule.dayOff")}</p>
               {!isPastDay && (
                 <Button size="sm" className="font-body text-xs" style={{ background: RED, color: "#fff" }} onClick={toggleDayOff}>
-                  Remover Folga
+                  {t("schedule.removeDayOff")}
                 </Button>
               )}
             </div>
