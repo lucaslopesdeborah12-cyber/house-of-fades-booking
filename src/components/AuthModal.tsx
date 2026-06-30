@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import CountryCodeSelector, { type Country, formatPhoneForSubmit } from "@/components/CountryCodeSelector";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const DEFAULT_COUNTRY: Country = { code: "IE", name: "Ireland", dial: "+353", flag: "🇮🇪" };
 
@@ -34,6 +35,7 @@ const ScissorsIcon = () => (
 );
 
 const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
+  const { t } = useLanguage();
   const [view, setView] = useState<"home" | "guest" | "register" | "otp" | "success">("home");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -66,7 +68,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
       reset();
       onContinue();
     } catch (err: any) {
-      setError(err.message || "Erro ao entrar");
+      setError(err.message || t("auth.errorLogin"));
     } finally {
       setLoading(false);
     }
@@ -76,9 +78,9 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
     setError(""); setLoading(true);
     try {
       if (!name.trim() || !email.trim() || !phone.trim() || !password.trim()) {
-        throw new Error("Preencha todos os campos");
+        throw new Error(t("auth.errorFillAll"));
       }
-      if (password.length < 6) throw new Error("Password mínima de 6 caracteres");
+      if (password.length < 6) throw new Error(t("auth.errorPasswordShort"));
       const fullPhone = formatPhoneForSubmit(phone, phoneCountry);
       const { error: err } = await supabase.auth.signInWithOtp({
         email,
@@ -93,7 +95,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
       setView("otp");
       startResendCooldown();
     } catch (err: any) {
-      setError(err.message || "Erro ao criar conta");
+      setError(err.message || t("auth.errorRegister"));
     } finally {
       setLoading(false);
     }
@@ -120,7 +122,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
       },
     });
     if (err) setError(err.message);
-    else { toast.success("Código reenviado"); startResendCooldown(); }
+    else { toast.success(t("auth.resentToast")); startResendCooldown(); }
   };
 
   const handleOtpChange = (idx: number, val: string) => {
@@ -143,7 +145,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
 
   const handleVerifyOtp = async () => {
     const code = otp.join("");
-    if (code.length !== 6) { setError("Insira os 6 dígitos"); return; }
+    if (code.length !== 6) { setError(t("auth.enter6Digits")); return; }
     setError(""); setLoading(true);
     try {
       const { error: err } = await supabase.auth.verifyOtp({
@@ -160,7 +162,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
       setView("success");
       setTimeout(() => { reset(); onContinue(); }, 2000);
     } catch (err: any) {
-      setError("Código incorreto. Tente novamente.");
+      setError(t("auth.errorWrongCode"));
       setOtpShake(true);
       setTimeout(() => setOtpShake(false), 500);
       setOtp(["", "", "", "", "", ""]);
@@ -172,7 +174,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
 
   const handleGuestConfirm = () => {
     if (!guestName.trim() || !guestPhone.trim()) {
-      setError("Preencha nome e telefone");
+      setError(t("auth.errorFillNamePhone"));
       return;
     }
     const guest = { name: guestName.trim(), phone: guestPhone.trim() };
@@ -198,12 +200,12 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
   };
 
   const handleForgotPassword = async () => {
-    if (!email.trim()) { setError("Insira o seu email primeiro"); return; }
+    if (!email.trim()) { setError(t("auth.errorEnterEmail")); return; }
     const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (err) setError(err.message);
-    else toast.success("Email de recuperação enviado!");
+    else toast.success(t("auth.recoverySentToast"));
   };
 
   const handleOpenChange = (o: boolean) => {
@@ -314,10 +316,10 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                     }}
                   >
                     <div style={{ fontSize: 14, color: "#fff", fontFamily: "Inter, sans-serif", fontWeight: 600 }}>
-                      <span style={{ marginRight: 6 }}>⚡</span>Não tem conta? Sem problema!
+                      <span style={{ marginRight: 6 }}>⚡</span>{t("auth.guestBannerTitle")}
                     </div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontFamily: "Inter, sans-serif", marginTop: 4 }}>
-                      Agende diretamente — rápido e sem registo obrigatório
+                      {t("auth.guestBannerSubtitle")}
                     </div>
                   </div>
 
@@ -337,7 +339,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       e.currentTarget.style.boxShadow = "none";
                     }}
                   >
-                    ⚡ Agendar sem conta →
+                    ⚡ {t("auth.bookWithoutAccount")}
                   </button>
                 </div>
 
@@ -345,7 +347,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                 <div style={{ padding: "20px 24px 0", display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ flex: 1, height: 1, background: "#2a2a2a" }} />
                   <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Inter, sans-serif", letterSpacing: 0.5 }}>
-                    ou entre na sua conta
+                    {t("auth.orSignIn")}
                   </span>
                   <div style={{ flex: 1, height: 1, background: "#2a2a2a" }} />
                 </div>
@@ -353,7 +355,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                 {/* Login form */}
                 <div style={{ padding: "16px 24px 0", display: "flex", flexDirection: "column", gap: 12 }}>
                   <div>
-                    <label style={labelStyle}>EMAIL</label>
+                    <label style={labelStyle}>{t("auth.emailLabel")}</label>
                     <input
                       type="email" className="auth-input"
                       value={email} onChange={(e) => setEmail(e.target.value)}
@@ -361,7 +363,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                     />
                   </div>
                   <div>
-                    <label style={labelStyle}>PASSWORD</label>
+                    <label style={labelStyle}>{t("auth.passwordLabel")}</label>
                     <input
                       type="password" className="auth-input"
                       value={password} onChange={(e) => setPassword(e.target.value)}
@@ -375,7 +377,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       fontFamily: "Inter, sans-serif", cursor: "pointer", marginTop: -4,
                     }}
                   >
-                    Esqueceu a senha?
+                    {t("auth.forgotPassword")}
                   </div>
                 </div>
 
@@ -402,7 +404,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#C9A84C"; e.currentTarget.style.color = "#C9A84C"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#3a3a3a"; e.currentTarget.style.color = "#e0e0e0"; }}
                   >
-                    {loading ? "A entrar..." : "Entrar →"}
+                    {loading ? t("auth.signingIn") : t("auth.signIn")}
                   </button>
                 </div>
 
@@ -410,12 +412,12 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                   textAlign: "center", padding: "14px 24px 22px",
                   fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Inter, sans-serif",
                 }}>
-                  Não tem conta?{" "}
+                  {t("auth.noAccount")}{" "}
                   <span
                     style={{ color: "#C9A84C", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
                     onClick={() => { setError(""); setView("register"); }}
                   >
-                    Criar agora
+                    {t("auth.createNow")}
                   </span>
                 </div>
               </motion.div>
@@ -438,27 +440,27 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       padding: 0, marginBottom: 14, display: "flex", alignItems: "center", gap: 6,
                     }}
                   >
-                    ← Voltar
+                    {t("auth.back")}
                   </button>
 
                   <div style={{ fontSize: 16, color: "#fff", fontFamily: "'Playfair Display', Georgia, serif", marginBottom: 4 }}>
-                    Agendar sem conta
+                    {t("auth.guestTitle")}
                   </div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "Inter, sans-serif", marginBottom: 16 }}>
-                    Só precisamos do seu nome e telefone
+                    {t("auth.guestSubtitle")}
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     <div>
-                      <label style={labelStyle}>PRIMEIRO NOME</label>
+                      <label style={labelStyle}>{t("auth.firstNameLabel")}</label>
                       <input
                         className="auth-input"
                         value={guestName} onChange={(e) => setGuestName(e.target.value)}
-                        placeholder="Mario" style={inputStyle}
+                        placeholder={t("auth.namePlaceholder")} style={inputStyle}
                       />
                     </div>
                     <div>
-                      <label style={labelStyle}>TELEFONE</label>
+                      <label style={labelStyle}>{t("auth.phoneLabel")}</label>
                       <input
                         type="tel" className="auth-input"
                         value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)}
@@ -474,7 +476,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       fontStyle: "italic",
                       fontFamily: "Inter, sans-serif",
                     }}>
-                      Dados guardados anteriormente · Editar à vontade
+                      {t("auth.prefillHint")}
                     </div>
                   )}
 
@@ -500,7 +502,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                     onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 6px 20px rgba(201,168,76,0.35)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; }}
                   >
-                    Confirmar marcação →
+                    {t("auth.confirmBooking")}
                   </button>
                 </div>
               </motion.div>
@@ -523,24 +525,24 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       padding: 0, marginBottom: 14, display: "flex", alignItems: "center", gap: 6,
                     }}
                   >
-                    ← Voltar
+                    {t("auth.back")}
                   </button>
 
                   <div style={{ fontSize: 16, color: "#fff", fontFamily: "'Playfair Display', Georgia, serif", marginBottom: 16 }}>
-                    Criar nova conta
+                    {t("auth.createTitle")}
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     <div>
-                      <label style={labelStyle}>NOME</label>
-                      <input className="auth-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" style={inputStyle} />
+                      <label style={labelStyle}>{t("auth.nameLabel")}</label>
+                      <input className="auth-input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("auth.yourName")} style={inputStyle} />
                     </div>
                     <div>
-                      <label style={labelStyle}>EMAIL</label>
+                      <label style={labelStyle}>{t("auth.emailLabel")}</label>
                       <input type="email" className="auth-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@gmail.com" style={inputStyle} />
                     </div>
                     <div>
-                      <label style={labelStyle}>TELEFONE</label>
+                      <label style={labelStyle}>{t("auth.phoneLabel")}</label>
                       <div
                         className="auth-input"
                         style={{
@@ -572,7 +574,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       </div>
                     </div>
                     <div>
-                      <label style={labelStyle}>PASSWORD</label>
+                      <label style={labelStyle}>{t("auth.passwordLabel")}</label>
                       <input type="password" className="auth-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={inputStyle} />
                     </div>
                   </div>
@@ -597,7 +599,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       cursor: loading ? "not-allowed" : "pointer",
                     }}
                   >
-                    {loading ? "A criar..." : "Criar conta →"}
+                    {loading ? t("auth.creatingAccount") : t("auth.createAccount")}
                   </button>
                 </div>
               </motion.div>
@@ -620,7 +622,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       padding: 0, marginBottom: 14, display: "flex", alignItems: "center", gap: 6,
                     }}
                   >
-                    ← Voltar
+                    {t("auth.back")}
                   </button>
 
                   <div style={{ textAlign: "center", marginBottom: 18 }}>
@@ -629,10 +631,10 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       <polyline points="3,7 12,13 21,7" />
                     </svg>
                     <div style={{ fontSize: 17, color: "#fff", fontFamily: "'Playfair Display', Georgia, serif", marginTop: 12 }}>
-                      Verifique o seu email
+                      {t("auth.verifyTitle")}
                     </div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "Inter, sans-serif", marginTop: 6 }}>
-                      Enviámos um código de 6 dígitos para <span style={{ color: "#C9A84C" }}>{email}</span>
+                      {t("auth.verifySubtitle")} <span style={{ color: "#C9A84C" }}>{email}</span>
                     </div>
                   </div>
 
@@ -673,11 +675,11 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                       fontFamily: "Inter, sans-serif", cursor: loading ? "not-allowed" : "pointer",
                     }}
                   >
-                    {loading ? "A verificar..." : "Confirmar código →"}
+                    {loading ? t("auth.verifying") : t("auth.confirmCode")}
                   </button>
 
                   <div style={{ textAlign: "center", marginTop: 14, fontSize: 11, fontFamily: "Inter, sans-serif", color: "rgba(255,255,255,0.4)" }}>
-                    Não recebeu?{" "}
+                    {t("auth.didntReceive")}{" "}
                     <span
                       onClick={handleResendOtp}
                       style={{
@@ -686,7 +688,7 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                         textDecoration: "underline", textUnderlineOffset: 2,
                       }}
                     >
-                      {resendCooldown > 0 ? `Reenviar em ${resendCooldown}s` : "Reenviar código"}
+                      {resendCooldown > 0 ? `${t("auth.resendIn")} ${resendCooldown}s` : t("auth.resend")}
                     </span>
                   </div>
                 </div>
@@ -713,10 +715,10 @@ const AuthModal = ({ open, onOpenChange, onContinue }: AuthModalProps) => {
                     </svg>
                   </div>
                   <div style={{ fontSize: 18, color: "#fff", fontFamily: "'Playfair Display', Georgia, serif", marginTop: 18 }}>
-                    Conta criada com sucesso!
+                    {t("auth.accountCreatedTitle")}
                   </div>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontFamily: "Inter, sans-serif", marginTop: 6 }}>
-                    Bem-vindo à House of Fades
+                    {t("auth.welcomeMsg")}
                   </div>
                 </div>
               </motion.div>
