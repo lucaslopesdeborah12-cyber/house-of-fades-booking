@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { format } from "date-fns";
-import { pt, enUS, es, fr, it, de } from "date-fns/locale";
+import { pt, enUS, es, fr, it, de, enIE } from "date-fns/locale";
 import {
   CalendarIcon,
   Clock,
@@ -144,16 +144,16 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
   const confirmationRef = useRef<HTMLDivElement>(null);
 
+  const dateLocale = (() => {
+    const map: Record<string, any> = { pt, en: enUS, es, fr, it, de, ga: enIE };
+    return map[lang] || enUS;
+  })();
+
   const getFullDate = (date: Date) => {
-    const locales: Record<string, any> = { pt, en: enUS, es, fr, it, de };
-    const currentLocale = locales[lang] || pt;
-    
-    // For Portuguese, add "de" between day and month
     if (lang === 'pt') {
       return format(date, "EEEE, d 'de' MMMM yyyy", { locale: pt });
     }
-    
-    return format(date, "EEEE, d MMMM yyyy", { locale: currentLocale });
+    return format(date, "EEEE, d MMMM yyyy", { locale: dateLocale });
   };
 
   // Slots filtered by per-day shop schedule (open hours + breaks)
@@ -173,9 +173,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
   const getUrgencyMessage = () => {
     if (!selectedDate || allSlotsBooked) return null;
-    if (availableSlots === 1) return "🔥 Apenas 1 vaga restante!";
-    if (availableSlots === 2) return "🔥 Apenas 2 vagas restantes!";
-    if (occupancyPercent > 70) return "👀 Alta procura para este dia!";
+    if (availableSlots === 1) return t("booking.urgencyOne");
+    if (availableSlots === 2) return t("booking.urgencyTwo");
+    if (occupancyPercent > 70) return t("booking.urgencyHigh");
     return null;
   };
 
@@ -219,7 +219,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         if (saved?.phone) setClientPhone((prev) => prev || String(saved.phone).replace(/[^0-9]/g, ""));
         if (saved?.email) setClientEmail((prev) => prev || saved.email);
         if (saved?.name || saved?.phone || saved?.email) {
-          setPrefillHint("Dados guardados anteriormente · Editar à vontade");
+            setPrefillHint(t("booking.prefillHint"));
         }
       }
     } catch {}
@@ -385,7 +385,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       return;
     }
     if (contactPreference === null) {
-      toast.error("Escolha como quer receber a confirmação");
+      toast.error(t("booking.errorPickContact"));
       return;
     }
     if (!clientEmail.trim()) {
@@ -393,7 +393,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
       return;
     }
     if (!clientPhone.trim()) {
-      toast.error("Introduza o seu telefone");
+      toast.error(t("booking.errorEnterPhone"));
       return;
     }
     const barberNameForEmail = barbers.find((b) => b.id === selectedBarber)?.name || "";
@@ -463,7 +463,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               service_name: serviceNameForEmail,
               barber_name: barberNameForEmail,
               service_price: servicePriceForEmail,
-              footer_note: "Enganou-se? Pode modificar ou cancelar a sua reserva respondendo a este email.",
+              footer_note: t("booking.emailFooterNote"),
             },
             "TBNWeHLfrq6OuvZhQ",
           )
@@ -560,7 +560,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         >
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl italic" style={{ color: "#c9a84c" }}>
-              {success ? "Reserva Confirmada" : t("booking.title")}
+              {success ? t("booking.confirmed") : t("booking.title")}
             </DialogTitle>
           </DialogHeader>
 
@@ -570,8 +570,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                 <Check size={280} strokeWidth={0.5} className="text-[#c9a84c]" />
               </div>
               <div className="relative z-10">
-                <h2 className="font-serif text-3xl italic text-[#c9a84c] mb-2">Até já, {clientName}.</h2>
-                <p className="font-cormorant text-lg italic text-foreground/40">A sua reserva está confirmada.</p>
+                <h2 className="font-serif text-3xl italic text-[#c9a84c] mb-2">{t("booking.successGreeting")}, {clientName}.</h2>
+                <p className="font-cormorant text-lg italic text-foreground/40">{t("booking.successSubtitle")}</p>
               </div>
               <div
                 className="relative z-10 space-y-3"
@@ -582,7 +582,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   style={{ borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}
                 >
                   <span className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/30">
-                    Barbeiro
+                    {t("booking.summaryBarber")}
                   </span>
                   <span className="font-sans text-sm text-foreground/80">{selectedBarberName}</span>
                 </div>
@@ -591,7 +591,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   style={{ borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}
                 >
                   <span className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/30">
-                    Serviço
+                    {t("booking.summaryService")}
                   </span>
                   <span className="font-sans text-sm text-foreground/80">{selectedServiceObj?.name}</span>
                 </div>
@@ -600,7 +600,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   style={{ borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}
                 >
                   <span className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/30">
-                    Data
+                    {t("booking.summaryDate")}
                   </span>
                   <span className="font-sans text-sm text-foreground/80">
                     {selectedDate && format(selectedDate, "dd/MM/yyyy")}
@@ -611,7 +611,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   style={{ borderBottom: "0.5px solid rgba(255,255,255,0.04)" }}
                 >
                   <span className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/30">
-                    Hora
+                    {t("booking.summaryTime")}
                   </span>
                   <span className="font-sans text-sm text-foreground/80">{selectedTime}</span>
                 </div>
@@ -632,7 +632,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   className="inline-flex items-center justify-center font-sans text-[11px] font-medium uppercase tracking-[0.15em] w-full h-12 px-4 text-[#050505]"
                   style={{ background: "#c9a84c", borderRadius: 0, border: "none", cursor: "pointer" }}
                 >
-                  <CalendarDownloadIcon size={14} className="mr-3" /> Adicionar ao Google Calendar
+                  <CalendarDownloadIcon size={14} className="mr-3" /> {t("booking.addGoogleCalendar")}
                 </button>
                 <button
                   type="button"
@@ -649,7 +649,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     cursor: "pointer",
                   }}
                 >
-                  <CalendarDownloadIcon size={14} className="mr-3" /> Guardar no Apple Calendar
+                  <CalendarDownloadIcon size={14} className="mr-3" /> {t("booking.saveAppleCalendar")}
                 </button>
                 <button
                   type="button"
@@ -666,7 +666,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                     cursor: "pointer",
                   }}
                 >
-                  Nova Reserva
+                  {t("booking.newBooking")}
                 </button>
                 <button
                   type="button"
@@ -677,7 +677,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   }}
                   className="font-sans text-[10px] text-foreground/20 hover:text-foreground/40 transition-colors mt-2"
                 >
-                  Fechar
+                  {t("booking.close")}
                 </button>
               </div>
             </div>
@@ -695,9 +695,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
               {step === 1 &&
                 (() => {
                   const barberRoles: Record<string, string> = {
-                    John: "Senior Barber",
-                    Mario: "Fade Specialist",
-                    CJ: "Style Expert",
+                    John: t("booking.roleSenior"),
+                    Mario: t("booking.roleFade"),
+                    CJ: t("booking.roleStyle"),
                   };
                   return (
                     <div>
@@ -793,7 +793,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                                     display: "block",
                                   }}
                                 >
-                                  {barberRoles[b.name] || "Barber"}
+                                  {barberRoles[b.name] || t("booking.roleDefault")}
                                 </span>
                               </div>
                             </button>
@@ -919,7 +919,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       selected={selectedDate}
                       onSelect={(date) => setSelectedDate(date)}
                       onMonthChange={setCalendarMonth}
-                      locale={pt}
+                      locale={dateLocale}
                       disabled={(date) => {
                         if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
                         const day = getDayScheduleFor(schedule, date);
@@ -929,21 +929,8 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       className={cn("p-3 pointer-events-auto w-full")}
                       formatters={{
                         formatCaption: (date) => {
-                          const months = [
-                            "Janeiro",
-                            "Fevereiro",
-                            "Março",
-                            "Abril",
-                            "Maio",
-                            "Junho",
-                            "Julho",
-                            "Agosto",
-                            "Setembro",
-                            "Outubro",
-                            "Novembro",
-                            "Dezembro",
-                          ];
-                          return `${months[date.getMonth()]} ${date.getFullYear()}`;
+                          const monthName = format(date, "LLLL", { locale: dateLocale });
+                          return `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${date.getFullYear()}`;
                         },
                       }}
                       modifiers={{
@@ -971,16 +958,16 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                   </div>
                   <div className="flex flex-wrap gap-4 justify-center font-sans text-[9px] font-light uppercase tracking-[0.15em] text-foreground/25">
                     <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-[1px] bg-[#c9a84c] inline-block" /> Disponível
+                      <span className="w-2 h-[1px] bg-[#c9a84c] inline-block" /> {t("booking.legendAvailable")}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-[1px] bg-[#c9a84c]/60 inline-block" /> A encher
+                      <span className="w-2 h-[1px] bg-[#c9a84c]/60 inline-block" /> {t("booking.legendFilling")}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-[1px] bg-[#c9a84c]/30 inline-block" /> Quase cheio
+                      <span className="w-2 h-[1px] bg-[#c9a84c]/30 inline-block" /> {t("booking.legendAlmostFull")}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-[1px] bg-foreground/15 inline-block" /> Últimas vagas
+                      <span className="w-2 h-[1px] bg-foreground/15 inline-block" /> {t("booking.legendLastSpots")}
                     </span>
                   </div>
                   {selectedDate && (
@@ -996,22 +983,22 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                       {allSlotsBooked ? (
                         <div className="flex flex-col items-center text-center gap-4 py-6">
                           <Lock size={24} className="text-foreground/20" />
-                          <h3 className="font-serif text-lg italic text-[#c9a84c]">Dia esgotado</h3>
+                          <h3 className="font-serif text-lg italic text-[#c9a84c]">{t("booking.fullDayTitle")}</h3>
                           <p className="font-cormorant text-sm italic text-foreground/35 leading-relaxed">
-                            Todas as vagas estão preenchidas — mas pode juntar-se à lista de espera.
+                            {t("booking.fullDaySubtitle")}
                           </p>
                           <button
                             onClick={() => setWaitingListOpen(true)}
                             className="font-sans text-[11px] font-medium uppercase tracking-[0.2em] w-full h-12 text-[#050505]"
                             style={{ background: "#c9a84c", borderRadius: 0 }}
                           >
-                            Lista de Espera
+                            {t("booking.waitingList")}
                           </button>
                           <button
                             onClick={() => setSelectedDate(undefined)}
                             className="font-sans text-[10px] font-light uppercase tracking-[0.15em] text-foreground/25 hover:text-foreground/40 transition-colors"
                           >
-                            Escolher outro dia
+                            {t("booking.pickAnotherDay")}
                           </button>
                         </div>
                       ) : (
@@ -1066,7 +1053,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                         }}
                       >
                         <p className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/40 mb-3">
-                          A SUA ESCOLHA
+                          {t("booking.yourChoice")}
                         </p>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-sm text-foreground/90 font-medium capitalize">
@@ -1139,7 +1126,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                               animation: prefShakeTriggered ? "prefShake 0.4s ease" : "none",
                             }}
                           >
-                            Escolha como quer receber a confirmação
+                            {t("booking.errorPickContact")}
                           </div>
                         )}
                         <div
@@ -1153,14 +1140,14 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             marginBottom: 10,
                           }}
                         >
-                          Forma de confirmação
+                          {t("booking.contactMethod")}
                         </div>
                         <div style={{ display: "flex", gap: 4 }}>
                           {[
-                            { value: "sms" as const, label: "SMS" },
-                            { value: "email" as const, label: "Email" },
-                            { value: "call" as const, label: "Ligação" },
-                            { value: "all" as const, label: "Todos" },
+                            { value: "sms" as const, label: t("booking.contactSms") },
+                            { value: "email" as const, label: t("booking.contactEmail") },
+                            { value: "call" as const, label: t("booking.contactCall") },
+                            { value: "all" as const, label: t("booking.contactAll") },
                           ].map((pill) => {
                             const isActive = selectedPrefs.has(pill.value);
                             return (
@@ -1217,10 +1204,10 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             fontWeight: 200,
                           }}
                         >
-                          Nome
+                          {t("booking.nameUpper")}
                         </span>
                         <input
-                          placeholder="Nome completo *"
+                          placeholder={t("booking.fullNamePlaceholder")}
                           value={clientName}
                           onChange={(e) => setClientName(e.target.value)}
                           style={{
@@ -1270,10 +1257,10 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             fontWeight: 200,
                           }}
                         >
-                          Email
+                          {t("booking.emailUpper")}
                         </span>
                         <input
-                          placeholder={emailDisabled ? "Escolha uma opção acima primeiro" : "Email *"}
+                          placeholder={t("booking.emailPlaceholder")}
                           type="email"
                           value={clientEmail}
                           onChange={(e) => setClientEmail(e.target.value)}
@@ -1320,7 +1307,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             fontWeight: 200,
                           }}
                         >
-                          Telefone
+                          {t("booking.phoneUpper")}
                         </span>
                         <div
                           style={{
@@ -1395,7 +1382,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                             marginBottom: 12,
                           }}
                         >
-                          Resumo
+                          {t("booking.summary")}
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                           <div>
@@ -1419,7 +1406,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                                 fontWeight: 200,
                               }}
                             >
-                              {selectedDate ? format(selectedDate, "dd/MM/yyyy") : ""} às {selectedTime}
+                              {selectedDate ? format(selectedDate, "dd/MM/yyyy") : ""} {t("booking.at")} {selectedTime}
                             </div>
                           </div>
                           <div
@@ -1456,7 +1443,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           ...(isConfirmDisabled ? { filter: "opacity(0.4)" } : {}),
                         }}
                       >
-                        {submitting ? t("booking.confirming") : "CONFIRMAR RESERVA"}
+                        {submitting ? t("booking.confirming") : t("booking.confirmBookingBtn")}
                       </button>
                       <div
                         onClick={() => setStep(3)}
@@ -1471,7 +1458,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
                           letterSpacing: "1px",
                         }}
                       >
-                        ← Voltar
+                        {t("booking.back")}
                       </div>
                     </div>
                   );
