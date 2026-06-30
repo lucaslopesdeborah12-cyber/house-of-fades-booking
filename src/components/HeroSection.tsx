@@ -137,7 +137,7 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
                 borderRadius: 0,
               }}
             >
-              AGENDAR
+              {t("hero.bookCta")}
             </motion.button>
             <motion.a
               href="#services"
@@ -151,7 +151,7 @@ const HeroSection = ({ onBookNow }: { onBookNow?: () => void }) => {
                 background: 'transparent',
               }}
             >
-              EXPLORAR
+              {t("hero.exploreCta")}
             </motion.a>
           </motion.div>
         </div>

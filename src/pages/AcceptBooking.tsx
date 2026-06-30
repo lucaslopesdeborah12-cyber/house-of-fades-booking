@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Check, Loader2 } from "lucide-react";
 import emailjs from "@emailjs/browser";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 let emailjsInited = false;
 
@@ -11,6 +12,7 @@ const AcceptBooking = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState("");
+  const { t } = useLanguage();
 
   useEffect(() => {
     const process = async () => {
@@ -23,7 +25,7 @@ const AcceptBooking = () => {
       const waitingId = params.get("waitingId");
 
       if (!date || !time || !barberId || !name || !waitingId) {
-        setErrorMsg("Invalid link.");
+        setErrorMsg(t("linkPage.invalidLink"));
         setStatus("error");
         return;
       }
@@ -36,7 +38,7 @@ const AcceptBooking = () => {
         .single();
 
       if (!entry || entry.status === "cancelled" || entry.status === "declined" || entry.status === "accepted") {
-        setErrorMsg("This link has expired or already been used.");
+        setErrorMsg(t("linkPage.linkExpired"));
         setStatus("error");
         return;
       }
@@ -51,7 +53,7 @@ const AcceptBooking = () => {
         .in("status", ["booked", "confirmed"]);
 
       if (existing && existing.length > 0) {
-        setErrorMsg("Sorry! This slot was just filled by someone else. We'll notify you when another slot opens up! 🙏");
+        setErrorMsg(t("linkPage.slotTakenLong") + " 🙏");
         setStatus("error");
         return;
       }
@@ -76,7 +78,7 @@ const AcceptBooking = () => {
 
       if (bookError) {
         console.error("Booking error:", bookError);
-        setErrorMsg("Error booking appointment. Please try again.");
+        setErrorMsg(t("linkPage.bookError"));
         setStatus("error");
         return;
       }
@@ -141,7 +143,7 @@ const AcceptBooking = () => {
     };
 
     process();
-  }, [params, navigate]);
+  }, [params, navigate, t]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -149,7 +151,7 @@ const AcceptBooking = () => {
         {status === "loading" && (
           <>
             <Loader2 className="w-16 h-16 mx-auto text-accent animate-spin" />
-            <p className="text-foreground font-body text-lg">Processing your booking...</p>
+            <p className="text-foreground font-body text-lg">{t("linkPage.processing")}</p>
           </>
         )}
         {status === "success" && (
@@ -157,9 +159,9 @@ const AcceptBooking = () => {
             <div className="w-20 h-20 mx-auto rounded-full bg-[#4A7C2F]/20 flex items-center justify-center">
               <Check size={40} className="text-[#4A7C2F]" />
             </div>
-            <h1 className="font-serif text-2xl text-foreground">Your appointment has been booked!</h1>
-            <p className="text-muted-foreground font-body">See you soon 🎉</p>
-            <p className="text-muted-foreground font-body text-sm">Redirecting in 3 seconds...</p>
+            <h1 className="font-serif text-2xl text-foreground">{t("linkPage.bookedTitle")}</h1>
+            <p className="text-muted-foreground font-body">{t("linkPage.seeYou")} 🎉</p>
+            <p className="text-muted-foreground font-body text-sm">{t("linkPage.redirecting")}</p>
           </>
         )}
         {status === "error" && (
@@ -167,7 +169,7 @@ const AcceptBooking = () => {
             <div className="w-20 h-20 mx-auto rounded-full bg-destructive/20 flex items-center justify-center">
               <span className="text-3xl">❌</span>
             </div>
-            <h1 className="font-serif text-2xl text-foreground">Oops!</h1>
+            <h1 className="font-serif text-2xl text-foreground">{t("linkPage.oops")}</h1>
             <p className="text-muted-foreground font-body">{errorMsg}</p>
           </>
         )}

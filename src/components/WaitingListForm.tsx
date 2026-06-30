@@ -40,8 +40,8 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
   };
 
   const handleSubmit = async () => {
-    if (!clientName.trim()) { toast.error("Introduza o seu nome"); return; }
-    if (!clientEmail.trim()) { toast.error("Introduza o seu email"); return; }
+    if (!clientName.trim()) { toast.error(t("waiting.errorName")); return; }
+    if (!clientEmail.trim()) { toast.error(t("waiting.errorEmail")); return; }
 
     setSubmitting(true);
     const { error } = await supabase.from("waiting_list").insert({
@@ -55,7 +55,7 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
     setSubmitting(false);
 
     if (error) {
-      toast.error("Erro ao entrar na lista. Tente novamente.");
+      toast.error(t("waiting.errorSubmit"));
       console.error(error);
     } else {
       setSuccess(true);
@@ -72,17 +72,17 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
                 <Check size={200} strokeWidth={0.5} className="text-[#c9a84c]" />
               </div>
               <h2 className="font-serif text-2xl italic text-[#c9a84c] relative z-10">
-                Na lista!
+                {t("waiting.successTitle")}
               </h2>
             </div>
             <p className="font-cormorant text-base italic text-foreground/40">
-              Avisamos assim que uma vaga abrir no dia {dateDisplay}.
+              {t("waiting.successMsg")} {dateDisplay}.
             </p>
             <button
               onClick={() => handleClose(false)}
               className="font-sans text-[10px] font-light uppercase tracking-[0.2em] text-foreground/25 hover:text-foreground/40 transition-colors mt-4"
             >
-              Fechar
+              {t("waiting.close")}
             </button>
           </div>
         </DialogContent>
@@ -95,20 +95,20 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
       <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-[#050505] border-[#c9a84c]/15 text-foreground max-w-md mx-auto" style={{ borderRadius: 2 }}>
         <div className="space-y-6 py-2">
           <div>
-            <h2 className="font-serif text-2xl italic text-[#c9a84c] mb-1">Lista de Espera</h2>
+            <h2 className="font-serif text-2xl italic text-[#c9a84c] mb-1">{t("waiting.title")}</h2>
             <p className="font-sans text-[10px] font-light uppercase tracking-[0.15em] text-foreground/25 mb-3">
               {dateDisplay} · {barberName}
             </p>
             <p className="font-cormorant text-sm italic text-foreground/35 leading-relaxed">
-              Todos os horários estão ocupados. Entra na lista de espera e avisamos assim que uma vaga abrir.
+              {t("waiting.subtitle")}
             </p>
           </div>
 
           {/* Nome */}
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 9, color: "rgba(201,168,76,0.4)", letterSpacing: 2, textTransform: "uppercase", fontFamily: "'Inter', sans-serif", fontWeight: 200 }}>Nome</span>
+            <span style={{ fontSize: 9, color: "rgba(201,168,76,0.4)", letterSpacing: 2, textTransform: "uppercase", fontFamily: "'Inter', sans-serif", fontWeight: 200 }}>{t("waiting.nameLabel")}</span>
             <input
-              placeholder="Nome completo *"
+              placeholder={t("waiting.namePlaceholder")}
               value={clientName}
               onChange={e => setClientName(e.target.value)}
               style={{ background: "transparent", borderBottom: "0.5px solid rgba(201,168,76,0.15)", borderTop: "none", borderLeft: "none", borderRight: "none", borderRadius: 0, padding: "12px 0", fontSize: "16px", color: "#e0e0e0", outline: "none", width: "100%", fontFamily: "'Inter', sans-serif", fontWeight: 300, transition: "border-color 0.2s" }}
@@ -119,7 +119,7 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
 
           {/* Email */}
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 9, color: "rgba(201,168,76,0.4)", letterSpacing: 2, textTransform: "uppercase", fontFamily: "'Inter', sans-serif", fontWeight: 200 }}>Email</span>
+            <span style={{ fontSize: 9, color: "rgba(201,168,76,0.4)", letterSpacing: 2, textTransform: "uppercase", fontFamily: "'Inter', sans-serif", fontWeight: 200 }}>{t("waiting.emailLabel")}</span>
             <input
               placeholder="Email *"
               type="email"
@@ -131,7 +131,7 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
 
           {/* Telefone */}
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 9, color: "rgba(201,168,76,0.4)", letterSpacing: 2, textTransform: "uppercase", fontFamily: "'Inter', sans-serif", fontWeight: 200 }}>Telefone</span>
+            <span style={{ fontSize: 9, color: "rgba(201,168,76,0.4)", letterSpacing: 2, textTransform: "uppercase", fontFamily: "'Inter', sans-serif", fontWeight: 200 }}>{t("waiting.phoneLabel")}</span>
             <div style={{ display: "flex", borderBottom: "0.5px solid rgba(201,168,76,0.15)", transition: "border-color 0.2s" }}
               onFocus={e => { (e.currentTarget as HTMLElement).style.borderBottomColor = "#c9a84c"; }}
               onBlur={e => { (e.currentTarget as HTMLElement).style.borderBottomColor = "rgba(201,168,76,0.15)"; }}
@@ -159,7 +159,7 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
               ...((submitting || !clientName.trim() || !clientEmail.trim()) ? { filter: "opacity(0.4)" } : {}),
             }}
           >
-            {submitting ? "A entrar..." : "ENTRAR NA LISTA"}
+            {submitting ? t("waiting.submitting") : t("waiting.submit")}
           </button>
 
           {/* Cancel */}
@@ -168,7 +168,7 @@ const WaitingListForm = ({ open, onOpenChange, date, barberId, barberName }: Wai
             className="w-full font-sans text-[10px] font-light uppercase tracking-[0.15em] text-foreground/20 hover:text-foreground/40 transition-colors"
             style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px 0" }}
           >
-            Cancelar
+            {t("waiting.cancel")}
           </button>
         </div>
       </DialogContent>
