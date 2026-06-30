@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronLeft, ChevronRight, Plus, Trash2, Coffee, Ban, CalendarOff } from "lucide-react";
 import { toast } from "sonner";
 import { useShopSettings, getDayCount, generateTimeSlots } from "@/hooks/useShopSettings";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface Props {
   barberId: string;
@@ -15,6 +16,7 @@ const GOLD = "#c9a84c";
 const RED = "#ff4444";
 
 const MySchedulePanel = ({ barberId }: Props) => {
+  const { t } = useLanguage();
   const { settings, loading: settingsLoading } = useShopSettings();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedDay, setSelectedDay] = useState(0);
@@ -23,7 +25,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
 
   const dayCount = getDayCount(settings.last_working_day);
   const timeSlots = generateTimeSlots(settings.work_start, settings.work_end);
-  const dayNames = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].slice(0, dayCount);
+  const dayNames = [0,1,2,3,4,5,6].map(i => t(`schedule.dayShort${i}`)).slice(0, dayCount);
   const weekDays = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i));
   const selectedDate = weekDays[selectedDay] || weekDays[0];
   const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
@@ -60,7 +62,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
 
   const addBreak = async (time: string) => {
     if (occupiedSlots.includes(time)) {
-      toast.error("Este horário já está ocupado");
+      toast.error(t("schedule.toastSlotTaken"));
       return;
     }
 
@@ -71,7 +73,7 @@ const MySchedulePanel = ({ barberId }: Props) => {
 
     if (serviceError || !services?.length) {
       console.error("Failed to load service for break:", serviceError);
-      toast.error("Erro ao adicionar pausa");
+      toast.error(t("schedule.toastFailedAddBreak"));
       return;
     }
 
@@ -91,10 +93,10 @@ const MySchedulePanel = ({ barberId }: Props) => {
     const { error } = await supabase.from("appointments").insert(breakInsert);
     if (error) {
       console.error("Break insert error:", error);
-      toast.error("Erro ao adicionar pausa");
+      toast.error(t("schedule.toastFailedAddBreak"));
       return;
     }
-    toast.success("Pausa adicionada");
+    toast.success(t("schedule.toastBreakAdded"));
     fetchAppointments();
   };
 
@@ -102,12 +104,12 @@ const MySchedulePanel = ({ barberId }: Props) => {
     const startIdx = timeSlots.indexOf(startTime);
     const endIdx = timeSlots.indexOf(endTime);
     if (startIdx < 0 || endIdx < 0 || startIdx >= endIdx) {
-      toast.error("Intervalo inválido");
+      toast.error(t("schedule.toastInvalidRange"));
       return;
     }
     const slotsToBlock = timeSlots.slice(startIdx, endIdx);
     const available = slotsToBlock.filter(t => !occupiedSlots.includes(t));
-    if (available.length === 0) { toast.error("Todos os slots já estão ocupados"); return; }
+    if (available.length === 0) { toast.error(t2("schedule.toastAllTaken")); return; }
 
     const inserts = available.map(t => ({
       barber_id: barberId,
@@ -121,8 +123,8 @@ const MySchedulePanel = ({ barberId }: Props) => {
     }));
 
     const { error } = await supabase.from("appointments").insert(inserts);
-    if (error) { toast.error("Erro ao bloquear"); return; }
-    toast.success(`${available.length} slots bloqueados`);
+    if (error) { toast.error(t2("schedule.toastFailedBlock")); return; }
+    toast.success(t2("schedule.toastSlotsBlocked").replace("{n}", String(available.length)));
     fetchAppointments();
   };
 
