@@ -10,6 +10,7 @@ import {
   LineChart, Line,
 } from "recharts";
 import { format, parseISO, startOfWeek, startOfMonth, eachDayOfInterval, endOfWeek, subMonths } from "date-fns";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type Barber = {
   id: string;
@@ -36,8 +37,8 @@ type AppointmentRow = {
   barbers: { name: string; commission_rate: number } | null;
 };
 
-// Barber Management
 const BarberManagement = () => {
+  const { t } = useLanguage();
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "employee", commission_rate: 0.50 });
@@ -51,16 +52,16 @@ const BarberManagement = () => {
   useEffect(() => { fetchBarbers(); }, []);
 
   const createBarber = async () => {
-    if (!form.name || !form.email || !form.password) { toast.error("Fill all fields"); return; }
+    if (!form.name || !form.email || !form.password) { toast.error(t("admin.fillAllFields")); return; }
     setLoading(true);
     const { data, error } = await supabase.functions.invoke("admin-actions", {
       body: { action: "create-barber", ...form },
     });
     setLoading(false);
     if (error || data?.error) {
-      toast.error(data?.error || "Failed to create barber");
+      toast.error(data?.error || t("admin.failedCreate"));
     } else {
-      toast.success("Barber created!");
+      toast.success(t("admin.barberCreated"));
       setShowAdd(false);
       setForm({ name: "", email: "", password: "", role: "employee", commission_rate: 0.50 });
       fetchBarbers();
@@ -68,36 +69,36 @@ const BarberManagement = () => {
   };
 
   const deleteBarber = async (userId: string, name: string) => {
-    if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
+    if (!confirm(t("admin.deleteConfirm").replace("{name}", name))) return;
     const { data, error } = await supabase.functions.invoke("admin-actions", {
       body: { action: "delete-barber", userId },
     });
-    if (error || data?.error) toast.error("Failed to delete");
-    else { toast.success("Deleted!"); fetchBarbers(); }
+    if (error || data?.error) toast.error(t("admin.failedDelete"));
+    else { toast.success(t("admin.deleted")); fetchBarbers(); }
   };
 
   const updateCommission = async (id: string, rate: number) => {
     await supabase.from("barbers").update({ commission_rate: rate }).eq("id", id);
-    toast.success("Commission updated!");
+    toast.success(t("admin.commissionUpdated"));
     fetchBarbers();
   };
 
   const resetPassword = async (userId: string) => {
-    const newPass = prompt("Enter new password (min 6 chars):");
+    const newPass = prompt(t("admin.newPasswordPrompt"));
     if (!newPass || newPass.length < 6) return;
     const { data, error } = await supabase.functions.invoke("admin-actions", {
       body: { action: "update-barber-password", userId, password: newPass },
     });
-    if (error || data?.error) toast.error("Failed");
-    else toast.success("Password updated!");
+    if (error || data?.error) toast.error(t("admin.failed"));
+    else toast.success(t("admin.passwordUpdated"));
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-serif text-xl font-semibold">Barber Accounts</h3>
+        <h3 className="font-serif text-xl font-semibold">{t("admin.barberAccounts")}</h3>
         <Button size="sm" onClick={() => setShowAdd(!showAdd)} className="bg-accent text-accent-foreground hover:bg-accent/80">
-          <Plus size={16} className="mr-1" /> Add Barber
+          <Plus size={16} className="mr-1" /> {t("admin.addBarber")}
         </Button>
       </div>
 
@@ -105,31 +106,31 @@ const BarberManagement = () => {
         <div className="bg-card border border-border rounded-lg p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label className="text-foreground font-body text-sm">Name</Label>
+              <Label className="text-foreground font-body text-sm">{t("admin.name")}</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 bg-background border-border text-foreground" />
             </div>
             <div>
-              <Label className="text-foreground font-body text-sm">Email</Label>
+              <Label className="text-foreground font-body text-sm">{t("admin.emailLabel")}</Label>
               <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1 bg-background border-border text-foreground" />
             </div>
             <div>
-              <Label className="text-foreground font-body text-sm">Password</Label>
+              <Label className="text-foreground font-body text-sm">{t("admin.password")}</Label>
               <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="mt-1 bg-background border-border text-foreground" />
             </div>
             <div>
-              <Label className="text-foreground font-body text-sm">Role</Label>
+              <Label className="text-foreground font-body text-sm">{t("admin.role")}</Label>
               <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="mt-1 w-full bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm">
-                <option value="employee">Employee</option>
-                <option value="owner">Owner</option>
+                <option value="employee">{t("admin.role.employee")}</option>
+                <option value="owner">{t("admin.role.owner")}</option>
               </select>
             </div>
             <div>
-              <Label className="text-foreground font-body text-sm">Commission %</Label>
+              <Label className="text-foreground font-body text-sm">{t("admin.commissionPct")}</Label>
               <Input type="number" step="0.01" min="0" max="1" value={form.commission_rate} onChange={(e) => setForm({ ...form, commission_rate: parseFloat(e.target.value) || 0.5 })} className="mt-1 bg-background border-border text-foreground" />
             </div>
           </div>
           <Button onClick={createBarber} disabled={loading} className="bg-accent text-accent-foreground hover:bg-accent/80">
-            {loading ? "Creating…" : "Create Barber"}
+            {loading ? t("admin.creating") : t("admin.createBarber")}
           </Button>
         </div>
       )}
@@ -139,11 +140,11 @@ const BarberManagement = () => {
           <div key={b.id} className="bg-card border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <p className="text-foreground font-body font-medium">{b.name}</p>
-              <p className="text-muted-foreground font-body text-sm">{b.email} • {b.role}</p>
+              <p className="text-muted-foreground font-body text-sm">{b.email} • {b.role === "owner" ? t("admin.role.owner") : t("admin.role.employee")}</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                <span className="text-muted-foreground text-xs font-body">Commission:</span>
+                <span className="text-muted-foreground text-xs font-body">{t("admin.commission")}</span>
                 <Input
                   type="number"
                   step="0.01"
@@ -164,8 +165,8 @@ const BarberManagement = () => {
   );
 };
 
-// Shop Stats
 const ShopStats = () => {
+  const { t } = useLanguage();
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -181,15 +182,14 @@ const ShopStats = () => {
     fetch();
   }, []);
 
-  if (loading) return <p className="text-muted-foreground font-body">Loading…</p>;
+  if (loading) return <p className="text-muted-foreground font-body">{t("admin.loading")}</p>;
 
   const now = new Date();
   const weekStart = startOfWeek(now, { weekStartsOn: 1 });
   const monthStart = startOfMonth(now);
-  const barberNames = [...new Set(appointments.map((a) => a.barbers?.name || "Unknown"))];
+  const barberNames = [...new Set(appointments.map((a) => a.barbers?.name || t("admin.unknown")))];
   const totalRevenue = appointments.reduce((s, a) => s + (a.services?.price || 0), 0);
 
-  // Find busiest day and time
   const dayCount: Record<string, number> = {};
   const timeCount: Record<string, number> = {};
   appointments.forEach((a) => {
@@ -208,7 +208,6 @@ const ShopStats = () => {
     return { name, cuts: mine.length, revenue, earnings: revenue * commission, commission };
   });
 
-  // Charts
   const daysOfWeek = eachDayOfInterval({ start: weekStart, end: endOfWeek(now, { weekStartsOn: 1 }) });
   const dailyData = daysOfWeek.map((day) => {
     const dayStr = format(day, "yyyy-MM-dd");
@@ -234,7 +233,7 @@ const ShopStats = () => {
   const colors = ["#8B1A1A", "#4A7C2F", "#C4A35A"];
 
   const exportCSV = () => {
-    const headers = "Barber,Cuts,Revenue,Earnings,Commission\n";
+    const headers = `${t("admin.barber")},${t("admin.cuts").replace(":","")},${t("admin.revenue").replace(":","")},${t("admin.earnings").replace(":","")},${t("admin.commission").replace(":","")}\n`;
     const rows = perBarber.map((b) => `${b.name},${b.cuts},€${b.revenue.toFixed(2)},€${b.earnings.toFixed(2)},${(b.commission * 100).toFixed(0)}%`).join("\n");
     const blob = new Blob([headers + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -247,17 +246,17 @@ const ShopStats = () => {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h3 className="font-serif text-xl font-semibold">Shop Statistics</h3>
+        <h3 className="font-serif text-xl font-semibold">{t("admin.shopStatistics")}</h3>
         <Button size="sm" onClick={exportCSV} className="bg-primary text-primary-foreground hover:bg-primary/80">
-          <Download size={16} className="mr-1" /> Export CSV
+          <Download size={16} className="mr-1" /> {t("admin.exportCSV")}
         </Button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Revenue" value={`€${totalRevenue.toFixed(0)}`} sub="all time" />
-        <StatCard label="Total Cuts" value={appointments.length} sub="all time" />
-        <StatCard label="Busiest Day" value={busiestDay?.[0] || "—"} sub={`${busiestDay?.[1] || 0} cuts`} />
-        <StatCard label="Busiest Time" value={busiestTime?.[0] || "—"} sub={`${busiestTime?.[1] || 0} cuts`} />
+        <StatCard label={t("admin.totalRevenue")} value={`€${totalRevenue.toFixed(0)}`} sub={t("admin.allTime")} />
+        <StatCard label={t("admin.totalCuts")} value={appointments.length} sub={t("admin.allTime")} />
+        <StatCard label={t("admin.busiestDay")} value={busiestDay?.[0] ? (t(`day.${busiestDay[0]}`) !== `day.${busiestDay[0]}` ? t(`day.${busiestDay[0]}`) : busiestDay[0]) : "—"} sub={`${busiestDay?.[1] || 0} ${t("admin.cutsLower")}`} />
+        <StatCard label={t("admin.busiestTime")} value={busiestTime?.[0] || "—"} sub={`${busiestTime?.[1] || 0} ${t("admin.cutsLower")}`} />
       </div>
 
       <div className="grid md:grid-cols-3 gap-4">
@@ -265,18 +264,17 @@ const ShopStats = () => {
           <div key={b.name} className="bg-card border border-border rounded-lg p-4">
             <h4 className="font-serif text-lg font-bold mb-2">{b.name}</h4>
             <div className="grid grid-cols-2 gap-1 font-body text-sm">
-              <span className="text-muted-foreground">Cuts:</span><span className="text-foreground">{b.cuts}</span>
-              <span className="text-muted-foreground">Revenue:</span><span className="text-foreground">€{b.revenue.toFixed(0)}</span>
-              <span className="text-muted-foreground">Commission:</span><span className="text-foreground">{(b.commission * 100).toFixed(0)}%</span>
-              <span className="text-muted-foreground">Earnings:</span><span className="text-accent font-medium">€{b.earnings.toFixed(0)}</span>
+              <span className="text-muted-foreground">{t("admin.cuts")}</span><span className="text-foreground">{b.cuts}</span>
+              <span className="text-muted-foreground">{t("admin.revenue")}</span><span className="text-foreground">€{b.revenue.toFixed(0)}</span>
+              <span className="text-muted-foreground">{t("admin.commission")}</span><span className="text-foreground">{(b.commission * 100).toFixed(0)}%</span>
+              <span className="text-muted-foreground">{t("admin.earnings")}</span><span className="text-accent font-medium">€{b.earnings.toFixed(0)}</span>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Revenue Bar Chart */}
       <div>
-        <h4 className="font-serif text-lg font-semibold mb-3">Revenue Per Day (This Week)</h4>
+        <h4 className="font-serif text-lg font-semibold mb-3">{t("admin.revenuePerDay")}</h4>
         <div className="bg-card border border-border rounded-lg p-4">
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={dailyData}>
@@ -291,9 +289,8 @@ const ShopStats = () => {
         </div>
       </div>
 
-      {/* Monthly Earnings Line Chart */}
       <div>
-        <h4 className="font-serif text-lg font-semibold mb-3">Monthly Earnings (6 Months)</h4>
+        <h4 className="font-serif text-lg font-semibold mb-3">{t("admin.monthlyEarnings")}</h4>
         <div className="bg-card border border-border rounded-lg p-4">
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={monthlyData}>
@@ -311,8 +308,8 @@ const ShopStats = () => {
   );
 };
 
-// Master Calendar
 const MasterCalendar = () => {
+  const { t } = useLanguage();
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [barbers, setBarbers] = useState<{ id: string; name: string }[]>([]);
@@ -335,37 +332,43 @@ const MasterCalendar = () => {
 
   const cancelAppt = async (id: string) => {
     await supabase.from("appointments").delete().eq("id", id);
-    toast.success("Cancelled");
+    toast.success(t("admin.cancelledMsg"));
     fetchAll();
   };
 
   const completeAppt = async (id: string) => {
     await supabase.from("appointments").update({ status: "completed" }).eq("id", id);
-    toast.success("Completed");
+    toast.success(t("admin.completedMsg"));
     fetchAll();
   };
 
   const addAppt = async () => {
-    if (!newAppt.barber_id || !newAppt.service_id || !newAppt.client_name) { toast.error("Fill required fields"); return; }
+    if (!newAppt.barber_id || !newAppt.service_id || !newAppt.client_name) { toast.error(t("admin.fillRequired")); return; }
     const { error } = await supabase.from("appointments").insert({
       ...newAppt,
       appointment_date: selectedDate,
       time_slot: newAppt.time_slot + ":00",
     });
     if (error) toast.error(error.message);
-    else { toast.success("Appointment added!"); setShowAdd(false); fetchAll(); }
+    else { toast.success(t("admin.appointmentAdded")); setShowAdd(false); fetchAll(); }
+  };
+
+  const statusLabel = (status: string) => {
+    const key = `admin.status.${status}`;
+    const v = t(key);
+    return v === key ? status : v;
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="font-serif text-xl font-semibold flex items-center gap-2">
-          <Calendar size={20} className="text-primary" /> Master Calendar
+          <Calendar size={20} className="text-primary" /> {t("admin.masterCalendar")}
         </h3>
         <div className="flex gap-2">
           <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-background border-border text-foreground" />
           <Button size="sm" onClick={() => setShowAdd(!showAdd)} className="bg-accent text-accent-foreground hover:bg-accent/80">
-            <Plus size={16} className="mr-1" /> Add
+            <Plus size={16} className="mr-1" /> {t("admin.add")}
           </Button>
         </div>
       </div>
@@ -374,43 +377,43 @@ const MasterCalendar = () => {
         <div className="bg-card border border-border rounded-lg p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label className="text-foreground font-body text-sm">Barber</Label>
+              <Label className="text-foreground font-body text-sm">{t("admin.barber")}</Label>
               <select value={newAppt.barber_id} onChange={(e) => setNewAppt({ ...newAppt, barber_id: e.target.value })} className="mt-1 w-full bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm">
-                <option value="">Select…</option>
+                <option value="">{t("admin.selectDots")}</option>
                 {barbers.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
             </div>
             <div>
-              <Label className="text-foreground font-body text-sm">Service</Label>
+              <Label className="text-foreground font-body text-sm">{t("admin.service")}</Label>
               <select value={newAppt.service_id} onChange={(e) => setNewAppt({ ...newAppt, service_id: e.target.value })} className="mt-1 w-full bg-background border border-border text-foreground rounded-md px-3 py-2 text-sm">
-                <option value="">Select…</option>
+                <option value="">{t("admin.selectDots")}</option>
                 {services.map((s) => <option key={s.id} value={s.id}>{s.name} — €{s.price}</option>)}
               </select>
             </div>
             <div>
-              <Label className="text-foreground font-body text-sm">Client Name</Label>
+              <Label className="text-foreground font-body text-sm">{t("admin.clientName")}</Label>
               <Input value={newAppt.client_name} onChange={(e) => setNewAppt({ ...newAppt, client_name: e.target.value })} className="mt-1 bg-background border-border text-foreground" />
             </div>
             <div>
-              <Label className="text-foreground font-body text-sm">Time</Label>
+              <Label className="text-foreground font-body text-sm">{t("admin.time")}</Label>
               <Input type="time" value={newAppt.time_slot} onChange={(e) => setNewAppt({ ...newAppt, time_slot: e.target.value })} className="mt-1 bg-background border-border text-foreground" />
             </div>
             <div>
-              <Label className="text-foreground font-body text-sm">Email</Label>
+              <Label className="text-foreground font-body text-sm">{t("admin.emailLabel")}</Label>
               <Input value={newAppt.client_email} onChange={(e) => setNewAppt({ ...newAppt, client_email: e.target.value })} className="mt-1 bg-background border-border text-foreground" />
             </div>
             <div>
-              <Label className="text-foreground font-body text-sm">Phone</Label>
+              <Label className="text-foreground font-body text-sm">{t("admin.phoneLabel")}</Label>
               <Input value={newAppt.client_phone} onChange={(e) => setNewAppt({ ...newAppt, client_phone: e.target.value })} className="mt-1 bg-background border-border text-foreground" />
             </div>
           </div>
-          <Button onClick={addAppt} className="bg-accent text-accent-foreground hover:bg-accent/80">Add Appointment</Button>
+          <Button onClick={addAppt} className="bg-accent text-accent-foreground hover:bg-accent/80">{t("admin.addAppointment")}</Button>
         </div>
       )}
 
       <div className="space-y-2">
         {appointments.length === 0 ? (
-          <p className="text-muted-foreground font-body text-sm py-8 text-center">No appointments for this date.</p>
+          <p className="text-muted-foreground font-body text-sm py-8 text-center">{t("admin.noAppointments")}</p>
         ) : (
           appointments.map((a) => (
             <div key={a.id} className="bg-card border border-border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -424,7 +427,7 @@ const MasterCalendar = () => {
                     a.status === "completed" ? "bg-accent text-accent-foreground" :
                     a.status === "cancelled" ? "bg-primary/20 text-primary" :
                     "bg-muted text-muted-foreground"
-                  }`}>{a.status}</span>
+                  }`}>{statusLabel(a.status)}</span>
                 </div>
                 <p className="text-foreground font-body text-sm">{a.client_name} — {a.services?.name}</p>
               </div>
@@ -450,7 +453,6 @@ const StatCard = ({ label, value, sub }: { label: string; value: string | number
   </div>
 );
 
-// Main Tab
 const EditBarberViewTab = () => {
   return (
     <div className="space-y-10">
