@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { format } from "date-fns";
-import { pt, enUS, es, fr, it, de } from "date-fns/locale";
+import { pt, enUS, es, fr, it, de, ga } from "date-fns/locale";
 import {
   CalendarIcon,
   Clock,
@@ -144,16 +144,16 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
   const confirmationRef = useRef<HTMLDivElement>(null);
 
+  const dateLocale = (() => {
+    const map: Record<string, any> = { pt, en: enUS, es, fr, it, de, ga };
+    return map[lang] || enUS;
+  })();
+
   const getFullDate = (date: Date) => {
-    const locales: Record<string, any> = { pt, en: enUS, es, fr, it, de };
-    const currentLocale = locales[lang] || pt;
-    
-    // For Portuguese, add "de" between day and month
     if (lang === 'pt') {
       return format(date, "EEEE, d 'de' MMMM yyyy", { locale: pt });
     }
-    
-    return format(date, "EEEE, d MMMM yyyy", { locale: currentLocale });
+    return format(date, "EEEE, d MMMM yyyy", { locale: dateLocale });
   };
 
   // Slots filtered by per-day shop schedule (open hours + breaks)
@@ -173,9 +173,9 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
 
   const getUrgencyMessage = () => {
     if (!selectedDate || allSlotsBooked) return null;
-    if (availableSlots === 1) return "🔥 Apenas 1 vaga restante!";
-    if (availableSlots === 2) return "🔥 Apenas 2 vagas restantes!";
-    if (occupancyPercent > 70) return "👀 Alta procura para este dia!";
+    if (availableSlots === 1) return t("booking.urgencyOne");
+    if (availableSlots === 2) return t("booking.urgencyTwo");
+    if (occupancyPercent > 70) return t("booking.urgencyHigh");
     return null;
   };
 
@@ -219,7 +219,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
         if (saved?.phone) setClientPhone((prev) => prev || String(saved.phone).replace(/[^0-9]/g, ""));
         if (saved?.email) setClientEmail((prev) => prev || saved.email);
         if (saved?.name || saved?.phone || saved?.email) {
-          setPrefillHint("Dados guardados anteriormente · Editar à vontade");
+            setPrefillHint(t("booking.prefillHint"));
         }
       }
     } catch {}
