@@ -591,14 +591,14 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                       style={{ background: GOLD, color: "#111" }}
                       onClick={() => { setModalType("move"); setMoveTarget(""); }}
                     >
-                      <ArrowRight size={16} /> Mover agendamento
+                      <ArrowRight size={16} /> {t("schedule.moveAppointment")}
                     </Button>
                     <Button
                       className="w-full font-body text-sm gap-2"
                       variant="outline"
                       onClick={() => { updateStatus(modalAppt.id, "completed"); closeModal(); }}
                     >
-                      <Check size={16} /> Marcar como concluído
+                      <Check size={16} /> {t("schedule.markCompleted")}
                     </Button>
                     {canCancel(modalAppt) && (
                       <Button
@@ -609,7 +609,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                           closeModal();
                         }}
                       >
-                        <Trash2 size={16} /> Cancelar agendamento
+                        <Trash2 size={16} /> {t("schedule.cancelAppointment")}
                       </Button>
                     )}
                   </div>
@@ -624,11 +624,11 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
               {modalAppt && (
                 <div className="space-y-4 pb-4">
                   <SheetHeader>
-                    <SheetTitle className="font-body text-foreground text-left">Mover para novo horário</SheetTitle>
+                    <SheetTitle className="font-body text-foreground text-left">{t("schedule.moveTitle")}</SheetTitle>
                   </SheetHeader>
                   <Select value={moveTarget} onValueChange={setMoveTarget}>
                     <SelectTrigger className="bg-background border-border text-foreground font-body">
-                      <SelectValue placeholder="Escolher horário..." />
+                      <SelectValue placeholder={t("schedule.choosePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {freeSlots.map(t => (
@@ -645,7 +645,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                       closeModal();
                     }}
                   >
-                    Confirmar
+                    {t("schedule.confirm")}
                   </Button>
                 </div>
               )}
@@ -658,7 +658,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
               <div className="space-y-4 pb-4">
                 <SheetHeader>
                   <SheetTitle className="font-body text-foreground text-left">
-                    {modalTime ? `Slot ${modalTime}` : "Adicionar Pausa"}
+                    {modalTime ? `${t("schedule.slotPrefix")} ${modalTime}` : t("schedule.addBreak")}
                   </SheetTitle>
                 </SheetHeader>
 
@@ -669,14 +669,14 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                       style={{ background: GOLD, color: "#111" }}
                       onClick={async () => { await addBreakAt(modalTime); closeModal(); }}
                     >
-                      <Coffee size={16} /> Adicionar break aqui
+                      <Coffee size={16} /> {t("schedule.addBreakHere")}
                     </Button>
                     <Button
                       className="w-full font-body text-sm gap-2"
                       style={{ background: RED, color: "#fff" }}
                       onClick={async () => { await addBlockAt(modalTime); closeModal(); }}
                     >
-                      <Ban size={16} /> Bloquear este horário
+                      <Ban size={16} /> {t("schedule.blockThisSlot")}
                     </Button>
                   </div>
                 ) : (
@@ -684,7 +684,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                   <div className="space-y-3">
                     <Select onValueChange={async (v) => { await addBreakAt(v); closeModal(); }}>
                       <SelectTrigger className="bg-background border-border text-foreground font-body">
-                        <SelectValue placeholder="Escolher horário para pausa..." />
+                        <SelectValue placeholder={t("schedule.choosePauseTime")} />
                       </SelectTrigger>
                       <SelectContent>
                         {freeSlots.map(t => (
@@ -705,7 +705,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                 <div className="space-y-4 pb-4">
                   <SheetHeader>
                     <SheetTitle className="font-body text-left" style={{ color: GOLD }}>
-                      <div className="flex items-center gap-2"><Coffee size={18} /> Pausa — {modalAppt.time_slot.slice(0, 5)}</div>
+                      <div className="flex items-center gap-2"><Coffee size={18} /> {t("schedule.breakAt")} — {modalAppt.time_slot.slice(0, 5)}</div>
                     </SheetTitle>
                   </SheetHeader>
                   <Button
@@ -713,7 +713,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                     style={{ background: RED, color: "#fff" }}
                     onClick={async () => { await removeSlot(modalAppt.id); closeModal(); }}
                   >
-                    <Trash2 size={16} /> Remover pausa
+                    <Trash2 size={16} /> {t("schedule.removeBreak")}
                   </Button>
                 </div>
               )}
@@ -727,7 +727,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                 <div className="space-y-4 pb-4">
                   <SheetHeader>
                     <SheetTitle className="font-body text-left" style={{ color: RED }}>
-                      <div className="flex items-center gap-2"><Ban size={18} /> Bloqueado — {modalAppt.time_slot.slice(0, 5)}</div>
+                      <div className="flex items-center gap-2"><Ban size={18} /> {t("schedule.blockedAt")} — {modalAppt.time_slot.slice(0, 5)}</div>
                     </SheetTitle>
                   </SheetHeader>
                   <Button
@@ -735,7 +735,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                     style={{ background: GOLD, color: "#111" }}
                     onClick={async () => { await removeSlot(modalAppt.id); closeModal(); }}
                   >
-                    <Check size={16} /> Desbloquear horário
+                    <Check size={16} /> {t("schedule.unblockSlot")}
                   </Button>
                 </div>
               )}
@@ -748,25 +748,25 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
               <div className="space-y-4 pb-4">
                 <SheetHeader>
                   <SheetTitle className="font-body text-left" style={{ color: RED }}>
-                    <div className="flex items-center gap-2"><Ban size={18} /> Bloquear intervalo</div>
+                    <div className="flex items-center gap-2"><Ban size={18} /> {t("schedule.blockRange")}</div>
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex items-center gap-2">
                   <Select value={blockStart} onValueChange={setBlockStart}>
                     <SelectTrigger className="flex-1 bg-background border-border text-foreground font-body text-sm">
-                      <SelectValue placeholder="De" />
+                      <SelectValue placeholder={t("schedule.from")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      {timeSlots.map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <span className="text-muted-foreground text-sm">→</span>
                   <Select value={blockEnd} onValueChange={setBlockEnd}>
                     <SelectTrigger className="flex-1 bg-background border-border text-foreground font-body text-sm">
-                      <SelectValue placeholder="Até" />
+                      <SelectValue placeholder={t("schedule.to")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {timeSlots.filter(t => t > blockStart).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      {timeSlots.filter(slot => slot > blockStart).map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -779,7 +779,7 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
                     closeModal();
                   }}
                 >
-                  Bloquear
+                  {t("schedule.block")}
                 </Button>
               </div>
             </SheetContent>
@@ -789,19 +789,19 @@ const ScheduleTab = ({ barberId, activeTab, refreshToken }: { barberId: string; 
           <AlertDialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle className="font-serif">Cancelar agendamento?</AlertDialogTitle>
+                <AlertDialogTitle className="font-serif">{t("schedule.cancelTitle")}</AlertDialogTitle>
                 <AlertDialogDescription className="font-body">
-                  Tens a certeza que queres cancelar o agendamento de{" "}
+                  {t("schedule.cancelDescPrefix")}{" "}
                   <span className="font-semibold text-foreground">{cancelTarget?.client_name}</span>?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="font-body">Não</AlertDialogCancel>
+                <AlertDialogCancel className="font-body">{t("staff.no")}</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-body"
                   onClick={() => { if (cancelTarget) { updateStatus(cancelTarget.id, "cancelled", cancelTarget); setCancelTarget(null); } }}
                 >
-                  Sim, cancelar
+                  {t("staff.yesCancel")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
