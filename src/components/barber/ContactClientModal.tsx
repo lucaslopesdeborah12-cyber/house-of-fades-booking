@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { format, parseISO } from "date-fns";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 let emailjsInited = false;
 const ensureEmailJSInit = () => {
@@ -40,6 +41,7 @@ const ContactClientModal = ({
   target: ContactTarget | null;
   onClose: () => void;
 }) => {
+  const { t } = useLanguage();
   const open = !!target;
 
   const { availableMsgTabs, showCall } = useMemo(() => {
@@ -54,7 +56,7 @@ const ContactClientModal = ({
 
   const [msgTab, setMsgTab] = useState<MsgTab>("sms");
   const [smsMessage, setSmsMessage] = useState("");
-  const [emailSubject, setEmailSubject] = useState("House of Fades — Sobre a sua marcação");
+  const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const [callTask, setCallTask] = useState("");
   const [busy, setBusy] = useState(false);
@@ -66,7 +68,7 @@ const ContactClientModal = ({
       setMsgTab(availableMsgTabs[0] || "sms");
       setSmsMessage("");
       setEmailMessage("");
-      setEmailSubject("House of Fades — Sobre a sua marcação");
+      setEmailSubject(t("contactModal.emailSubject"));
       setCallTask("");
       setCallState("idle");
     }
@@ -102,11 +104,11 @@ const ContactClientModal = ({
 
   const handleSendSMS = async () => {
     if (!target.client_phone) {
-      toast.error("Cliente não tem telefone");
+      toast.error(t("cancelModal.toastNoPhone"));
       return;
     }
     if (!smsMessage.trim()) {
-      toast.error("Escreva uma mensagem");
+      toast.error(t("cancelModal.toastWriteMessage"));
       return;
     }
     setBusy(true);
@@ -116,11 +118,11 @@ const ContactClientModal = ({
       });
       if (error || !data?.success) throw new Error(error?.message || "SMS failed");
       await logContact("sms", smsMessage.trim(), "sent");
-      toast.success(`SMS enviado para ${target.client_name} ✓`);
+      toast.success(t("contactModal.toastSmsSentTo").replace("{name}", target.client_name));
       onClose();
     } catch (e: any) {
       await logContact("sms", smsMessage.trim(), "failed", undefined, String(e?.message || e));
-      toast.error("Falha ao enviar SMS");
+      toast.error(t("cancelModal.toastSmsFailed"));
     } finally {
       setBusy(false);
     }
@@ -128,11 +130,11 @@ const ContactClientModal = ({
 
   const handleSendEmail = async () => {
     if (!target.client_email) {
-      toast.error("Cliente não tem email");
+      toast.error(t("cancelModal.toastNoEmail"));
       return;
     }
     if (!emailMessage.trim()) {
-      toast.error("Escreva uma mensagem");
+      toast.error(t("cancelModal.toastWriteMessage"));
       return;
     }
     setBusy(true);
@@ -150,11 +152,11 @@ const ContactClientModal = ({
         appointment_time: timeStr,
       });
       await logContact("email", emailMessage.trim(), "sent", emailSubject);
-      toast.success(`Email enviado para ${target.client_name} ✓`);
+      toast.success(t("contactModal.toastEmailSentTo").replace("{name}", target.client_name));
       onClose();
     } catch (e: any) {
       await logContact("email", emailMessage.trim(), "failed", emailSubject, String(e?.message || e));
-      toast.error("Falha ao enviar email");
+      toast.error(t("cancelModal.toastEmailFailed"));
     } finally {
       setBusy(false);
     }
@@ -162,11 +164,11 @@ const ContactClientModal = ({
 
   const handleCall = async () => {
     if (!target.client_phone) {
-      toast.error("Cliente não tem telefone");
+      toast.error(t("cancelModal.toastNoPhone"));
       return;
     }
     if (!callTask.trim()) {
-      toast.error("Descreva o motivo da chamada");
+      toast.error(t("cancelModal.toastWriteCallReason"));
       return;
     }
     setCallState("loading");
@@ -181,7 +183,7 @@ const ContactClientModal = ({
       if (error || !data?.success) throw new Error(error?.message || "Call failed");
       await logContact("call", callTask.trim(), "sent");
       setCallState("success");
-      toast.success(`Chamada iniciada ✓`);
+      toast.success(t("contactModal.toastCallStarted"));
       setTimeout(() => setCallState("idle"), 4000);
     } catch (e: any) {
       await logContact("call", callTask.trim(), "failed", undefined, String(e?.message || e));
@@ -211,16 +213,16 @@ const ContactClientModal = ({
           <div className="flex justify-between items-start mb-6">
             <div>
               <DialogTitle className="font-body text-base font-medium text-white">
-                Contactar — {target.client_name}
+                {t("contactModal.titlePrefix").replace("{name}", target.client_name)}
               </DialogTitle>
               <p className="font-body text-[13px] text-[#666] mt-1">
-                {serviceName} · {dateStr} às {timeStr} · {barberName}
+                {serviceName} · {dateStr} · {timeStr} · {barberName}
               </p>
             </div>
             <button
               onClick={() => !busy && callState !== "loading" && onClose()}
               className="text-[#555] hover:text-white transition-colors"
-              aria-label="Fechar"
+              aria-label={t("cancelModal.close")}
             >
               <X className="h-5 w-5" />
             </button>
@@ -238,7 +240,7 @@ const ContactClientModal = ({
                   className="font-body uppercase mb-2.5"
                   style={{ color: GOLD, fontSize: 10, letterSpacing: "0.12em" }}
                 >
-                  Mensagem Direta
+                  {t("cancelModal.directMessage")}
                 </p>
                 <div
                   className="p-4"
@@ -272,7 +274,7 @@ const ContactClientModal = ({
                       <Textarea
                         value={smsMessage}
                         onChange={(e) => setSmsMessage(e.target.value.slice(0, 160))}
-                        placeholder="Escreva a sua mensagem..."
+                        placeholder={t("contactModal.messagePlaceholder")}
                         rows={5}
                         className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0 resize-y"
                         style={{ background: "#111", borderColor: "#2a2a2a", borderRadius: 8 }}
@@ -288,7 +290,7 @@ const ContactClientModal = ({
                         className="w-full font-body text-xs font-medium uppercase tracking-wider py-3 transition-opacity disabled:opacity-40"
                         style={{ background: GOLD, color: "#050505", borderRadius: 8 }}
                       >
-                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : "Enviar SMS →"}
+                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : t("cancelModal.sendSms")}
                       </button>
                     </div>
                   )}
@@ -298,7 +300,7 @@ const ContactClientModal = ({
                       <Input
                         value={emailSubject}
                         onChange={(e) => setEmailSubject(e.target.value)}
-                        placeholder="Assunto"
+                        placeholder={t("contactModal.subjectPlaceholder")}
                         className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0"
                         style={{ background: "#111", borderColor: "#2a2a2a", borderRadius: 8 }}
                         onFocus={(e) => (e.currentTarget.style.borderColor = "#c9a84c88")}
@@ -307,7 +309,7 @@ const ContactClientModal = ({
                       <Textarea
                         value={emailMessage}
                         onChange={(e) => setEmailMessage(e.target.value)}
-                        placeholder="Escreva a sua mensagem..."
+                        placeholder={t("contactModal.messagePlaceholder")}
                         rows={5}
                         className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0 resize-y"
                         style={{ background: "#111", borderColor: "#2a2a2a", borderRadius: 8 }}
@@ -320,7 +322,7 @@ const ContactClientModal = ({
                         className="w-full font-body text-xs font-medium uppercase tracking-wider py-3 transition-opacity disabled:opacity-40"
                         style={{ background: GOLD, color: "#050505", borderRadius: 8 }}
                       >
-                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : "Enviar Email →"}
+                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : t("cancelModal.sendEmail")}
                       </button>
                     </div>
                   )}
@@ -339,7 +341,7 @@ const ContactClientModal = ({
                   className="font-body uppercase mb-2.5"
                   style={{ color: GOLD, fontSize: 10, letterSpacing: "0.12em" }}
                 >
-                  Chamada com Inteligência Artificial
+                  {t("contactModal.aiCallTitle")}
                 </p>
                 <div
                   className="p-4 space-y-3"
@@ -350,19 +352,19 @@ const ContactClientModal = ({
                     style={{ color: "#888" }}
                   >
                     <Zap className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: GOLD }} />
-                    A IA irá contactar o cliente autonomamente em nome da House of Fades
+                    {t("contactModal.aiCallDescription")}
                   </p>
 
                   <label
                     className="font-body uppercase block"
                     style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, letterSpacing: "0.12em" }}
                   >
-                    Descreva o motivo da chamada
+                    {t("contactModal.callReasonLabel")}
                   </label>
                   <Textarea
                     value={callTask}
                     onChange={(e) => setCallTask(e.target.value)}
-                    placeholder="Ex: O barbeiro Mario ficou doente e precisamos remarcar a consulta de amanhã às 14:00..."
+                    placeholder={t("contactModal.callPlaceholder")}
                     className="border text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0 resize-y"
                     style={{
                       background: "#111",
@@ -380,7 +382,7 @@ const ContactClientModal = ({
                       style={{ color: "rgba(255,255,255,0.7)" }}
                     >
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      A ligar para {target.client_name}...
+                      {t("cancelModal.callingClient").replace("{name}", target.client_name)}
                     </div>
                   )}
 
@@ -390,7 +392,7 @@ const ContactClientModal = ({
                       style={{ background: "#1a3a1a", color: "#4ade80", borderRadius: 8 }}
                     >
                       <Check className="h-4 w-4" />
-                      Chamada iniciada
+                      {t("cancelModal.callStarted")}
                     </div>
                   )}
 
@@ -399,7 +401,7 @@ const ContactClientModal = ({
                       className="w-full font-body text-xs py-3 text-center"
                       style={{ background: "#3a1a1a", color: "#f87171", borderRadius: 8 }}
                     >
-                      Erro ao iniciar chamada. Tente novamente.
+                      {t("cancelModal.callError")}
                     </div>
                   )}
 
@@ -411,7 +413,7 @@ const ContactClientModal = ({
                       style={{ background: GOLD, color: "#111", borderRadius: 8 }}
                     >
                       <Phone className="h-3.5 w-3.5" />
-                      Iniciar Chamada com IA →
+                      {t("cancelModal.startAiCall")}
                     </button>
                   )}
                 </div>

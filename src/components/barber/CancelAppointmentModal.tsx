@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { format, parseISO } from "date-fns";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 let emailjsInited = false;
 const ensureEmailJSInit = () => {
@@ -33,21 +34,8 @@ type MsgTab = "sms" | "email";
 
 const GOLD = "#c9a84c";
 
-const buildMessage = (t: CancelTarget) => {
-  const dateStr = format(parseISO(t.appointment_date), "dd/MM");
-  const timeStr = t.time_slot.slice(0, 5);
-  const serviceName = t.services?.name || "serviço";
-  const barberName = t.barbers?.name || "o barbeiro";
-  return `Olá ${t.client_name}, infelizmente temos de cancelar a sua marcação de ${dateStr} às ${timeStr} (${serviceName} com ${barberName}). Pedimos desculpa pelo inconveniente. Por favor contacte-nos para remarcar. — House of Fades, Carlow`;
-};
-
-const buildCallTask = (t: CancelTarget) => {
-  const dateStr = format(parseISO(t.appointment_date), "dd/MM");
-  const timeStr = t.time_slot.slice(0, 5);
-  const serviceName = t.services?.name || "serviço";
-  const barberName = t.barbers?.name || "o barbeiro";
-  return `Ligar para ${t.client_name} para informar que a marcação de ${dateStr} às ${timeStr} para ${serviceName} com o barbeiro ${barberName} foi cancelada. Pedir desculpa pelo inconveniente e oferecer para remarcar.`;
-};
+const interpolate = (template: string, vars: Record<string, string>) =>
+  template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
 
 const CancelAppointmentModal = ({
   target,
@@ -58,6 +46,7 @@ const CancelAppointmentModal = ({
   onClose: () => void;
   onCancelled: () => void;
 }) => {
+  const { t } = useLanguage();
   const open = !!target;
 
   const { availableMsgTabs, showCall } = useMemo(() => {
@@ -72,7 +61,7 @@ const CancelAppointmentModal = ({
 
   const [msgTab, setMsgTab] = useState<MsgTab>("sms");
   const [smsMessage, setSmsMessage] = useState("");
-  const [emailSubject, setEmailSubject] = useState("House of Fades — Cancelamento da sua marcação");
+  const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const [callTask, setCallTask] = useState("");
   const [busy, setBusy] = useState(false);
@@ -85,12 +74,19 @@ const CancelAppointmentModal = ({
 
   useEffect(() => {
     if (target) {
-      const baseMsg = buildMessage(target);
+      const vars = {
+        name: target.client_name,
+        date: format(parseISO(target.appointment_date), "dd/MM"),
+        time: target.time_slot.slice(0, 5),
+        service: target.services?.name || t("cancelModal.serviceFallback"),
+        barber: target.barbers?.name || t("cancelModal.barberFallback"),
+      };
+      const baseMsg = interpolate(t("cancelModal.messageTemplate"), vars);
       setMsgTab(availableMsgTabs[0] || "sms");
       setSmsMessage(baseMsg);
       setEmailMessage(baseMsg);
-      setEmailSubject("House of Fades — Cancelamento da sua marcação");
-      setCallTask(buildCallTask(target));
+      setEmailSubject(t("cancelModal.emailSubject"));
+      setCallTask(interpolate(t("cancelModal.callTaskTemplate"), vars));
       setCallState("idle");
       setSmsSent(false);
       setEmailSent(false);
@@ -130,8 +126,8 @@ const CancelAppointmentModal = ({
   };
 
   const handleSendSMS = async () => {
-    if (!target.client_phone) { toast.error("Cliente não tem telefone"); return; }
-    if (!smsMessage.trim()) { toast.error("Escreva uma mensagem"); return; }
+    if (!target.client_phone) { toast.error(t("cancelModal.toastNoPhone")); return; }
+    if (!smsMessage.trim()) { toast.error(t("cancelModal.toastWriteMessage")); return; }
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-sms", {
@@ -140,16 +136,16 @@ const CancelAppointmentModal = ({
       if (error || !data?.success) throw new Error(error?.message || "SMS failed");
       await logContact("sms", smsMessage.trim(), "sent");
       setSmsSent(true);
-      toast.success(`SMS enviado ✓`);
+      toast.success(t("cancelModal.toastSmsSent"));
     } catch (e: any) {
       await logContact("sms", smsMessage.trim(), "failed", undefined, String(e?.message || e));
-      toast.error("Falha ao enviar SMS");
+      toast.error(t("cancelModal.toastSmsFailed"));
     } finally { setBusy(false); }
   };
 
   const handleSendEmail = async () => {
-    if (!target.client_email) { toast.error("Cliente não tem email"); return; }
-    if (!emailMessage.trim()) { toast.error("Escreva uma mensagem"); return; }
+    if (!target.client_email) { toast.error(t("cancelModal.toastNoEmail")); return; }
+    if (!emailMessage.trim()) { toast.error(t("cancelModal.toastWriteMessage")); return; }
     setBusy(true);
     try {
       ensureEmailJSInit();
@@ -166,16 +162,16 @@ const CancelAppointmentModal = ({
       });
       await logContact("email", emailMessage.trim(), "sent", emailSubject);
       setEmailSent(true);
-      toast.success(`Email enviado ✓`);
+      toast.success(t("cancelModal.toastEmailSent"));
     } catch (e: any) {
       await logContact("email", emailMessage.trim(), "failed", emailSubject, String(e?.message || e));
-      toast.error("Falha ao enviar email");
+      toast.error(t("cancelModal.toastEmailFailed"));
     } finally { setBusy(false); }
   };
 
   const handleCall = async () => {
-    if (!target.client_phone) { toast.error("Cliente não tem telefone"); return; }
-    if (!callTask.trim()) { toast.error("Descreva o motivo da chamada"); return; }
+    if (!target.client_phone) { toast.error(t("cancelModal.toastNoPhone")); return; }
+    if (!callTask.trim()) { toast.error(t("cancelModal.toastWriteCallReason")); return; }
     setCallState("loading");
     try {
       const { data, error } = await supabase.functions.invoke("contact-call", {
@@ -205,11 +201,11 @@ const CancelAppointmentModal = ({
         } as any)
         .eq("id", target.id);
       if (error) throw error;
-      toast.success("Agendamento cancelado ✓");
+      toast.success(t("cancelModal.toastCancelled"));
       onCancelled();
       onClose();
     } catch (e: any) {
-      toast.error("Falha ao cancelar");
+      toast.error(t("cancelModal.toastCancelFailed"));
       setFinalizing(false);
     }
   };
@@ -236,12 +232,12 @@ const CancelAppointmentModal = ({
           {/* Header */}
           <div className="flex justify-between items-start mb-6">
             <DialogTitle className="font-body text-base font-medium text-white">
-              Cancelar Agendamento
+              {t("cancelModal.title")}
             </DialogTitle>
             <button
               onClick={() => !lockedClose && onClose()}
               className="text-[#555] hover:text-white transition-colors"
-              aria-label="Fechar"
+              aria-label={t("cancelModal.close")}
             >
               <X className="h-5 w-5" />
             </button>
@@ -255,19 +251,19 @@ const CancelAppointmentModal = ({
               transition={{ duration: 0.3, delay: 0.05, ease: "easeOut" }}
             >
               <p className="font-body uppercase mb-2.5" style={{ color: GOLD, fontSize: 10, letterSpacing: "0.12em" }}>
-                Informação do Agendamento
+                {t("cancelModal.appointmentInfo")}
               </p>
               <div className="p-4 space-y-2 font-body text-sm" style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 12 }}>
                 <div className="flex items-center gap-2"><User className="h-4 w-4" style={{ color: GOLD }} /><span className="text-white">{target.client_name}</span></div>
                 <div className="flex items-center gap-2"><Calendar className="h-4 w-4" style={{ color: GOLD }} /><span className="text-white">{dateStr} · {timeStr}</span></div>
                 <div className="flex items-center gap-2"><Scissors className="h-4 w-4" style={{ color: GOLD }} /><span className="text-white">{serviceName} · {barberName}</span></div>
-                <div className="flex items-center gap-2"><Mail className="h-4 w-4" style={{ color: GOLD }} /><span className={target.client_email ? "text-white" : "text-[#555]"}>{target.client_email || "Não disponível"}</span></div>
-                <div className="flex items-center gap-2"><Phone className="h-4 w-4" style={{ color: GOLD }} /><span className={target.client_phone ? "text-white" : "text-[#555]"}>{target.client_phone || "Não disponível"}</span></div>
+                <div className="flex items-center gap-2"><Mail className="h-4 w-4" style={{ color: GOLD }} /><span className={target.client_email ? "text-white" : "text-[#555]"}>{target.client_email || t("cancelModal.notAvailable")}</span></div>
+                <div className="flex items-center gap-2"><Phone className="h-4 w-4" style={{ color: GOLD }} /><span className={target.client_phone ? "text-white" : "text-[#555]"}>{target.client_phone || t("cancelModal.notAvailable")}</span></div>
               </div>
             </motion.div>
 
             <p className="font-body uppercase" style={{ color: GOLD, fontSize: 10, letterSpacing: "0.12em" }}>
-              Notificar o Cliente
+              {t("cancelModal.notifyClient")}
             </p>
 
             {/* SECTION 1 — MENSAGEM DIRETA */}
@@ -278,7 +274,7 @@ const CancelAppointmentModal = ({
                 transition={{ duration: 0.3, delay: 0.15, ease: "easeOut" }}
               >
                 <p className="font-body uppercase mb-2.5" style={{ color: GOLD, fontSize: 10, letterSpacing: "0.12em" }}>
-                  Mensagem Direta
+                  {t("cancelModal.directMessage")}
                 </p>
                 <div className="p-4" style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 12 }}>
                   <div className="flex gap-1 mb-4 border-b" style={{ borderColor: "#2a2a2a" }}>
@@ -320,7 +316,7 @@ const CancelAppointmentModal = ({
                       {smsSent ? (
                         <div className="w-full py-3 flex items-center justify-center gap-2 font-body text-xs uppercase tracking-wider"
                           style={{ background: "#1a3a1a", color: "#4ade80", borderRadius: 8 }}>
-                          <Check className="h-4 w-4" /> Mensagem enviada
+                          <Check className="h-4 w-4" /> {t("cancelModal.messageSent")}
                         </div>
                       ) : (
                         <button
@@ -329,7 +325,7 @@ const CancelAppointmentModal = ({
                           className="w-full font-body text-xs font-medium uppercase tracking-wider py-3 transition-opacity disabled:opacity-40"
                           style={{ background: GOLD, color: "#050505", borderRadius: 8 }}
                         >
-                          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : "Enviar SMS →"}
+                          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : t("cancelModal.sendSms")}
                         </button>
                       )}
                     </div>
@@ -357,7 +353,7 @@ const CancelAppointmentModal = ({
                       {emailSent ? (
                         <div className="w-full py-3 flex items-center justify-center gap-2 font-body text-xs uppercase tracking-wider"
                           style={{ background: "#1a3a1a", color: "#4ade80", borderRadius: 8 }}>
-                          <Check className="h-4 w-4" /> Mensagem enviada
+                          <Check className="h-4 w-4" /> {t("cancelModal.messageSent")}
                         </div>
                       ) : (
                         <button
@@ -366,7 +362,7 @@ const CancelAppointmentModal = ({
                           className="w-full font-body text-xs font-medium uppercase tracking-wider py-3 transition-opacity disabled:opacity-40"
                           style={{ background: GOLD, color: "#050505", borderRadius: 8 }}
                         >
-                          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : "Enviar Email →"}
+                          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : t("cancelModal.sendEmail")}
                         </button>
                       )}
                     </div>
@@ -383,15 +379,15 @@ const CancelAppointmentModal = ({
                 transition={{ duration: 0.3, delay: 0.25, ease: "easeOut" }}
               >
                 <p className="font-body uppercase mb-2.5" style={{ color: GOLD, fontSize: 10, letterSpacing: "0.12em" }}>
-                  Chamada com IA
+                  {t("cancelModal.aiCall")}
                 </p>
                 <div className="p-4 space-y-3" style={{ background: "#1a1a1a", border: "1px solid #c9a84c33", borderRadius: 12 }}>
                   <p className="font-body text-xs italic flex items-start gap-1.5" style={{ color: "#888" }}>
                     <Zap className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: GOLD }} />
-                    A IA irá contactar o cliente autonomamente em nome da House of Fades para explicar o cancelamento
+                    {t("cancelModal.aiCallDescription")}
                   </p>
                   <label className="font-body uppercase block" style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, letterSpacing: "0.12em" }}>
-                    Motivo da chamada
+                    {t("cancelModal.callReason")}
                   </label>
                   <Textarea
                     value={callTask}
@@ -404,18 +400,18 @@ const CancelAppointmentModal = ({
                   {callState === "loading" && (
                     <div className="flex items-center justify-center gap-2 py-3 font-body text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      A ligar para {target.client_name}...
+                      {t("cancelModal.callingClient").replace("{name}", target.client_name)}
                     </div>
                   )}
                   {callState === "success" && (
                     <div className="w-full font-body text-xs font-medium uppercase tracking-wider py-3 flex items-center justify-center gap-2"
                       style={{ background: "#1a3a1a", color: "#4ade80", borderRadius: 8 }}>
-                      <Check className="h-4 w-4" /> Chamada iniciada
+                      <Check className="h-4 w-4" /> {t("cancelModal.callStarted")}
                     </div>
                   )}
                   {callState === "error" && (
                     <div className="w-full font-body text-xs py-3 text-center" style={{ background: "#3a1a1a", color: "#f87171", borderRadius: 8 }}>
-                      Erro ao iniciar chamada. Tente novamente.
+                      {t("cancelModal.callError")}
                     </div>
                   )}
                   {callState === "idle" && !callSent && (
@@ -426,7 +422,7 @@ const CancelAppointmentModal = ({
                       style={{ background: GOLD, color: "#111", borderRadius: 8 }}
                     >
                       <Phone className="h-3.5 w-3.5" />
-                      Iniciar Chamada com IA →
+                      {t("cancelModal.startAiCall")}
                     </button>
                   )}
                 </div>
@@ -444,20 +440,20 @@ const CancelAppointmentModal = ({
                     exit={{ opacity: 0 }}
                     className="flex items-center gap-2"
                   >
-                    <span className="font-body text-xs text-white/60">Tens a certeza?</span>
+                    <span className="font-body text-xs text-white/60">{t("cancelModal.areYouSure")}</span>
                     <button
                       onClick={() => finalizeCancellation(false)}
                       disabled={finalizing}
                       className="font-body text-xs uppercase tracking-wider px-3 py-2 disabled:opacity-40"
                       style={{ color: "#f87171" }}
                     >
-                      {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : "Sim, cancelar"}
+                      {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : t("cancelModal.yesCancel")}
                     </button>
                     <button
                       onClick={() => setConfirmNoNotify(false)}
                       className="font-body text-xs uppercase tracking-wider px-3 py-2 text-white/40 hover:text-white"
                     >
-                      Não
+                      {t("cancelModal.no")}
                     </button>
                   </motion.div>
                 ) : (
@@ -469,7 +465,7 @@ const CancelAppointmentModal = ({
                     onClick={() => setConfirmNoNotify(true)}
                     className="font-body text-xs uppercase tracking-wider text-white/40 hover:text-white/70 transition-colors"
                   >
-                    Cancelar sem notificar
+                    {t("cancelModal.cancelWithoutNotify")}
                   </motion.button>
                 )}
               </AnimatePresence>
@@ -480,7 +476,7 @@ const CancelAppointmentModal = ({
                 className="font-body text-xs font-medium uppercase tracking-wider px-5 py-3 transition-opacity disabled:opacity-40"
                 style={{ background: GOLD, color: "#050505", borderRadius: 8 }}
               >
-                {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : "Confirmar cancelamento →"}
+                {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : t("cancelModal.confirmCancellation")}
               </button>
             </div>
           </div>
