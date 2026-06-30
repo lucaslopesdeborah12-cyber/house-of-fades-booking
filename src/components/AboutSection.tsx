@@ -33,7 +33,7 @@ const AboutSection = () => {
           >
             <img
               src={barberAction}
-              alt="Barber at work"
+              alt={t("about.imageAlt")}
               loading="lazy"
               width={800}
               height={800}
