@@ -7,6 +7,7 @@ import { format, parseISO, startOfWeek, endOfWeek, isToday } from "date-fns";
 import ContactClientModal, { ContactTarget } from "@/components/barber/ContactClientModal";
 import CancelAppointmentModal, { CancelTarget } from "@/components/barber/CancelAppointmentModal";
 import { AnimatePresence, motion } from "framer-motion";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type AppointmentRow = {
   id: string;
@@ -25,6 +26,7 @@ type AppointmentRow = {
 type Filter = "all" | "today" | "week" | "upcoming";
 
 const AllAppointmentsList = () => {
+  const { t } = useLanguage();
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("upcoming");
@@ -41,7 +43,7 @@ const AllAppointmentsList = () => {
       .order("time_slot");
 
     if (error) {
-      toast.error("Failed to load appointments");
+      toast.error(t("staff.failedLoad"));
     } else {
       setAppointments((data as AppointmentRow[]) || []);
     }
@@ -80,17 +82,17 @@ const AllAppointmentsList = () => {
   };
 
   const filters: { label: string; value: Filter }[] = [
-    { label: "Todos", value: "all" },
-    { label: "Hoje", value: "today" },
-    { label: "Esta semana", value: "week" },
-    { label: "Próximos", value: "upcoming" },
+    { label: t("staff.filterAll"), value: "all" },
+    { label: t("staff.filterToday"), value: "today" },
+    { label: t("staff.filterWeek"), value: "week" },
+    { label: t("staff.filterUpcoming"), value: "upcoming" },
   ];
 
-  if (loading) return <p className="text-muted-foreground font-body text-sm p-2">Loading…</p>;
+  if (loading) return <p className="text-muted-foreground font-body text-sm p-2">{t("staff.loading")}</p>;
 
   return (
     <div>
-      <h3 className="font-serif text-xl font-semibold mb-4">Todos os Agendamentos</h3>
+      <h3 className="font-serif text-xl font-semibold mb-4">{t("staff.allAppointments")}</h3>
 
       <div className="flex gap-2 mb-4 flex-wrap">
         {filters.map((f) => (
@@ -107,19 +109,19 @@ const AllAppointmentsList = () => {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-muted-foreground font-body text-sm">Nenhum agendamento encontrado.</p>
+        <p className="text-muted-foreground font-body text-sm">{t("staff.noAppointments")}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full font-body text-sm">
             <thead>
               <tr className="border-b border-border text-muted-foreground">
-                <th className="text-left py-2 pr-3">Data</th>
-                <th className="text-left py-2 pr-3">Hora</th>
-                <th className="text-left py-2 pr-3">Cliente</th>
-                <th className="text-left py-2 pr-3">Serviço</th>
-                <th className="text-left py-2 pr-3">Barbeiro</th>
-                <th className="text-left py-2 pr-3">Status</th>
-                <th className="text-right py-2">Ação</th>
+                <th className="text-left py-2 pr-3">{t("staff.colDate")}</th>
+                <th className="text-left py-2 pr-3">{t("staff.colTime")}</th>
+                <th className="text-left py-2 pr-3">{t("staff.colClient")}</th>
+                <th className="text-left py-2 pr-3">{t("staff.colService")}</th>
+                <th className="text-left py-2 pr-3">{t("staff.tableBarber")}</th>
+                <th className="text-left py-2 pr-3">{t("staff.colStatus")}</th>
+                <th className="text-right py-2">{t("staff.colAction")}</th>
               </tr>
             </thead>
             <tbody>
@@ -148,7 +150,7 @@ const AllAppointmentsList = () => {
                         style={{ color: "#c9a84c" }}
                         onClick={() => setContactTarget(a as ContactTarget)}
                       >
-                        Contactar
+                        {t("staff.contact")}
                       </Button>
                       <Button
                         size="sm"
@@ -156,7 +158,7 @@ const AllAppointmentsList = () => {
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 font-body text-xs h-7"
                         onClick={() => setCancelTarget(a as CancelTarget)}
                       >
-                        Cancelar
+                        {t("staff.cancel")}
                       </Button>
                     </div>
                   </td>

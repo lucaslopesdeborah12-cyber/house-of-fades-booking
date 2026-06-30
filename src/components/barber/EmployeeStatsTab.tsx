@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, startOfMonth, parseISO } from "date-fns";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const COMMISSION = 0.5;
 
@@ -12,6 +13,7 @@ type AppointmentRow = {
 };
 
 const EmployeeStatsTab = ({ barberId }: { barberId: string }) => {
+  const { t } = useLanguage();
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,7 +30,7 @@ const EmployeeStatsTab = ({ barberId }: { barberId: string }) => {
     fetch();
   }, [barberId]);
 
-  if (loading) return <p className="text-muted-foreground font-body p-4">Loading stats…</p>;
+  if (loading) return <p className="text-muted-foreground font-body p-4">{t("staff.loadingStats")}</p>;
 
   const now = new Date();
   const weekStart = startOfWeek(now, { weekStartsOn: 1 });
@@ -41,19 +43,19 @@ const EmployeeStatsTab = ({ barberId }: { barberId: string }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="This Week" value={weekAppts.length} sub="cuts" />
-        <StatCard label="This Month" value={monthAppts.length} sub="cuts" />
-        <StatCard label="All Time" value={appointments.length} sub="cuts" />
-        <StatCard label="My Earnings" value={`€${(totalRevenue * COMMISSION).toFixed(0)}`} sub="all time (50%)" />
+        <StatCard label={t("staff.thisWeek")} value={weekAppts.length} sub={t("staff.cuts")} />
+        <StatCard label={t("staff.thisMonth")} value={monthAppts.length} sub={t("staff.cuts")} />
+        <StatCard label={t("staff.allTime")} value={appointments.length} sub={t("staff.cuts")} />
+        <StatCard label={t("staff.myEarnings")} value={`€${(totalRevenue * COMMISSION).toFixed(0)}`} sub={t("staff.allTime50")} />
       </div>
 
       <div>
-        <h3 className="font-serif text-xl font-semibold mb-4">Service Breakdown</h3>
+        <h3 className="font-serif text-xl font-semibold mb-4">{t("staff.serviceBreakdown")}</h3>
         <div className="space-y-2">
           {(() => {
             const serviceMap = new Map<string, { count: number; revenue: number }>();
             appointments.forEach((a) => {
-              const sn = a.services?.name || "Unknown";
+              const sn = a.services?.name || t("staff.unknown");
               const existing = serviceMap.get(sn) || { count: 0, revenue: 0 };
               serviceMap.set(sn, { count: existing.count + 1, revenue: existing.revenue + (a.services?.price || 0) });
             });
@@ -61,7 +63,7 @@ const EmployeeStatsTab = ({ barberId }: { barberId: string }) => {
               <div key={service} className="bg-card border border-border rounded-lg p-3 flex justify-between items-center font-body text-sm">
                 <span className="text-foreground">{service}</span>
                 <div className="text-right">
-                  <span className="text-muted-foreground">{data.count} cuts</span>
+                  <span className="text-muted-foreground">{data.count} {t("staff.cuts")}</span>
                   <span className="text-foreground ml-3">€{(data.revenue * COMMISSION).toFixed(0)}</span>
                 </div>
               </div>

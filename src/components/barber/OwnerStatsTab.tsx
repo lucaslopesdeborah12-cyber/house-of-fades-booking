@@ -11,6 +11,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line,
 } from "recharts";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const COMMISSION = 0.5;
 
@@ -24,6 +25,7 @@ type AppointmentRow = {
 };
 
 const OwnerStatsTab = () => {
+  const { t } = useLanguage();
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [notifEmail, setNotifEmail] = useState("");
@@ -53,7 +55,7 @@ const OwnerStatsTab = () => {
     fetch();
   }, []);
 
-  if (loading) return <p className="text-muted-foreground font-body p-4">Loading stats…</p>;
+  if (loading) return <p className="text-muted-foreground font-body p-4">{t("staff.loadingStats")}</p>;
 
   const now = new Date();
   const weekStart = startOfWeek(now, { weekStartsOn: 1 });
@@ -63,7 +65,7 @@ const OwnerStatsTab = () => {
   const monthAppts = appointments.filter((a) => parseISO(a.appointment_date) >= monthStart);
 
   // Per-barber stats
-  const barberNames = [...new Set(appointments.map((a) => a.barbers?.name || "Unknown"))];
+  const barberNames = [...new Set(appointments.map((a) => a.barbers?.name || t("staff.unknown")))];
 
   const perBarber = barberNames.map((name) => {
     const mine = appointments.filter((a) => a.barbers?.name === name);
@@ -87,7 +89,7 @@ const OwnerStatsTab = () => {
     const mine = appointments.filter((a) => a.barbers?.name === barber);
     const serviceMap = new Map<string, { count: number; revenue: number }>();
     mine.forEach((a) => {
-      const sn = a.services?.name || "Unknown";
+      const sn = a.services?.name || t("staff.unknown");
       const existing = serviceMap.get(sn) || { count: 0, revenue: 0 };
       serviceMap.set(sn, { count: existing.count + 1, revenue: existing.revenue + (a.services?.price || 0) });
     });
@@ -133,10 +135,10 @@ const OwnerStatsTab = () => {
     <div className="space-y-8">
       {/* Notification Settings */}
       <div className="bg-card border border-border rounded-lg p-4">
-        <h3 className="font-serif text-lg font-semibold mb-3">Notification Settings</h3>
+        <h3 className="font-serif text-lg font-semibold mb-3">{t("staff.notificationSettings")}</h3>
         <div className="flex gap-2 items-end">
           <div className="flex-1">
-            <label className="font-body text-xs text-muted-foreground mb-1 block">Owner notification email</label>
+            <label className="font-body text-xs text-muted-foreground mb-1 block">{t("staff.ownerNotifEmail")}</label>
             <Input
               placeholder="your@gmail.com"
               value={notifEmail}
@@ -150,11 +152,11 @@ const OwnerStatsTab = () => {
               setSavingEmail(true);
               await (supabase.from("owner_settings" as any) as any).upsert({ key: "notification_email", value: notifEmail.trim() }, { onConflict: "key" });
               setSavingEmail(false);
-              toast.success("Saved!");
+              toast.success(t("staff.saved"));
             }}
             className="bg-accent hover:bg-accent/90 text-background font-body"
           >
-            {savingEmail ? "Saving…" : "Save"}
+            {savingEmail ? t("staff.saving") : t("staff.save")}
           </Button>
         </div>
       </div>
@@ -164,25 +166,25 @@ const OwnerStatsTab = () => {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="This Week" value={weekAppts.length} sub="cuts" />
-        <StatCard label="This Month" value={monthAppts.length} sub="cuts" />
-        <StatCard label="All Time" value={appointments.length} sub="cuts" />
-        <StatCard label="Total Revenue" value={`€${totalShopRevenue.toFixed(0)}`} sub="all time" />
+        <StatCard label={t("staff.thisWeek")} value={weekAppts.length} sub={t("staff.cuts")} />
+        <StatCard label={t("staff.thisMonth")} value={monthAppts.length} sub={t("staff.cuts")} />
+        <StatCard label={t("staff.allTime")} value={appointments.length} sub={t("staff.cuts")} />
+        <StatCard label={t("staff.totalRevenue")} value={`€${totalShopRevenue.toFixed(0)}`} sub={t("staff.allTimeLabel")} />
       </div>
 
       {/* Per barber summary */}
       <div>
-        <h3 className="font-serif text-xl font-semibold mb-4">Per Barber</h3>
+        <h3 className="font-serif text-xl font-semibold mb-4">{t("staff.perBarber")}</h3>
         <div className="grid md:grid-cols-3 gap-4">
           {perBarber.map((b) => (
             <div key={b.name} className="bg-card border border-border rounded-lg p-4">
               <h4 className="font-serif text-lg font-bold mb-2">{b.name}</h4>
               <div className="grid grid-cols-2 gap-2 font-body text-sm">
-                <span className="text-muted-foreground">Week:</span><span className="text-foreground">{b.weekCuts} cuts</span>
-                <span className="text-muted-foreground">Month:</span><span className="text-foreground">{b.monthCuts} cuts</span>
-                <span className="text-muted-foreground">All time:</span><span className="text-foreground">{b.allTimeCuts} cuts</span>
-                <span className="text-muted-foreground">Revenue:</span><span className="text-foreground">€{b.totalRevenue.toFixed(0)}</span>
-                <span className="text-muted-foreground">Earnings (50%):</span><span className="text-accent font-medium">€{b.earnings.toFixed(0)}</span>
+                <span className="text-muted-foreground">{t("staff.week")}</span><span className="text-foreground">{b.weekCuts} {t("staff.cuts")}</span>
+                <span className="text-muted-foreground">{t("staff.month")}</span><span className="text-foreground">{b.monthCuts} {t("staff.cuts")}</span>
+                <span className="text-muted-foreground">{t("staff.allTimeColon")}</span><span className="text-foreground">{b.allTimeCuts} {t("staff.cuts")}</span>
+                <span className="text-muted-foreground">{t("staff.revenue")}</span><span className="text-foreground">€{b.totalRevenue.toFixed(0)}</span>
+                <span className="text-muted-foreground">{t("staff.earnings50")}</span><span className="text-accent font-medium">€{b.earnings.toFixed(0)}</span>
               </div>
             </div>
           ))}
@@ -191,15 +193,15 @@ const OwnerStatsTab = () => {
 
       {/* Service breakdown */}
       <div>
-        <h3 className="font-serif text-xl font-semibold mb-4">Service Breakdown</h3>
+        <h3 className="font-serif text-xl font-semibold mb-4">{t("staff.serviceBreakdown")}</h3>
         <div className="overflow-x-auto">
           <table className="w-full font-body text-sm">
             <thead>
               <tr className="border-b border-border text-muted-foreground">
-                <th className="text-left py-2 pr-4">Barber</th>
-                <th className="text-left py-2 pr-4">Service</th>
-                <th className="text-right py-2 pr-4">Count</th>
-                <th className="text-right py-2">Revenue</th>
+                <th className="text-left py-2 pr-4">{t("staff.tableBarber")}</th>
+                <th className="text-left py-2 pr-4">{t("staff.tableService")}</th>
+                <th className="text-right py-2 pr-4">{t("staff.tableCount")}</th>
+                <th className="text-right py-2">{t("staff.tableRevenue")}</th>
               </tr>
             </thead>
             <tbody>
@@ -218,7 +220,7 @@ const OwnerStatsTab = () => {
 
       {/* Bar chart */}
       <div>
-        <h3 className="font-serif text-xl font-semibold mb-4">Cuts Per Day (This Week)</h3>
+        <h3 className="font-serif text-xl font-semibold mb-4">{t("staff.cutsPerDay")}</h3>
         <div className="bg-card border border-border rounded-lg p-4">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dailyData}>
@@ -237,7 +239,7 @@ const OwnerStatsTab = () => {
 
       {/* Line chart */}
       <div>
-        <h3 className="font-serif text-xl font-semibold mb-4">Monthly Earnings (Last 6 Months)</h3>
+        <h3 className="font-serif text-xl font-semibold mb-4">{t("staff.monthlyEarnings")}</h3>
         <div className="bg-card border border-border rounded-lg p-4">
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={monthlyData}>

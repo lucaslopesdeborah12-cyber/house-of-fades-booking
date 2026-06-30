@@ -10,10 +10,12 @@ import EmployeeStatsTab from "@/components/barber/EmployeeStatsTab";
 import ScheduleTab from "@/components/barber/ScheduleTab";
 import ClientsTab from "@/components/barber/ClientsTab";
 import BarberLogin from "@/components/barber/BarberLogin";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type Barber = Tables<"barbers">;
 
 const BarberPortal = () => {
+  const { t } = useLanguage();
   const [session, setSession] = useState<any>(null);
   const [barber, setBarber] = useState<Barber | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ const BarberPortal = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground font-body">Loading…</p>
+        <p className="text-muted-foreground font-body">{t("staff.loading")}</p>
       </div>
     );
   }
@@ -94,12 +96,10 @@ const BarberPortal = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center">
-          <h2 className="font-serif text-2xl font-bold mb-2">Access Denied</h2>
-          <p className="text-muted-foreground font-body mb-4">
-            Your account is not linked to a barber profile.
-          </p>
+          <h2 className="font-serif text-2xl font-bold mb-2">{t("staff.accessDenied")}</h2>
+          <p className="text-muted-foreground font-body mb-4">{t("staff.noBarberProfile")}</p>
           <Button onClick={handleLogout} variant="outline" className="border-border text-foreground">
-            Sign Out
+            {t("staff.signOut")}
           </Button>
         </div>
       </div>
@@ -116,7 +116,7 @@ const BarberPortal = () => {
           <div>
             <span className="font-serif text-lg text-primary-foreground">House</span>
             <span className="text-muted-foreground font-body text-sm ml-3">
-              {barber.name} • {isOwner ? "Owner" : "Barber"}
+              {barber.name} • {isOwner ? t("staff.owner") : t("staff.barber")}
             </span>
           </div>
           <Button
@@ -125,7 +125,7 @@ const BarberPortal = () => {
             onClick={handleLogout}
             className="text-muted-foreground hover:text-foreground"
           >
-            <LogOut size={16} className="mr-1" /> Sign Out
+            <LogOut size={16} className="mr-1" /> {t("staff.signOut")}
           </Button>
         </div>
       </header>
@@ -136,7 +136,7 @@ const BarberPortal = () => {
           <TabsList className="bg-card border border-border mb-6">
             <TabsTrigger value="stats" className="font-body data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <BarChart3 size={16} className="mr-1.5" />
-              {isOwner ? "Shop Stats" : "My Stats"}
+              {isOwner ? t("staff.shopStats") : t("staff.myStats")}
             </TabsTrigger>
             <TabsTrigger
               value="schedule"
@@ -148,7 +148,7 @@ const BarberPortal = () => {
               }}
             >
               <CalendarDays size={16} className="mr-1.5" />
-              My Schedule
+              {t("staff.mySchedule")}
             </TabsTrigger>
             <TabsTrigger
               value="clients"
@@ -160,7 +160,7 @@ const BarberPortal = () => {
               }}
             >
               <Users size={16} className="mr-1.5" />
-              Clients
+              {t("staff.clients")}
             </TabsTrigger>
           </TabsList>
 

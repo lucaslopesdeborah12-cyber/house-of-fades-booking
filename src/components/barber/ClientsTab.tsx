@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { notifyWaitingList } from "@/lib/waitingListNotifier";
 import { useShopSettings } from "@/hooks/useShopSettings";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type ClientAppointment = {
   id: string;
@@ -29,8 +30,6 @@ type ClientAppointment = {
   services: { name: string } | null;
   barbers: { name: string } | null;
 };
-
-const DAY_NAMES = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
 const getCurrentWeekMonday = () => {
   const today = new Date();
@@ -53,6 +52,11 @@ const ClientsTab = ({
   activeTab?: string;
   refreshToken?: number;
 }) => {
+  const { t } = useLanguage();
+  const DAY_NAMES = [
+    t("staff.dayMonday"), t("staff.dayTuesday"), t("staff.dayWednesday"),
+    t("staff.dayThursday"), t("staff.dayFriday"), t("staff.daySaturday"), t("staff.daySunday"),
+  ];
   const { settings, loading: settingsLoading } = useShopSettings();
   const [appointments, setAppointments] = useState<ClientAppointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,7 +108,7 @@ const ClientsTab = ({
 
     if (queryError) {
       console.error("[ClientsTab] query error:", queryError);
-      setError("Falha ao carregar clientes");
+      setError(t("staff.failedLoadClients"));
     } else {
       setAppointments((data as ClientAppointment[]) || []);
     }
@@ -167,9 +171,9 @@ const ClientsTab = ({
       .eq("id", cancelTarget.id);
 
     if (error) {
-      toast.error("Failed to cancel");
+      toast.error(t("staff.failedCancel"));
     } else {
-      toast.success("Agendamento cancelado");
+      toast.success(t("staff.appointmentCancelled"));
       notifyWaitingList(barberIdForNotify, dateForNotify, timeSlot, barberName);
       fetchAppointments(weekStart);
     }
@@ -192,7 +196,7 @@ const ClientsTab = ({
   });
 
   if (!authReady || settingsLoading) {
-    return <p className="text-muted-foreground font-body text-sm p-4">Loading…</p>;
+    return <p className="text-muted-foreground font-body text-sm p-4">{t("staff.loading")}</p>;
   }
 
   if (error) {
@@ -200,14 +204,14 @@ const ClientsTab = ({
       <div className="flex flex-col items-center gap-3 p-6">
         <p className="text-destructive font-body text-sm">{error}</p>
         <Button variant="outline" size="sm" onClick={() => fetchAppointments(weekStart)}>
-          <RefreshCw size={14} className="mr-1.5" /> Tentar novamente
+          <RefreshCw size={14} className="mr-1.5" /> {t("staff.tryAgain")}
         </Button>
       </div>
     );
   }
 
   if (loading) {
-    return <p className="text-muted-foreground font-body text-sm p-4">Loading…</p>;
+    return <p className="text-muted-foreground font-body text-sm p-4">{t("staff.loading")}</p>;
   }
 
   return (
@@ -230,7 +234,7 @@ const ClientsTab = ({
             {DAY_NAMES[(parseISO(dateStr).getDay() + 6) % 7]} — {format(parseISO(dateStr), "dd/MM")}
           </h4>
           {dayAppts.length === 0 ? (
-            <p className="text-xs text-muted-foreground/60 font-body pl-2">Sem agendamentos</p>
+            <p className="text-xs text-muted-foreground/60 font-body pl-2">{t("staff.noBookings")}</p>
           ) : (
             <div className="space-y-1.5">
               {dayAppts.map((a) => (
@@ -275,19 +279,19 @@ const ClientsTab = ({
       <AlertDialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-serif">Cancelar agendamento?</AlertDialogTitle>
+            <AlertDialogTitle className="font-serif">{t("staff.cancelTitle")}</AlertDialogTitle>
             <AlertDialogDescription className="font-body">
-              Tens a certeza que queres cancelar o agendamento de{" "}
+              {t("staff.cancelConfirm")}{" "}
               <span className="font-semibold text-foreground">{cancelTarget?.client_name}</span>?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="font-body">Não</AlertDialogCancel>
+            <AlertDialogCancel className="font-body">{t("staff.no")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-body"
               onClick={handleCancel}
             >
-              Sim, cancelar
+              {t("staff.yesCancel")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
