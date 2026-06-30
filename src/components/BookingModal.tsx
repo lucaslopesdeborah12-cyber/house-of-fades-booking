@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { format } from "date-fns";
-import { pt, enUS, es, fr, it, de, ga } from "date-fns/locale";
+import { pt, enUS, es, fr, it, de, enIE } from "date-fns/locale";
 import {
   CalendarIcon,
   Clock,
@@ -145,7 +145,7 @@ const BookingModal = ({ open, onOpenChange, preselectedBarber }: BookingModalPro
   const confirmationRef = useRef<HTMLDivElement>(null);
 
   const dateLocale = (() => {
-    const map: Record<string, any> = { pt, en: enUS, es, fr, it, de, ga };
+    const map: Record<string, any> = { pt, en: enUS, es, fr, it, de, ga: enIE };
     return map[lang] || enUS;
   })();
 
